@@ -4,7 +4,7 @@ import pytest
 from sklearn.datasets import load_iris, load_wine
 from sklearn.model_selection import train_test_split
 
-from alpaydin_ml import SoftDecisionTree
+from neural_trees import SoftDecisionTree
 
 
 def test_fit_predict_iris():

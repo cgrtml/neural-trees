@@ -11,14 +11,14 @@ __version__ = "0.1.0"
 __author__ = "Community Contributors"
 __paper_author__ = "Prof. Dr. Ethem Alpaydın"
 
-from alpaydin_ml.decision_trees.soft_decision_tree import SoftDecisionTree
-from alpaydin_ml.decision_trees.omnivariate_tree import OmnivariateDecisionTree
-from alpaydin_ml.statistical_tests.classifier_comparison import (
+from neural_trees.decision_trees.soft_decision_tree import SoftDecisionTree
+from neural_trees.decision_trees.omnivariate_tree import OmnivariateDecisionTree
+from neural_trees.statistical_tests.classifier_comparison import (
     combined_5x2cv_f_test,
     mcnemar_test,
     paired_t_test,
 )
-from alpaydin_ml.mixture_of_experts.hierarchical_moe import HierarchicalMixtureOfExperts
+from neural_trees.mixture_of_experts.hierarchical_moe import HierarchicalMixtureOfExperts
 
 __all__ = [
     "SoftDecisionTree",

@@ -176,7 +176,7 @@ class HierarchicalMixtureOfExperts(BaseEstimator, ClassifierMixin):
 
     Examples
     --------
-    >>> from alpaydin_ml import HierarchicalMixtureOfExperts
+    >>> from neural_trees import HierarchicalMixtureOfExperts
     >>> from sklearn.datasets import load_digits
     >>> X, y = load_digits(return_X_y=True)
     >>> moe = HierarchicalMixtureOfExperts(depth=2, branching_factor=4)

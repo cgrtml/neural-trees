@@ -17,7 +17,7 @@ standard: more powerful than McNemar's test and more reliable than the paired t-
 
 Usage
 -----
->>> from alpaydin_ml.statistical_tests import combined_5x2cv_f_test
+>>> from neural_trees.statistical_tests import combined_5x2cv_f_test
 >>> from sklearn.tree import DecisionTreeClassifier
 >>> from sklearn.svm import SVC
 >>> from sklearn.datasets import load_iris

@@ -190,7 +190,7 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
 
     Examples
     --------
-    >>> from alpaydin_ml import SoftDecisionTree
+    >>> from neural_trees import SoftDecisionTree
     >>> from sklearn.datasets import load_iris
     >>> X, y = load_iris(return_X_y=True)
     >>> sdt = SoftDecisionTree(depth=4, max_epochs=30)

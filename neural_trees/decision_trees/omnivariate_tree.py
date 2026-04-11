@@ -131,7 +131,7 @@ class OmnivariateDecisionTree(BaseEstimator, ClassifierMixin):
 
     Examples
     --------
-    >>> from alpaydin_ml import OmnivariateDecisionTree
+    >>> from neural_trees import OmnivariateDecisionTree
     >>> from sklearn.datasets import load_wine
     >>> X, y = load_wine(return_X_y=True)
     >>> odt = OmnivariateDecisionTree(max_depth=4)

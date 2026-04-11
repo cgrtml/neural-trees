@@ -1,11 +1,11 @@
-# alpaydin-ml
+# neural-trees
 
 > Modern Python implementations of algorithms from **Prof. Dr. Ethem Alpaydın**'s research papers and his landmark textbook *Introduction to Machine Learning* (MIT Press, 4th ed., 2020).
 
-[![PyPI version](https://badge.fury.io/py/alpaydin-ml.svg)](https://badge.fury.io/py/alpaydin-ml)
+[![PyPI version](https://badge.fury.io/py/neural-trees.svg)](https://badge.fury.io/py/neural-trees)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://github.com/cgrtml/alpaydin-ml/actions/workflows/tests.yml/badge.svg)](https://github.com/cgrtml/alpaydin-ml/actions)
+[![Tests](https://github.com/cgrtml/neural-trees/actions/workflows/tests.yml/badge.svg)](https://github.com/cgrtml/neural-trees/actions)
 [![sklearn compatible](https://img.shields.io/badge/sklearn-compatible-orange)](https://scikit-learn.org)
 
 ---
@@ -32,14 +32,14 @@ This library fills that gap:
 ## Installation
 
 ```bash
-pip install alpaydin-ml
+pip install neural-trees
 ```
 
 Or install from source:
 
 ```bash
-git clone https://github.com/cgrtml/alpaydin-ml.git
-cd alpaydin-ml
+git clone https://github.com/cgrtml/neural-trees.git
+cd neural-trees
 pip install -e ".[dev]"
 ```
 
@@ -52,7 +52,7 @@ pip install -e ".[dev]"
 The flagship algorithm. Unlike hard decision trees, every sample reaches every leaf with some probability — making the tree **fully differentiable** and trainable end-to-end with backpropagation.
 
 ```python
-from alpaydin_ml import SoftDecisionTree
+from neural_trees import SoftDecisionTree
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 
@@ -88,7 +88,7 @@ $$P(y \mid \mathbf{x}) = \sum_\ell \mu_\ell(\mathbf{x}) \cdot Q_\ell(y)$$
 Alpaydın's **Combined 5×2cv F Test** (Neural Computation, 1999) is the statistically correct way to compare two classifiers. It overcomes the inflated Type I error of the paired t-test.
 
 ```python
-from alpaydin_ml.statistical_tests import combined_5x2cv_f_test
+from neural_trees.statistical_tests import combined_5x2cv_f_test
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_breast_cancer
@@ -123,7 +123,7 @@ The paired t-test reuses training data across folds — the differences are corr
 ### Hierarchical Mixture of Experts with Dropout
 
 ```python
-from alpaydin_ml import HierarchicalMixtureOfExperts
+from neural_trees import HierarchicalMixtureOfExperts
 from sklearn.datasets import load_digits
 
 X, y = load_digits(return_X_y=True)
@@ -146,7 +146,7 @@ print(f"Accuracy: {moe.score(X, y):.4f}")
 No need to specify architecture. The network grows when it can't learn and prunes itself when neurons become redundant.
 
 ```python
-from alpaydin_ml.classical import GALNetwork
+from neural_trees.classical import GALNetwork
 from sklearn.datasets import load_wine
 
 X, y = load_wine(return_X_y=True)
@@ -171,7 +171,7 @@ print(f"Accuracy: {gal.score(X, y):.4f}")
 At each node, automatically selects the best split type (univariate, linear LDA, or nonlinear MLP) using cross-validation.
 
 ```python
-from alpaydin_ml import OmnivariateDecisionTree
+from neural_trees import OmnivariateDecisionTree
 from sklearn.datasets import load_wine
 
 X, y = load_wine(return_X_y=True)

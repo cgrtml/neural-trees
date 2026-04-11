@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="alpaydin-ml",
+    name="neural-trees",
     version="0.1.0",
     author="Community Contributors",
     description=(
@@ -13,7 +13,7 @@ setup(
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/cgrtml/alpaydin-ml",
+    url="https://github.com/cgrtml/neural-trees",
     packages=find_packages(exclude=["tests*", "notebooks*", "examples*"]),
     python_requires=">=3.8",
     install_requires=[

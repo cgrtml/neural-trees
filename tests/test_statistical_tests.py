@@ -5,7 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
-from alpaydin_ml.statistical_tests import (
+from neural_trees.statistical_tests import (
     combined_5x2cv_f_test,
     mcnemar_test,
     paired_t_test,
