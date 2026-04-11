@@ -6,7 +6,8 @@ with open("README.md", "r", encoding="utf-8") as f:
 setup(
     name="neural-trees",
     version="0.1.0",
-    author="Community Contributors",
+    author="Cagri Temel",
+    author_email="cagritemel34@gmail.com",
     description=(
         "Implementations of algorithms from Prof. Dr. Ethem Alpaydın's "
         "research papers and ML textbook (MIT Press)."

@@ -1,15 +1,13 @@
 """
-alpaydin-ml: Implementations of algorithms from Prof. Dr. Ethem Alpaydın's
+neural-trees: Implementations of algorithms from Prof. Dr. Ethem Alpaydın's
 research papers and textbook "Introduction to Machine Learning" (MIT Press).
 
 Reference:
     Alpaydın, E. (2020). Introduction to Machine Learning (4th ed.). MIT Press.
-    https://people.eecs.berkeley.edu/~jordan/courses/281B-spring04/
 """
 
 __version__ = "0.1.0"
-__author__ = "Community Contributors"
-__paper_author__ = "Prof. Dr. Ethem Alpaydın"
+__author__ = "Cagri Temel"
 
 from neural_trees.decision_trees.soft_decision_tree import SoftDecisionTree
 from neural_trees.decision_trees.omnivariate_tree import OmnivariateDecisionTree

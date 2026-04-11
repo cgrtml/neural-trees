@@ -1,8 +1,8 @@
 # neural-trees
 
-> Modern Python implementations of algorithms from **Prof. Dr. Ethem Alpaydın**'s research papers and his landmark textbook *Introduction to Machine Learning* (MIT Press, 4th ed., 2020).
+> PyTorch + sklearn implementations of the tree and mixture-of-experts algorithms
+> from Alpaydın's research papers — the ones that never got a proper open-source home.
 
-[![PyPI version](https://badge.fury.io/py/neural-trees.svg)](https://badge.fury.io/py/neural-trees)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://github.com/cgrtml/neural-trees/actions/workflows/tests.yml/badge.svg)](https://github.com/cgrtml/neural-trees/actions)
@@ -10,11 +10,16 @@
 
 ---
 
-## Why this library?
+## Why?
 
-Alpaydın's textbook is used in hundreds of universities worldwide. His research papers introduced algorithms that appear in top venues (ICML, NIPS, ICPR, IEEE TNN) — yet **clean, maintained Python implementations are nearly impossible to find**.
+I was reading through Alpaydın's *Introduction to Machine Learning* and his papers
+and kept hitting the same wall: interesting algorithms, no usable Python code anywhere.
+The Soft Decision Tree paper (ICPR 2012) alone has hundreds of citations but the implementations
+floating around are incomplete, undocumented, or years out of date.
 
-This library fills that gap:
+So I wrote them myself — clean, tested, and fully compatible with the sklearn API.
+
+Covered so far:
 
 | Algorithm | Paper | Status |
 |-----------|-------|--------|
@@ -282,20 +287,20 @@ If you use this library in academic work, please cite the original papers:
 
 ---
 
-## Contributing
+## Roadmap
 
-Contributions are welcome! Priority areas:
+Things I'm planning to add:
 
 - [ ] Multiple Kernel Learning (Gönen & Alpaydın, JMLR 2011)
 - [ ] Localized Multiple Kernel Learning (ICML 2008)
 - [ ] Convolutional Soft Decision Trees (ICANN 2018)
-- [ ] Visualization utilities for Soft Decision Trees
-- [ ] Benchmark suite comparing all algorithms on UCI datasets
+- [ ] Decision boundary visualization utilities
+- [ ] Benchmark comparison on UCI datasets
 
-Please open an issue to discuss before submitting a large PR.
+If you find a bug or want to implement one of these, open an issue.
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
