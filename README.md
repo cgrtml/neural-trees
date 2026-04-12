@@ -16,7 +16,7 @@ and kept hitting the same wall: interesting algorithms, no usable Python code an
 The Soft Decision Tree paper (ICPR 2012) alone has hundreds of citations but the implementations
 floating around are incomplete, undocumented, or years out of date.
 
-So I wrote them myself — clean, tested, and fully compatible with the sklearn API.
+So I wrote them myself clean, tested, and fully compatible with the sklearn API.
 
 Covered so far:
 
