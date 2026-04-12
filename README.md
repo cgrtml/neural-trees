@@ -118,8 +118,8 @@ pipe.score(X_test, y_test)
 
 ## Notebooks
 
-- [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb) — training, boundary visualization, comparison with CART
-- [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb) — when to use which test
+- [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb) = training, boundary visualization, comparison with CART
+- [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb) = when to use which test
 
 ---
 
