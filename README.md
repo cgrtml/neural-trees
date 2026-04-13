@@ -1,6 +1,14 @@
 # neural-trees
 
-**sklearn-compatible implementations of classic ML algorithms from research papers — the ones that never got a proper open-source home.**
+sklearn-compatible implementations of classic ML algorithms from research papers — finally usable in Python.
+
+<p align="center">
+  <img src="assets/demo.gif" width="600">
+</p>
+
+<p align="center">
+Decision boundary learning with Soft Decision Trees (toy dataset)
+</p>
 
 [![PyPI](https://img.shields.io/pypi/v/neural-trees)](https://pypi.org/project/neural-trees/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -9,17 +17,17 @@
 
 ---
 
-<p align="center">
-  <img src="assets/demo.gif" width="600">
-  <br>
-  <em>Decision boundary learning with Soft Decision Trees (toy dataset)</em>
-  <br><br>
-  Built to make research ideas more accessible and easier to experiment with.
-</p>
+## 🚀 Features
+
+- sklearn-compatible API
+- PyTorch backend
+- Implementations of classic ML algorithms from research papers
+- Includes Combined 5×2cv F Test for statistical comparison
+- Designed for research and experimentation
 
 ---
 
-## Install
+## Quick Install
 
 ```bash
 pip install neural-trees
@@ -37,7 +45,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
 
 model = SoftDecisionTree(depth=4, max_epochs=40)
 model.fit(X_train, y_train)
-print(model.score(X_test, y_test))  # 0.97
+print(model.score(X_test, y_test))  # ~0.97
 ```
 
 Works in any sklearn Pipeline:
@@ -56,24 +64,24 @@ pipe.score(X_test, y_test)
 
 ---
 
-## Benchmark
+## 📊 Benchmark
 
 5-fold CV accuracy on standard datasets (with `StandardScaler`):
 
 | Model | Iris | Wine | Breast Cancer |
 |-------|:----:|:----:|:-------------:|
-| **Soft Decision Tree** (depth=4) | **0.96** | **0.95** | **0.95** |
+| **Soft Decision Tree** (depth=4) | 0.96 | 0.95 | 0.95 |
 | CART (sklearn) | 0.953 | 0.865 | 0.917 |
 | Random Forest | 0.967 | 0.978 | 0.956 |
 | SVM (RBF) | 0.967 | 0.983 | 0.974 |
 
-Soft Decision Trees close much of the gap between CART and ensemble/kernel methods while remaining fully differentiable and interpretable.
+Soft Decision Trees close much of the gap between CART and ensemble/kernel methods while remaining differentiable and interpretable.
 
 ---
 
-## Algorithms
+## 🧠 Algorithms
 
-Based on implementations inspired by academic research, including works by Prof. Dr. Ethem Alpaydın (*Introduction to Machine Learning*, MIT Press).
+Based on implementations inspired by academic research, including works by Ethem Alpaydın.
 
 | Algorithm | Paper |
 |-----------|-------|
@@ -87,11 +95,11 @@ Based on implementations inspired by academic research, including works by Prof.
 
 ---
 
-## Use Cases
+## 🔬 Use Cases
 
-**Research** — reproduce or extend results from the original papers with a clean, tested codebase.
+**Research** — Reproduce or extend results from original papers with a clean, tested codebase.
 
-**Model comparison** — statistically rigorous classifier comparison. The standard paired t-test is unreliable when training folds overlap; Alpaydın's 5×2cv F test fixes that.
+**Model comparison** — Statistically rigorous classifier comparison:
 
 ```python
 from neural_trees import combined_5x2cv_f_test
@@ -100,39 +108,36 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.datasets import load_breast_cancer
 
 X, y = load_breast_cancer(return_X_y=True)
-result = combined_5x2cv_f_test(DecisionTreeClassifier(), SVC(kernel="rbf"), X, y)
+
+result = combined_5x2cv_f_test(
+    DecisionTreeClassifier(),
+    SVC(kernel="rbf"),
+    X, y
+)
+
 print(result)
 ```
 
-```
-StatisticalTestResult(
-  test       = Alpaydın's Combined 5×2cv F Test
-  statistic  = 12.4731
-  p-value    = 0.0083
-  decision   = ✓ REJECT H0
-)
-```
-
-**Education** — understand how soft splits and mixture-of-experts work from the inside, not just the textbook diagram.
+**Education** — Understand soft splits and mixture-of-experts beyond textbook diagrams.
 
 ---
 
-## Why?
+## 💡 Why?
 
-I was reading through Alpaydın's papers and kept hitting the same wall: interesting algorithms, no usable Python code anywhere. The Soft Decision Tree paper (ICPR 2012) alone has hundreds of citations but the implementations floating around are incomplete, undocumented, or years out of date.
+I kept running into the same issue while reading ML papers: interesting algorithms, but no usable Python implementations.
 
-So I wrote them myself — clean, tested, and fully compatible with the sklearn API.
+So I built them — clean, tested, and fully compatible with sklearn.
 
 ---
 
-## Notebooks
+## 📚 Notebooks
 
 - [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb) — training, boundary visualization, comparison with CART
 - [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb) — when to use which statistical test
 
 ---
 
-## Citation
+## 📖 Citation
 
 If you use this in academic work, please cite the original papers:
 
@@ -157,6 +162,6 @@ If you use this in academic work, please cite the original papers:
 
 ---
 
-## License
+## 📄 License
 
 MIT — see [LICENSE](LICENSE).
