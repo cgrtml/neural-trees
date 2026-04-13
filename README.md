@@ -9,8 +9,7 @@
 
 ---
 
-<!-- Replace with actual demo GIF: record decision boundary shifting as you change tree depth -->
-<!-- ![Decision Boundary Demo](assets/demo.gif) -->
+![Decision Boundary Demo](assets/demo.gif)
 
 ---
 
