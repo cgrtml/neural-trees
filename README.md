@@ -1,6 +1,6 @@
 # neural-trees
 
-sklearn-compatible implementations of classic ML algorithms from research papers — finally usable in Python.
+sklearn-compatible implementations of classic ML algorithms from research papers, finally usable in Python.
 
 <p align="center">
   <img src="assets/demo.gif" width="600">
