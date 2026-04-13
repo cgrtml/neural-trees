@@ -9,9 +9,11 @@
 
 ---
 
-![Decision Boundary Demo](assets/demo.gif)
-
-*Decision boundary learning with Soft Decision Trees (toy dataset)*
+<p align="center">
+  <img src="assets/demo.gif" width="600">
+  <br>
+  <em>Decision boundary learning with Soft Decision Trees (toy dataset)</em>
+</p>
 
 ---
 
