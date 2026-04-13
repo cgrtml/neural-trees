@@ -126,7 +126,7 @@ print(result)
 
 I kept running into the same issue while reading ML papers: interesting algorithms, but no usable Python implementations.
 
-So I built them — clean, tested, and fully compatible with sklearn.
+So I built them, clean, tested, and fully compatible with sklearn.
 
 ---
 
