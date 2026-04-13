@@ -13,6 +13,8 @@
   <img src="assets/demo.gif" width="600">
   <br>
   <em>Decision boundary learning with Soft Decision Trees (toy dataset)</em>
+  <br><br>
+  Built to make research ideas more accessible and easier to experiment with.
 </p>
 
 ---
