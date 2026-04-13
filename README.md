@@ -132,7 +132,7 @@ So I built them, clean, tested, and fully compatible with sklearn.
 
 ## 📚 Notebooks
 
-- [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb) — training, boundary visualization, comparison with CART
+- [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb) = training, boundary visualization, comparison with CART
 - [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb) — when to use which statistical test
 
 ---
