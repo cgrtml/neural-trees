@@ -11,6 +11,8 @@
 
 ![Decision Boundary Demo](assets/demo.gif)
 
+*Decision boundary learning with Soft Decision Trees (toy dataset)*
+
 ---
 
 ## Install
