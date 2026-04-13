@@ -118,7 +118,7 @@ result = combined_5x2cv_f_test(
 print(result)
 ```
 
-**Education** — Understand soft splits and mixture-of-experts beyond textbook diagrams.
+**Education** Understand soft splits and mixture-of-experts beyond textbook diagrams.
 
 ---
 
