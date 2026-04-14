@@ -14,6 +14,7 @@ Decision boundary learning with Soft Decision Trees (toy dataset)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://github.com/cgrtml/neural-trees/actions/workflows/tests.yml/badge.svg)](https://github.com/cgrtml/neural-trees/actions)
+[![GitHub Stars](https://img.shields.io/github/stars/cgrtml/neural-trees?style=social)](https://github.com/cgrtml/neural-trees/stargazers)
 
 ---
 
@@ -159,6 +160,20 @@ If you use this in academic work, please cite the original papers:
   year    = {1999}
 }
 ```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome. A few good starting points:
+
+- Add support for a new algorithm from Alpaydın's papers
+- Improve test coverage
+- Add a notebook or example
+
+Open an issue first to discuss what you'd like to change.
+
+If this project is useful to you, a star helps others find it.
 
 ---
 
