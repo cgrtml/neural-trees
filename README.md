@@ -98,9 +98,9 @@ Based on implementations inspired by academic research, including works by Ethem
 
 ## 🔬 Use Cases
 
-**Research** — Reproduce or extend results from original papers with a clean, tested codebase.
+**Research** Reproduce or extend results from original papers with a clean, tested codebase.
 
-**Model comparison** — Statistically rigorous classifier comparison:
+**Model comparison** Statistically rigorous classifier comparison:
 
 ```python
 from neural_trees import combined_5x2cv_f_test
@@ -119,7 +119,7 @@ result = combined_5x2cv_f_test(
 print(result)
 ```
 
-**Education** Understand soft splits and mixture-of-experts beyond textbook diagrams.
+**Education** Understand soft splits and mixture of experts beyond textbook diagrams.
 
 ---
 
@@ -134,7 +134,7 @@ So I built them, clean, tested, and fully compatible with sklearn.
 ## 📚 Notebooks
 
 - [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb) = training, boundary visualization, comparison with CART
-- [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb) — when to use which statistical test
+- [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb) = when to use which statistical test
 
 ---
 
