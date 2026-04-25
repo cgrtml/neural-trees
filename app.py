@@ -317,21 +317,48 @@ tab_rank, tab_chart, tab_h2h, tab_boundary = st.tabs([
 
 # ── TAB 1: Ranking ──
 with tab_rank:
+    best_acc = valid_results[0][1]["mean"] if valid_results else 1.0
     for rank, (name, r) in enumerate(sorted_results, 1):
         medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(rank, f"#{rank}")
         has_error = "error" in r
+        color = MODEL_COLORS.get(name, "#999")
+        border_weight = "3px" if rank <= 3 else "2px"
+        bg = "#fffdf5" if rank == 1 else "#f8f9fa"
+        pct = int(r["mean"] / best_acc * 100) if not has_error and best_acc > 0 else 0
 
-        c_medal, c_name, c_acc, c_bar = st.columns([0.5, 2.5, 1.5, 4])
-        c_medal.markdown(f"### {medal}")
-        c_name.markdown(f"**{name}**")
-        c_name.caption(MODEL_DESCRIPTIONS[name])
         if has_error:
-            c_acc.markdown(f"❌ Error")
-            c_bar.caption(r["error"])
+            card_html = f"""
+            <div style="background:#fff5f5; border-left:3px solid #e74c3c; border-radius:10px;
+                        padding:16px 20px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:28px">{medal}</span>
+                    <div style="flex:1">
+                        <div style="font-weight:600; font-size:16px; color:#333">{name}</div>
+                        <div style="font-size:12px; color:#888">{MODEL_DESCRIPTIONS[name]}</div>
+                    </div>
+                    <div style="color:#e74c3c; font-weight:600">❌ Error</div>
+                </div>
+            </div>"""
         else:
-            c_acc.markdown(f"### {r['mean']:.4f}")
-            c_acc.caption(f"± {r['std']:.4f}")
-            c_bar.progress(r["mean"])
+            card_html = f"""
+            <div style="background:{bg}; border-left:{border_weight} solid {color}; border-radius:10px;
+                        padding:16px 20px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <span style="font-size:32px">{medal}</span>
+                    <div style="flex:1">
+                        <div style="font-weight:600; font-size:16px; color:#333">{name}</div>
+                        <div style="font-size:12px; color:#888; margin-top:2px">{MODEL_DESCRIPTIONS[name]}</div>
+                        <div style="margin-top:8px; background:#e9ecef; border-radius:6px; height:8px; overflow:hidden;">
+                            <div style="width:{pct}%; height:100%; background:{color}; border-radius:6px;"></div>
+                        </div>
+                    </div>
+                    <div style="text-align:right; min-width:100px;">
+                        <div style="font-size:28px; font-weight:700; color:{color}">{r['mean']:.4f}</div>
+                        <div style="font-size:12px; color:#999">± {r['std']:.4f}</div>
+                    </div>
+                </div>
+            </div>"""
+        st.markdown(card_html, unsafe_allow_html=True)
 
 # ── TAB 2: Charts ──
 with tab_chart:
