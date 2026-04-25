@@ -7,3 +7,4 @@ jupyter
 pytest>=7.0
 pytest-cov
 plotly
+streamlit>=1.30.0
