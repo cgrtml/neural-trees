@@ -32,14 +32,34 @@ st.set_page_config(page_title="ML Playground", page_icon="🧠", layout="wide")
 
 st.markdown("""
 <style>
-    .block-container { padding-top: 1.5rem; }
-    .stMetric { background: #f0f2f6; border-radius: 10px; padding: 15px; }
-    h1 { color: #1f77b4; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+.block-container { padding-top: 1.5rem; }
+.hero-banner {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 16px; padding: 32px; color: white; margin-bottom: 24px;
+}
+.hero-banner h1 { font-size: 2rem; margin: 0 0 8px 0; color: white; }
+.hero-banner p  { font-size: 1rem; opacity: 0.8; margin: 0; color: white; }
+.model-card {
+    background: #f8f9fa; border-radius: 10px; padding: 16px;
+    border-left: 4px solid #1f77b4; margin-bottom: 8px;
+}
+.vs-badge {
+    font-size: 2.5rem; font-weight: 700; color: #e74c3c;
+    text-align: center; line-height: 80px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧠 ML Playground")
-st.caption("Interactive classifier comparison powered by [neural-trees](https://github.com/cgrtml/neural-trees)")
+# Hero banner
+st.markdown("""
+<div class="hero-banner">
+    <h1>🧠 ML Playground</h1>
+    <p>Choose algorithms, tune hyperparameters, watch decision boundaries update live.<br>
+    Powered by <a href="https://github.com/cgrtml/neural-trees" style="color:#58a6ff">neural-trees</a> — sklearn-compatible implementations of classic ML research.</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────
 # Datasets
@@ -65,11 +85,11 @@ DATASETS = {
 }
 
 DATASET_INFO = {
-    "Iris": "3 classes, 4 features, 150 samples",
-    "Wine": "3 classes, 13 features, 178 samples",
-    "Breast Cancer": "2 classes, 30 features, 569 samples",
-    "Moons": "2 classes, 2 features, 500 samples (synthetic)",
-    "Circles": "2 classes, 2 features, 500 samples (synthetic)",
+    "Iris": "3 classes · 4 features · 150 samples",
+    "Wine": "3 classes · 13 features · 178 samples",
+    "Breast Cancer": "2 classes · 30 features · 569 samples",
+    "Moons": "2 classes · 2 features · 500 samples (synthetic)",
+    "Circles": "2 classes · 2 features · 500 samples (synthetic)",
 }
 
 # ──────────────────────────────────────────────
@@ -93,13 +113,13 @@ MODEL_DESCRIPTIONS = {
     "Hierarchical MoE": "Tree-structured mixture of experts with dropout (Irsoy & Alpaydin, 2021)",
     "GAL Network": "Grow-and-learn constructive neural network (Alpaydin, 1994)",
     "CART (sklearn)": "Classic decision tree with Gini impurity",
-    "Random Forest": "Ensemble of 100 decision trees",
+    "Random Forest": "Ensemble of decision trees with bagging",
     "SVM (RBF)": "Support vector machine with RBF kernel",
-    "Weighted KNN": "Inverse-distance weighted k-nearest neighbors (k=5)",
+    "Weighted KNN": "Inverse-distance weighted k-nearest neighbors",
     "Naive Bayes": "Gaussian naive Bayes classifier",
 }
 
-COLORS = {
+MODEL_COLORS = {
     "Soft Decision Tree": "#1f77b4",
     "Omnivariate Tree": "#ff7f0e",
     "Hierarchical MoE": "#2ca02c",
@@ -111,24 +131,8 @@ COLORS = {
     "Naive Bayes": "#bcbd22",
 }
 
-
-def get_model(name):
-    models = {
-        "Soft Decision Tree": SoftDecisionTree(depth=4, max_epochs=40, verbose=False),
-        "Omnivariate Tree": OmnivariateDecisionTree(max_depth=5),
-        "Hierarchical MoE": HierarchicalMixtureOfExperts(depth=2, max_epochs=50, verbose=False),
-        "GAL Network": GALNetwork(max_epochs=80, verbose=False),
-        "CART (sklearn)": DecisionTreeClassifier(max_depth=5, random_state=42),
-        "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
-        "SVM (RBF)": SVC(kernel="rbf", probability=True, random_state=42),
-        "Weighted KNN": WeightedKNN(k=5),
-        "Naive Bayes": NaiveBayesClassifier(likelihood="gaussian"),
-    }
-    return models[name]
-
-
 # ──────────────────────────────────────────────
-# Sidebar
+# Sidebar — Configuration
 # ──────────────────────────────────────────────
 st.sidebar.header("⚙️ Configuration")
 
@@ -136,36 +140,119 @@ dataset_name = st.sidebar.selectbox("📊 Dataset", list(DATASETS.keys()))
 st.sidebar.caption(DATASET_INFO[dataset_name])
 
 selected_models = st.sidebar.multiselect(
-    "🤖 Models to compare",
+    "🤖 Models",
     MODEL_NAMES,
     default=["Soft Decision Tree", "CART (sklearn)", "Random Forest", "SVM (RBF)"],
 )
 
-cv_folds = st.sidebar.slider("🔄 Cross-validation folds", 3, 10, 5)
-show_boundary = st.sidebar.checkbox("🗺️ Show decision boundaries", value=True)
+cv_folds = st.sidebar.slider("🔄 CV Folds", 3, 10, 5)
+
+# ──────────────────────────────────────────────
+# Sidebar — Hyperparameters
+# ──────────────────────────────────────────────
+st.sidebar.divider()
+st.sidebar.header("🎛️ Hyperparameters")
+
+hp = {}
+for name in selected_models:
+    with st.sidebar.expander(f"**{name}**", expanded=False):
+        if name == "Soft Decision Tree":
+            hp[name] = {
+                "depth": st.slider("Tree depth", 2, 8, 4, key="sdt_depth"),
+                "max_epochs": st.slider("Max epochs", 10, 100, 40, key="sdt_epochs"),
+                "lr": st.select_slider("Learning rate", [0.001, 0.005, 0.01, 0.05, 0.1], value=0.01, key="sdt_lr"),
+                "batch_size": st.select_slider("Batch size", [16, 32, 64, 128], value=64, key="sdt_bs"),
+            }
+        elif name == "Omnivariate Tree":
+            hp[name] = {
+                "max_depth": st.slider("Max depth", 2, 10, 5, key="odt_depth"),
+                "min_samples_split": st.slider("Min samples split", 2, 30, 10, key="odt_mss"),
+            }
+        elif name == "Hierarchical MoE":
+            hp[name] = {
+                "depth": st.slider("Tree depth", 1, 4, 2, key="hmoe_depth"),
+                "max_epochs": st.slider("Max epochs", 20, 100, 50, key="hmoe_epochs"),
+                "dropout_rate": st.slider("Dropout rate", 0.0, 0.5, 0.3, step=0.05, key="hmoe_drop"),
+            }
+        elif name == "GAL Network":
+            hp[name] = {
+                "initial_hidden": st.slider("Initial hidden units", 1, 10, 2, key="gal_init"),
+                "max_hidden": st.slider("Max hidden units", 10, 100, 50, key="gal_max"),
+                "max_epochs": st.slider("Max epochs", 20, 200, 80, key="gal_epochs"),
+            }
+        elif name == "CART (sklearn)":
+            hp[name] = {
+                "max_depth": st.slider("Max depth", 1, 20, 5, key="cart_depth"),
+                "criterion": st.selectbox("Criterion", ["gini", "entropy"], key="cart_crit"),
+            }
+        elif name == "Random Forest":
+            hp[name] = {
+                "n_estimators": st.slider("Number of trees", 10, 300, 100, step=10, key="rf_n"),
+                "max_depth": st.slider("Max depth", 2, 20, 5, key="rf_depth"),
+            }
+        elif name == "SVM (RBF)":
+            hp[name] = {
+                "C": st.select_slider("C (regularization)", [0.01, 0.1, 1.0, 10.0, 100.0], value=1.0, key="svm_c"),
+                "gamma": st.selectbox("Gamma", ["scale", "auto"], key="svm_gamma"),
+            }
+        elif name == "Weighted KNN":
+            hp[name] = {
+                "k": st.slider("k (neighbors)", 1, 20, 5, key="knn_k"),
+                "weight_power": st.slider("Weight power", 0.0, 4.0, 2.0, step=0.5, key="knn_wp"),
+            }
+        elif name == "Naive Bayes":
+            hp[name] = {
+                "likelihood": st.selectbox("Likelihood", ["gaussian", "bernoulli"], key="nb_like"),
+            }
 
 st.sidebar.divider()
 run_button = st.sidebar.button("🚀 Run Comparison", type="primary", use_container_width=True)
-
 st.sidebar.divider()
 st.sidebar.caption("Built by [Cagri Temel](https://github.com/cgrtml)")
 
+
 # ──────────────────────────────────────────────
-# Main
+# Build model with hyperparameters
+# ──────────────────────────────────────────────
+def build_model(name):
+    p = hp.get(name, {})
+    if name == "Soft Decision Tree":
+        return SoftDecisionTree(depth=p.get("depth", 4), max_epochs=p.get("max_epochs", 40),
+                                learning_rate=p.get("lr", 0.01), batch_size=p.get("batch_size", 64), verbose=False)
+    elif name == "Omnivariate Tree":
+        return OmnivariateDecisionTree(max_depth=p.get("max_depth", 5), min_samples_split=p.get("min_samples_split", 10))
+    elif name == "Hierarchical MoE":
+        return HierarchicalMixtureOfExperts(depth=p.get("depth", 2), max_epochs=p.get("max_epochs", 50),
+                                            dropout_rate=p.get("dropout_rate", 0.3), verbose=False)
+    elif name == "GAL Network":
+        return GALNetwork(initial_hidden=p.get("initial_hidden", 2), max_hidden=p.get("max_hidden", 50),
+                          max_epochs=p.get("max_epochs", 80), verbose=False)
+    elif name == "CART (sklearn)":
+        return DecisionTreeClassifier(max_depth=p.get("max_depth", 5), criterion=p.get("criterion", "gini"), random_state=42)
+    elif name == "Random Forest":
+        return RandomForestClassifier(n_estimators=p.get("n_estimators", 100), max_depth=p.get("max_depth", 5), random_state=42)
+    elif name == "SVM (RBF)":
+        return SVC(kernel="rbf", C=p.get("C", 1.0), gamma=p.get("gamma", "scale"), probability=True, random_state=42)
+    elif name == "Weighted KNN":
+        return WeightedKNN(k=p.get("k", 5), weight_power=p.get("weight_power", 2.0))
+    elif name == "Naive Bayes":
+        return NaiveBayesClassifier(likelihood=p.get("likelihood", "gaussian"))
+
+
+# ──────────────────────────────────────────────
+# Landing page
 # ──────────────────────────────────────────────
 if not run_button:
-    st.info("👈 Select models and a dataset from the sidebar, then press **Run Comparison**.")
+    st.info("👈 Select models, tune hyperparameters, then press **Run Comparison**.")
 
-    # Show model cards
-    st.header("Available Models")
     cols = st.columns(3)
     for i, name in enumerate(MODEL_NAMES):
         with cols[i % 3]:
             st.markdown(f"""
-            <div style="background: #f8f9fa; border-left: 4px solid {COLORS[name]};
-                        padding: 12px 16px; border-radius: 6px; margin-bottom: 10px;">
-                <strong>{name}</strong><br>
-                <span style="font-size: 13px; color: #555;">{MODEL_DESCRIPTIONS[name]}</span>
+            <div style="background:#f8f9fa; border-left:4px solid {MODEL_COLORS[name]};
+                        padding:12px 16px; border-radius:8px; margin-bottom:10px;">
+                <strong style="color:{MODEL_COLORS[name]}">{name}</strong><br>
+                <span style="font-size:13px; color:#555;">{MODEL_DESCRIPTIONS[name]}</span>
             </div>
             """, unsafe_allow_html=True)
     st.stop()
@@ -174,7 +261,9 @@ if not selected_models:
     st.warning("Please select at least one model.")
     st.stop()
 
+# ──────────────────────────────────────────────
 # Load data
+# ──────────────────────────────────────────────
 data = DATASETS[dataset_name]()
 X, y = data.data, data.target
 scaler = StandardScaler()
@@ -184,8 +273,6 @@ n_classes = len(np.unique(y))
 # ──────────────────────────────────────────────
 # Cross-validation
 # ──────────────────────────────────────────────
-st.header(f"📊 Results on {dataset_name}")
-
 results = {}
 status = st.empty()
 progress = st.progress(0)
@@ -193,7 +280,7 @@ progress = st.progress(0)
 for i, name in enumerate(selected_models):
     status.text(f"Training {name}...")
     try:
-        model = get_model(name)
+        model = build_model(name)
         scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
         results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
     except Exception as e:
@@ -204,172 +291,209 @@ progress.empty()
 status.empty()
 
 sorted_results = sorted(results.items(), key=lambda x: x[1]["mean"], reverse=True)
+valid_results = [(n, r) for n, r in sorted_results if "error" not in r]
 
 # ──────────────────────────────────────────────
-# Metrics row
+# Top metrics
 # ──────────────────────────────────────────────
-best_name, best_r = sorted_results[0]
-metric_cols = st.columns(4)
-metric_cols[0].metric("🏆 Best Model", best_name)
-metric_cols[1].metric("Accuracy", f"{best_r['mean']:.4f}")
-metric_cols[2].metric("Dataset", dataset_name)
-metric_cols[3].metric("Models Compared", len(selected_models))
+st.header(f"📊 Results — {dataset_name}")
+
+if valid_results:
+    best_name, best_r = valid_results[0]
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("🏆 Best Model", best_name)
+    m2.metric("Accuracy", f"{best_r['mean']:.4f}")
+    m3.metric("Dataset", dataset_name)
+    m4.metric("Models Tested", len(selected_models))
 
 st.divider()
 
 # ──────────────────────────────────────────────
-# Results: Table + Bar Chart
+# Tabs
 # ──────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(["📋 Ranking", "📊 Charts", "⚔️ Head-to-Head"])
+tab_rank, tab_chart, tab_h2h, tab_boundary = st.tabs([
+    "📋 Ranking", "📊 Charts", "⚔️ Head-to-Head", "🗺️ Decision Boundaries"
+])
 
-with tab1:
-    # Ranking table
+# ── TAB 1: Ranking ──
+with tab_rank:
     for rank, (name, r) in enumerate(sorted_results, 1):
         medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(rank, f"#{rank}")
         has_error = "error" in r
-        acc_text = "ERROR" if has_error else f"{r['mean']:.4f} ± {r['std']:.4f}"
 
-        col_medal, col_name, col_acc, col_bar = st.columns([0.5, 2, 1.5, 4])
-        col_medal.markdown(f"### {medal}")
-        col_name.markdown(f"**{name}**")
-        col_name.caption(MODEL_DESCRIPTIONS[name])
-        col_acc.markdown(f"### {acc_text}")
-        if not has_error:
-            col_bar.progress(r["mean"])
+        c_medal, c_name, c_acc, c_bar = st.columns([0.5, 2.5, 1.5, 4])
+        c_medal.markdown(f"### {medal}")
+        c_name.markdown(f"**{name}**")
+        c_name.caption(MODEL_DESCRIPTIONS[name])
+        if has_error:
+            c_acc.markdown(f"❌ Error")
+            c_bar.caption(r["error"])
+        else:
+            c_acc.markdown(f"### {r['mean']:.4f}")
+            c_acc.caption(f"± {r['std']:.4f}")
+            c_bar.progress(r["mean"])
 
-with tab2:
-    col_bar, col_box = st.columns(2)
+# ── TAB 2: Charts ──
+with tab_chart:
+    if not valid_results:
+        st.warning("No valid results to display.")
+    else:
+        col_bar, col_box = st.columns(2)
 
-    with col_bar:
-        st.subheader("Accuracy Comparison")
-        names = [n for n, _ in sorted_results if "error" not in _]
-        means = [r["mean"] for _, r in sorted_results if "error" not in r]
-        stds = [r["std"] for _, r in sorted_results if "error" not in r]
-        bar_colors = [COLORS.get(n, "#999") for n in names]
+        with col_bar:
+            st.subheader("Accuracy Comparison")
+            names = [n for n, _ in valid_results]
+            means = [r["mean"] for _, r in valid_results]
+            stds = [r["std"] for _, r in valid_results]
 
-        fig_bar = go.Figure()
-        fig_bar.add_trace(go.Bar(
-            x=names, y=means,
-            error_y=dict(type="data", array=stds, visible=True, color="#333"),
-            marker_color=bar_colors,
-            text=[f"{m:.3f}" for m in means],
-            textposition="outside",
-            textfont=dict(size=14, color="#333"),
-        ))
-        fig_bar.update_layout(
-            yaxis_title="Accuracy",
-            yaxis_range=[max(0, min(means) - 0.15), 1.05],
-            height=450,
-            margin=dict(t=20, b=80),
-            xaxis_tickangle=-30,
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            yaxis=dict(gridcolor="#eee"),
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
+            fig_bar = go.Figure()
+            fig_bar.add_trace(go.Bar(
+                x=names, y=means,
+                error_y=dict(type="data", array=stds, visible=True, color="#333"),
+                marker_color=[MODEL_COLORS.get(n, "#999") for n in names],
+                text=[f"{m:.3f}" for m in means],
+                textposition="outside",
+                textfont=dict(size=14, color="#333"),
+            ))
+            fig_bar.update_layout(
+                yaxis_title="Accuracy", yaxis_range=[max(0, min(means) - 0.15), 1.05],
+                height=420, margin=dict(t=20, b=80), xaxis_tickangle=-25,
+                plot_bgcolor="white", paper_bgcolor="white", yaxis=dict(gridcolor="#eee"),
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
 
-    with col_box:
-        st.subheader("Score Distribution")
-        fig_box = go.Figure()
-        for name, r in sorted_results:
-            if "error" not in r:
+        with col_box:
+            st.subheader("Per-Fold Distribution")
+            fig_box = go.Figure()
+            for name, r in valid_results:
                 fig_box.add_trace(go.Box(
                     y=r["scores"], name=name,
-                    marker_color=COLORS.get(name, "#999"),
+                    marker_color=MODEL_COLORS.get(name, "#999"),
                     boxmean=True,
                 ))
-        fig_box.update_layout(
-            yaxis_title="Accuracy per fold",
-            height=450,
-            margin=dict(t=20, b=80),
-            showlegend=False,
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            yaxis=dict(gridcolor="#eee"),
-            xaxis_tickangle=-30,
-        )
-        st.plotly_chart(fig_box, use_container_width=True)
+            fig_box.update_layout(
+                yaxis_title="Accuracy per fold", height=420,
+                margin=dict(t=20, b=80), showlegend=False,
+                plot_bgcolor="white", paper_bgcolor="white", yaxis=dict(gridcolor="#eee"),
+                xaxis_tickangle=-25,
+            )
+            st.plotly_chart(fig_box, use_container_width=True)
 
-with tab3:
-    st.subheader("⚔️ Head-to-Head Comparison")
-    if len(selected_models) < 2:
-        st.info("Select at least 2 models to compare head-to-head.")
+        # Radar chart
+        if len(valid_results) >= 3:
+            st.subheader("Radar Overview")
+            fig_radar = go.Figure()
+            categories = [n for n, _ in valid_results]
+            for name, r in valid_results:
+                vals = [r["mean"]] + [results[n]["mean"] if "error" not in results[n] else 0 for n in categories[1:]]
+                # Just show each model's accuracy as a point
+            fig_radar = go.Figure()
+            for name, r in valid_results:
+                fig_radar.add_trace(go.Scatterpolar(
+                    r=[results[n]["mean"] if n == name else 0 for n in categories] + [r["mean"]],
+                    theta=categories + [categories[0]],
+                    name=name,
+                    line=dict(color=MODEL_COLORS.get(name, "#999")),
+                ))
+            fig_radar.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                height=400, showlegend=True,
+            )
+            st.plotly_chart(fig_radar, use_container_width=True)
+
+# ── TAB 3: Head-to-Head ──
+with tab_h2h:
+    valid_names = [n for n, r in results.items() if "error" not in r]
+    if len(valid_names) < 2:
+        st.info("Select at least 2 working models for head-to-head comparison.")
     else:
-        valid_models = [n for n in selected_models if "error" not in results[n]]
-        h2h_col1, h2h_col2 = st.columns(2)
-        model_a = h2h_col1.selectbox("Model A", valid_models, index=0)
-        model_b = h2h_col2.selectbox("Model B", [m for m in valid_models if m != model_a], index=0)
+        h1, h2 = st.columns(2)
+        model_a = h1.selectbox("Model A", valid_names, index=0)
+        remaining = [m for m in valid_names if m != model_a]
+        model_b = h2.selectbox("Model B", remaining, index=min(1, len(remaining) - 1) if len(remaining) > 1 else 0)
 
         ra, rb = results[model_a], results[model_b]
+        diff = ra["mean"] - rb["mean"]
+        winner = model_a if diff > 0 else model_b
 
-        # Comparison metrics
-        c1, c2, c3 = st.columns([2, 1, 2])
-        with c1:
-            st.markdown(f"<h2 style='text-align:center; color:{COLORS[model_a]}'>{model_a}</h2>", unsafe_allow_html=True)
+        # VS display
+        v1, vs, v2 = st.columns([5, 2, 5])
+        with v1:
+            st.markdown(f"<h2 style='text-align:center; color:{MODEL_COLORS[model_a]}'>{model_a}</h2>", unsafe_allow_html=True)
             st.markdown(f"<h1 style='text-align:center'>{ra['mean']:.4f}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align:center; color:#888'>± {ra['std']:.4f}</p>", unsafe_allow_html=True)
-        with c2:
-            st.markdown("<h1 style='text-align:center; margin-top:30px'>⚔️</h1>", unsafe_allow_html=True)
-            diff = ra["mean"] - rb["mean"]
-            winner = model_a if diff > 0 else model_b
-            st.markdown(f"<p style='text-align:center; font-size:12px; color:#888'>Δ = {abs(diff):.4f}</p>", unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"<h2 style='text-align:center; color:{COLORS[model_b]}'>{model_b}</h2>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align:center; color:#888'>σ = {ra['std']:.4f}</p>", unsafe_allow_html=True)
+            # Show hyperparams
+            if model_a in hp:
+                st.caption("Hyperparameters:")
+                for k, v in hp[model_a].items():
+                    st.markdown(f"<span style='font-size:12px'>`{k}` = **{v}**</span>", unsafe_allow_html=True)
+        with vs:
+            st.markdown("<div class='vs-badge'>VS</div>", unsafe_allow_html=True)
+            delta_color = MODEL_COLORS[winner]
+            st.markdown(f"<p style='text-align:center; font-size:13px'>Δ = <b style=\"color:{delta_color}\">{abs(diff):.4f}</b></p>", unsafe_allow_html=True)
+            if abs(diff) < 0.005:
+                st.markdown("<p style='text-align:center; font-size:11px; color:#888'>⚖️ Too close to call</p>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<p style='text-align:center; font-size:11px; color:{delta_color}'>👑 {winner}</p>", unsafe_allow_html=True)
+        with v2:
+            st.markdown(f"<h2 style='text-align:center; color:{MODEL_COLORS[model_b]}'>{model_b}</h2>", unsafe_allow_html=True)
             st.markdown(f"<h1 style='text-align:center'>{rb['mean']:.4f}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align:center; color:#888'>± {rb['std']:.4f}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align:center; color:#888'>σ = {rb['std']:.4f}</p>", unsafe_allow_html=True)
+            if model_b in hp:
+                st.caption("Hyperparameters:")
+                for k, v in hp[model_b].items():
+                    st.markdown(f"<span style='font-size:12px'>`{k}` = **{v}**</span>", unsafe_allow_html=True)
 
-        # Fold-by-fold comparison
+        st.divider()
+
+        # Fold-by-fold line chart
+        st.subheader("Fold-by-Fold Accuracy")
         fig_h2h = go.Figure()
         folds = list(range(1, cv_folds + 1))
         fig_h2h.add_trace(go.Scatter(
             x=folds, y=ra["scores"], mode="lines+markers",
-            name=model_a, line=dict(color=COLORS[model_a], width=3),
-            marker=dict(size=10),
+            name=model_a, line=dict(color=MODEL_COLORS[model_a], width=3), marker=dict(size=10),
         ))
         fig_h2h.add_trace(go.Scatter(
             x=folds, y=rb["scores"], mode="lines+markers",
-            name=model_b, line=dict(color=COLORS[model_b], width=3),
-            marker=dict(size=10),
+            name=model_b, line=dict(color=MODEL_COLORS[model_b], width=3), marker=dict(size=10),
+        ))
+        # Add shaded area between them
+        fig_h2h.add_trace(go.Scatter(
+            x=folds + folds[::-1],
+            y=list(ra["scores"]) + list(rb["scores"][::-1]),
+            fill="toself", fillcolor="rgba(200,200,200,0.15)",
+            line=dict(width=0), showlegend=False,
         ))
         fig_h2h.update_layout(
-            xaxis_title="Fold",
-            yaxis_title="Accuracy",
-            height=350,
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            yaxis=dict(gridcolor="#eee"),
+            xaxis_title="Fold", yaxis_title="Accuracy", height=350,
+            plot_bgcolor="white", paper_bgcolor="white", yaxis=dict(gridcolor="#eee"),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         st.plotly_chart(fig_h2h, use_container_width=True)
 
         # Statistical test
-        st.subheader("📐 Statistical Significance Test")
-        st.caption("Alpaydin's Combined 5×2cv F Test")
-        if st.button("Run 5×2cv F Test", type="secondary"):
-            with st.spinner("Running statistical test..."):
+        st.subheader("📐 Statistical Significance")
+        st.caption("Alpaydin's Combined 5×2cv F Test — the gold standard for classifier comparison")
+        if st.button("Run 5×2cv F Test"):
+            with st.spinner("Running 5 repetitions of 2-fold CV..."):
                 try:
-                    test_result = combined_5x2cv_f_test(
-                        get_model(model_a), get_model(model_b), X_scaled, y,
-                    )
-                    tc1, tc2, tc3 = st.columns(3)
-                    tc1.metric("F Statistic", f"{test_result.statistic:.4f}")
-                    tc2.metric("P Value", f"{test_result.p_value:.4f}")
-                    tc3.metric("Reject H₀?", "Yes ✅" if test_result.reject_null else "No ❌")
+                    test_result = combined_5x2cv_f_test(build_model(model_a), build_model(model_b), X_scaled, y)
+                    t1, t2, t3 = st.columns(3)
+                    t1.metric("F Statistic", f"{test_result.statistic:.4f}")
+                    t2.metric("P Value", f"{test_result.p_value:.4f}")
+                    t3.metric("Significant?", "Yes ✅" if test_result.reject_null else "No ❌")
 
                     if test_result.reject_null:
-                        st.success(f"**Statistically significant** difference (p = {test_result.p_value:.4f}). Winner: **{winner}**")
+                        st.success(f"**Statistically significant** difference (p = {test_result.p_value:.4f}). {test_result.interpretation}")
                     else:
-                        st.info(f"**No significant difference** found (p = {test_result.p_value:.4f}). Models perform similarly.")
+                        st.info(f"**No significant difference** (p = {test_result.p_value:.4f}). {test_result.interpretation}")
                 except Exception as e:
                     st.error(f"Test failed: {e}")
 
-# ──────────────────────────────────────────────
-# Decision boundaries (2D PCA projection)
-# ──────────────────────────────────────────────
-if show_boundary:
-    st.divider()
-    st.header("🗺️ Decision Boundaries")
-    st.caption("Projected to 2D using PCA" if X.shape[1] > 2 else "Original 2D feature space")
+# ── TAB 4: Decision Boundaries ──
+with tab_boundary:
+    st.caption("Projected to 2D via PCA" if X.shape[1] > 2 else "Original 2D feature space")
 
     if X.shape[1] > 2:
         pca = PCA(n_components=2, random_state=42)
@@ -377,83 +501,70 @@ if show_boundary:
     else:
         X_2d = X_scaled.copy()
 
-    x_min, x_max = X_2d[:, 0].min() - 0.5, X_2d[:, 0].max() + 0.5
-    y_min, y_max = X_2d[:, 1].min() - 0.5, X_2d[:, 1].max() + 0.5
-    h = 0.06
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-    grid = np.c_[xx.ravel(), yy.ravel()]
-
-    valid = [n for n in selected_models if "error" not in results[n]]
-    n_models = len(valid)
-    if n_models == 0:
+    valid_models = [n for n in selected_models if "error" not in results.get(n, {"error": True})]
+    if not valid_models:
         st.warning("No valid models to plot.")
     else:
+        x_min, x_max = X_2d[:, 0].min() - 0.5, X_2d[:, 0].max() + 0.5
+        y_min, y_max = X_2d[:, 1].min() - 0.5, X_2d[:, 1].max() + 0.5
+        h = 0.06
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+        grid = np.c_[xx.ravel(), yy.ravel()]
+
+        n_models = len(valid_models)
         cols_per_row = min(n_models, 3)
         rows = (n_models + cols_per_row - 1) // cols_per_row
 
         fig = make_subplots(
             rows=rows, cols=cols_per_row,
-            subplot_titles=[f"{n} ({results[n]['mean']:.3f})" for n in valid],
-            horizontal_spacing=0.06,
-            vertical_spacing=0.12,
+            subplot_titles=[f"{n} ({results[n]['mean']:.3f})" for n in valid_models],
+            horizontal_spacing=0.06, vertical_spacing=0.12,
         )
 
         class_colors = ["#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6"]
-        bg_colorscales = [
-            [[0, "#fee"], [1, "#eef"]],
-            [[0, "#fee"], [0.5, "#efe"], [1, "#eef"]],
-        ]
-        bg_cs = bg_colorscales[1] if n_classes > 2 else bg_colorscales[0]
 
         boundary_status = st.empty()
-        for idx, name in enumerate(valid):
-            boundary_status.text(f"Computing boundary for {name}...")
+        for idx, name in enumerate(valid_models):
+            boundary_status.text(f"Computing boundary: {name}...")
             row = idx // cols_per_row + 1
             col = idx % cols_per_row + 1
 
             try:
-                model = get_model(name)
+                model = build_model(name)
                 model.fit(X_2d, y)
                 Z = model.predict(grid).reshape(xx.shape)
 
+                # Background heatmap
                 fig.add_trace(
                     go.Heatmap(
-                        z=Z,
-                        x=np.arange(x_min, x_max, h),
-                        y=np.arange(y_min, y_max, h),
-                        showscale=False,
-                        opacity=0.3,
-                        colorscale=bg_cs,
+                        z=Z, x=np.arange(x_min, x_max, h), y=np.arange(y_min, y_max, h),
+                        showscale=False, opacity=0.25,
+                        colorscale=[[0, "#ffcccc"], [0.5, "#ccffcc"], [1, "#ccccff"]],
                     ),
                     row=row, col=col,
                 )
 
+                # Data points
                 for c_idx in range(n_classes):
                     mask = y == c_idx
                     fig.add_trace(
                         go.Scatter(
-                            x=X_2d[mask, 0], y=X_2d[mask, 1],
-                            mode="markers",
-                            marker=dict(
-                                size=5,
-                                color=class_colors[c_idx % len(class_colors)],
-                                line=dict(width=0.5, color="white"),
-                            ),
+                            x=X_2d[mask, 0], y=X_2d[mask, 1], mode="markers",
+                            marker=dict(size=5, color=class_colors[c_idx % len(class_colors)],
+                                        line=dict(width=0.5, color="white")),
                             showlegend=(idx == 0),
                             name=f"Class {c_idx}" if idx == 0 else None,
                         ),
                         row=row, col=col,
                     )
             except Exception as e:
-                st.warning(f"Could not plot boundary for {name}: {e}")
+                st.warning(f"Boundary failed for {name}: {e}")
 
         boundary_status.empty()
 
         fig.update_layout(
-            height=380 * rows,
-            margin=dict(t=40, b=20, l=20, r=20),
-            plot_bgcolor="white",
-            paper_bgcolor="white",
+            height=380 * rows, margin=dict(t=40, b=20, l=20, r=20),
+            plot_bgcolor="white", paper_bgcolor="white",
             legend=dict(orientation="h", yanchor="bottom", y=-0.05),
         )
         fig.update_xaxes(showticklabels=False, showgrid=False)
@@ -464,4 +575,4 @@ if show_boundary:
 # Footer
 # ──────────────────────────────────────────────
 st.divider()
-st.caption("Built by [Cagri Temel](https://github.com/cgrtml) | Powered by [neural-trees](https://pypi.org/project/neural-trees/)")
+st.caption("Built by [Cagri Temel](https://github.com/cgrtml) · Powered by [neural-trees](https://pypi.org/project/neural-trees/)")
