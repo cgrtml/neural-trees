@@ -8,7 +8,7 @@ Implementation based on:
 
     İrsoy, O., & Alpaydın, E. (2021).
     Dropout Regularization in Hierarchical Mixture of Experts.
-    Neurocomputing, 419, 148–156.
+    Neurocomputing, 419, 148-156.
 
 Key idea:
     Unlike hard decision trees where each sample follows exactly one path,
@@ -88,7 +88,7 @@ class _SoftTreeModule(nn.Module):
         Compute the probability of each sample reaching each leaf.
 
         Returns:
-            Tensor of shape (batch_size, n_leaves) — the arrival probabilities μ_ℓ(x).
+            Tensor of shape (batch_size, n_leaves) with the arrival probabilities for each leaf.
         """
         batch_size = x.size(0)
         # Store per-node probabilities as a list (avoids in-place ops that break autograd)

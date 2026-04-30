@@ -40,7 +40,7 @@ def test_5x2cv_identical_classifiers_same_seed(iris_data):
         DecisionTreeClassifier(random_state=42),
         X, y,
     )
-    # Two identical classifiers have zero difference — should not reject
+    # Two identical classifiers have zero difference, should not reject
     assert not result.reject_null or result.p_value > 0.01
 
 

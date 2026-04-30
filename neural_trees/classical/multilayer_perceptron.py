@@ -1,10 +1,10 @@
 """
-GAL Network — Grow and Learn
+GAL Network: Grow and Learn
 =============================
 Implementation based on:
     Alpaydın, E. (1994).
     GAL: Networks that Grow when they Learn and Shrink when they Forget.
-    International Journal of Pattern Recognition and Artificial Intelligence, 8, 391–414.
+    International Journal of Pattern Recognition and Artificial Intelligence, 8, 391-414.
 
 Key idea:
     A constructive neural network that dynamically adds hidden units when the
@@ -54,7 +54,7 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
     References
     ----------
     Alpaydın, E. (1994). GAL: Networks that Grow when they Learn and Shrink
-    when they Forget. IJPRAI, 8, 391–414.
+    when they Forget. IJPRAI, 8, 391-414.
     """
 
     def __init__(

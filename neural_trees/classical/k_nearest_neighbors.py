@@ -9,7 +9,7 @@ Extension of standard KNN with distance-weighted voting:
 
 Also implements "Condensed Nearest Neighbor" (Alpaydın, 1997):
     Voting over Multiple Condensed Nearest Neighbors.
-    Artificial Intelligence Review, 11, 115–132.
+    Artificial Intelligence Review, 11, 115-132.
 """
 
 import numpy as np
@@ -37,7 +37,7 @@ class WeightedKNN(BaseEstimator, ClassifierMixin):
     References
     ----------
     Alpaydın, E. (1997). Voting over Multiple Condensed Nearest Neighbors.
-    Artificial Intelligence Review, 11, 115–132.
+    Artificial Intelligence Review, 11, 115-132.
     """
 
     def __init__(

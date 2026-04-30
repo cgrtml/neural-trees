@@ -4,7 +4,7 @@ Hierarchical Mixture of Experts (HMoE) with Dropout
 Implementation based on:
     İrsoy, O., & Alpaydın, E. (2021).
     Dropout Regularization in Hierarchical Mixture of Experts.
-    Neurocomputing, 419, 148–156.
+    Neurocomputing, 419, 148-156.
 
 Key idea:
     A HMoE is a tree-structured mixture model where each internal node is a
@@ -187,7 +187,7 @@ class HierarchicalMixtureOfExperts(BaseEstimator, ClassifierMixin):
     ----------
     İrsoy, O., & Alpaydın, E. (2021).
     Dropout Regularization in Hierarchical Mixture of Experts.
-    Neurocomputing, 419, 148–156.
+    Neurocomputing, 419, 148-156.
     """
 
     def __init__(

@@ -5,11 +5,11 @@ Implementations based on:
 
     Alpaydın, E. (1999).
     Combined 5x2cv F Test for Comparing Supervised Classification Learning Algorithms.
-    Neural Computation, 11(8), 1885–1892.
+    Neural Computation, 11(8), 1885-1892.
 
     Dietterich, T. G. (1998).
     Approximate Statistical Tests for Comparing Supervised Classification Learning Algorithms.
-    Neural Computation, 10(7), 1895–1923.
+    Neural Computation, 10(7), 1895-1923.
 
 These tests are the standard statistical tools for comparing two classifiers
 on the same dataset. Alpaydın's combined 5×2cv F test is considered the gold
@@ -99,7 +99,7 @@ def combined_5x2cv_f_test(
     References
     ----------
     Alpaydın, E. (1999). Combined 5x2cv F Test for Comparing Supervised
-    Classification Learning Algorithms. Neural Computation, 11(8), 1885–1892.
+    Classification Learning Algorithms. Neural Computation, 11(8), 1885-1892.
 
     Examples
     --------

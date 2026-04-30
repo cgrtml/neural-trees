@@ -4,7 +4,7 @@ Omnivariate Decision Trees
 Implementation based on:
     Yıldız, O. T., & Alpaydın, E. (2001).
     Omnivariate Decision Trees.
-    IEEE Transactions on Neural Networks, 12(6), 1539–1546.
+    IEEE Transactions on Neural Networks, 12(6), 1539-1546.
 
 Key idea:
     Standard decision trees are "univariate" (split on a single feature) or
@@ -142,7 +142,7 @@ class OmnivariateDecisionTree(BaseEstimator, ClassifierMixin):
     ----------
     Yıldız, O. T., & Alpaydın, E. (2001).
     Omnivariate Decision Trees.
-    IEEE Transactions on Neural Networks, 12(6), 1539–1546.
+    IEEE Transactions on Neural Networks, 12(6), 1539-1546.
     """
 
     def __init__(
