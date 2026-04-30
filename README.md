@@ -34,6 +34,14 @@ Decision boundary learning with Soft Decision Trees (toy dataset)
 pip install neural-trees
 ```
 
+### From Source
+
+```bash
+git clone https://github.com/cgrtml/neural-trees.git
+cd neural-trees
+pip install -e .
+```
+
 ## Quick Start
 
 ```python
@@ -171,7 +179,23 @@ Contributions are welcome. A few good starting points:
 - Improve test coverage
 - Add a notebook or example
 
-Open an issue first to discuss what you'd like to change.
+### How to contribute
+
+1. **Fork** the repo on GitHub
+2. **Clone** your fork and create a feature branch
+   ```bash
+   git clone https://github.com/<your-username>/neural-trees.git
+   cd neural-trees
+   git checkout -b my-feature
+   pip install -e .
+   ```
+3. Make your changes and run the tests
+   ```bash
+   pytest
+   ```
+4. Commit, push, and open a **Pull Request** against `main`
+
+Open an issue first if you want to discuss a larger change.
 
 If this project is useful to you, a star helps others find it.
 
