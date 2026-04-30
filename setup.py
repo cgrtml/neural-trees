@@ -5,12 +5,12 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="neural-trees",
-    version="0.1.1",
+    version="0.1.2",
     author="Cagri Temel",
     author_email="cagritemel34@gmail.com",
     description=(
-        "Implementations of algorithms from Prof. Dr. Ethem Alpaydın's "
-        "research papers and ML textbook (MIT Press)."
+        "Soft decision trees, mixture of experts, and statistical model "
+        "comparison tests for Python. Scikit-learn compatible, PyTorch backend."
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -47,9 +47,24 @@ setup(
     keywords=[
         "machine learning",
         "soft decision trees",
+        "decision trees",
+        "neural decision trees",
         "mixture of experts",
+        "hierarchical mixture of experts",
+        "omnivariate decision trees",
         "statistical tests",
+        "5x2cv f test",
+        "mcnemar test",
+        "classifier comparison",
         "alpaydin",
         "sklearn",
+        "scikit-learn",
+        "pytorch",
+        "differentiable trees",
     ],
+    project_urls={
+        "Source": "https://github.com/cgrtml/neural-trees",
+        "Bug Tracker": "https://github.com/cgrtml/neural-trees/issues",
+        "Documentation": "https://github.com/cgrtml/neural-trees#readme",
+    },
 )

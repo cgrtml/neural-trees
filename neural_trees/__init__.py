@@ -6,7 +6,7 @@ Reference:
     Alpaydın, E. (2020). Introduction to Machine Learning (4th ed.). MIT Press.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __author__ = "Cagri Temel"
 
 from neural_trees.decision_trees.soft_decision_tree import SoftDecisionTree

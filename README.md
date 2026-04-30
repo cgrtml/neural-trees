@@ -1,13 +1,13 @@
 # neural-trees
 
-sklearn-compatible implementations of classic ML algorithms from research papers, finally usable in Python.
+Soft decision trees, mixture of experts, and statistical model comparison tests for Python. A scikit-learn compatible library implementing classic machine learning algorithms from research papers, with a PyTorch backend.
 
 <p align="center">
   <img src="assets/demo.gif" width="600">
 </p>
 
 <p align="center">
-Decision boundary learning with Soft Decision Trees (toy dataset)
+Decision boundary learning with Soft Decision Trees on a toy dataset.
 </p>
 
 [![PyPI](https://img.shields.io/pypi/v/neural-trees)](https://pypi.org/project/neural-trees/)
@@ -16,25 +16,21 @@ Decision boundary learning with Soft Decision Trees (toy dataset)
 [![Tests](https://github.com/cgrtml/neural-trees/actions/workflows/tests.yml/badge.svg)](https://github.com/cgrtml/neural-trees/actions)
 [![GitHub Stars](https://img.shields.io/github/stars/cgrtml/neural-trees?style=social)](https://github.com/cgrtml/neural-trees/stargazers)
 
----
+## Features
 
-## 🚀 Features
+- scikit-learn compatible API (`fit`, `predict`, `score`, works in `Pipeline`)
+- PyTorch backend with GPU support
+- Soft Decision Trees, Hierarchical Mixture of Experts, Omnivariate Trees, GAL
+- Combined 5x2cv F test, McNemar's test, paired t-test for classifier comparison
+- Tested on standard benchmarks (Iris, Wine, Breast Cancer)
 
-- sklearn-compatible API
-- PyTorch backend
-- Implementations of classic ML algorithms from research papers
-- Includes Combined 5×2cv F Test for statistical comparison
-- Designed for research and experimentation
-
----
-
-## Quick Install
+## Installation
 
 ```bash
 pip install neural-trees
 ```
 
-### From Source
+### Install from source
 
 ```bash
 git clone https://github.com/cgrtml/neural-trees.git
@@ -43,6 +39,8 @@ pip install -e .
 ```
 
 ## Quick Start
+
+Train a Soft Decision Tree on the Iris dataset:
 
 ```python
 from neural_trees import SoftDecisionTree
@@ -57,7 +55,7 @@ model.fit(X_train, y_train)
 print(model.score(X_test, y_test))  # ~0.97
 ```
 
-Works in any sklearn Pipeline:
+Use it inside a scikit-learn pipeline:
 
 ```python
 from sklearn.pipeline import Pipeline
@@ -71,11 +69,9 @@ pipe.fit(X_train, y_train)
 pipe.score(X_test, y_test)
 ```
 
----
+## Benchmark
 
-## 📊 Benchmark
-
-5-fold CV accuracy on standard datasets (with `StandardScaler`):
+5-fold cross-validation accuracy with `StandardScaler` preprocessing:
 
 | Model | Iris | Wine | Breast Cancer |
 |-------|:----:|:----:|:-------------:|
@@ -84,31 +80,27 @@ pipe.score(X_test, y_test)
 | Random Forest | 0.967 | 0.978 | 0.956 |
 | SVM (RBF) | 0.967 | 0.983 | 0.974 |
 
-Soft Decision Trees close much of the gap between CART and ensemble/kernel methods while remaining differentiable and interpretable.
+Soft Decision Trees close most of the gap between CART and ensemble or kernel methods, while staying differentiable and interpretable.
 
----
+## Algorithms
 
-## 🧠 Algorithms
+Implementations based on published research, including work by Ethem Alpaydın.
 
-Based on implementations inspired by academic research, including works by Ethem Alpaydın.
-
-| Algorithm | Paper |
-|-----------|-------|
+| Algorithm | Reference |
+|-----------|-----------|
 | **Soft Decision Trees** | İrsoy, Yıldız, Alpaydın (ICPR 2012) |
 | **Omnivariate Decision Trees** | Yıldız & Alpaydın (IEEE TNN 2001) |
-| **Hierarchical Mixture of Experts + Dropout** | İrsoy & Alpaydın (Neurocomputing 2021) |
+| **Hierarchical Mixture of Experts with Dropout** | İrsoy & Alpaydın (Neurocomputing 2021) |
 | **GAL: Grow and Learn Networks** | Alpaydın (IJPRAI 1994) |
-| **Combined 5×2cv F Test** | Alpaydın (Neural Computation 1999) |
-| **McNemar's Test + Paired t-test** | — |
-| **Naive Bayes, Weighted KNN** | Textbook Ch. 3–8 |
+| **Combined 5x2cv F Test** | Alpaydın (Neural Computation 1999) |
+| **McNemar's Test, Paired t-test** | Standard references |
+| **Naive Bayes, Weighted KNN** | Textbook chapters 3 to 8 |
 
----
+## Use Cases
 
-## 🔬 Use Cases
+**Research.** Reproduce or extend results from the original papers with a clean, tested codebase.
 
-**Research** Reproduce or extend results from original papers with a clean, tested codebase.
-
-**Model comparison** Statistically rigorous classifier comparison:
+**Statistical model comparison.** Compare classifiers with proper hypothesis tests instead of ad hoc accuracy diffs:
 
 ```python
 from neural_trees import combined_5x2cv_f_test
@@ -121,34 +113,31 @@ X, y = load_breast_cancer(return_X_y=True)
 result = combined_5x2cv_f_test(
     DecisionTreeClassifier(),
     SVC(kernel="rbf"),
-    X, y
+    X, y,
 )
 
 print(result)
 ```
 
-**Education** Understand soft splits and mixture of experts beyond textbook diagrams.
+**Education.** A working reference for soft splits and mixtures of experts beyond textbook diagrams.
 
----
+## Why Soft Decision Trees
 
-## 💡 Why?
+Standard decision trees use hard splits, which makes them non-differentiable and unstable to small input changes. Soft Decision Trees replace each split with a sigmoid gate, which means:
 
-I kept running into the same issue while reading ML papers: interesting algorithms, but no usable Python implementations.
+- The tree is fully differentiable and trains with gradient descent
+- Predictions are smooth, not piecewise constant
+- Performance often lands between CART and ensemble methods
+- The tree stays interpretable, you can still read off split decisions
 
-So I built them, clean, tested, and fully compatible with sklearn.
+## Notebooks
 
----
+- [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb): training, decision boundary visualization, comparison with CART
+- [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb): when to use which statistical test
 
-## 📚 Notebooks
+## Citation
 
-- [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb) = training, boundary visualization, comparison with CART
-- [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb) = when to use which statistical test
-
----
-
-## 📖 Citation
-
-If you use this in academic work, please cite the original papers:
+If you use this library in academic work, please cite the original papers:
 
 ```bibtex
 @inproceedings{irsoy2012soft,
@@ -169,38 +158,34 @@ If you use this in academic work, please cite the original papers:
 }
 ```
 
----
+## Contributing
 
-## 🤝 Contributing
+Contributions are welcome. Good starting points:
 
-Contributions are welcome. A few good starting points:
-
-- Add support for a new algorithm from Alpaydın's papers
+- Add an algorithm from Alpaydın's papers
 - Improve test coverage
 - Add a notebook or example
 
 ### How to contribute
 
-1. **Fork** the repo on GitHub
-2. **Clone** your fork and create a feature branch
+1. **Fork** the repository on GitHub.
+2. **Clone** your fork and create a feature branch:
    ```bash
    git clone https://github.com/<your-username>/neural-trees.git
    cd neural-trees
    git checkout -b my-feature
-   pip install -e .
+   pip install -e ".[dev]"
    ```
-3. Make your changes and run the tests
+3. Make your changes and run the tests:
    ```bash
    pytest
    ```
-4. Commit, push, and open a **Pull Request** against `main`
+4. Commit, push, and open a **Pull Request** against `main`.
 
-Open an issue first if you want to discuss a larger change.
+For larger changes, open an issue first to discuss the approach.
 
 If this project is useful to you, a star helps others find it.
 
----
+## License
 
-## 📄 License
-
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
