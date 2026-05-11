@@ -160,31 +160,32 @@ If you use this library in academic work, please cite the original papers:
 
 ## Contributing
 
-Contributions are welcome. Good starting points:
+Contributions are welcome. New to open source? See
+[CONTRIBUTING.md](CONTRIBUTING.md) for a beginner-friendly walkthrough.
 
+Good starting points:
+
+- Browse issues tagged [`good first issue`](https://github.com/cgrtml/neural-trees/labels/good%20first%20issue)
 - Add an algorithm from Alpaydın's papers
 - Improve test coverage
 - Add a notebook or example
 
-### How to contribute
+For larger changes, open an issue first to discuss the approach. If this
+project is useful to you, a star helps others find it.
 
-1. **Fork** the repository on GitHub.
-2. **Clone** your fork and create a feature branch:
-   ```bash
-   git clone https://github.com/<your-username>/neural-trees.git
-   cd neural-trees
-   git checkout -b my-feature
-   pip install -e ".[dev]"
-   ```
-3. Make your changes and run the tests:
-   ```bash
-   pytest
-   ```
-4. Commit, push, and open a **Pull Request** against `main`.
+## Contributors
 
-For larger changes, open an issue first to discuss the approach.
+Thanks to everyone who has improved this library.
 
-If this project is useful to you, a star helps others find it.
+### WSU Data and Analytics Breakout (May 15, 2026)
+
+Students from Washington State University contributed via the live
+GitHub Sprint segment of the workshop. Their merged pull requests
+appear below as the event proceeds:
+
+<!-- WSU-CONTRIBUTORS-START -->
+*To be populated during and after the workshop.*
+<!-- WSU-CONTRIBUTORS-END -->
 
 ## License
 
