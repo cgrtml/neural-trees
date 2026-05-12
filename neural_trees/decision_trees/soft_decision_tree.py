@@ -291,13 +291,20 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         """
         Predict class probabilities.
 
+        Each probability is derived from the soft path through the tree:
+        every internal node routes a fraction of the input down each child,
+        so a sample's leaf class distributions are weighted by its
+        accumulated path probabilities.
+
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
+            Input samples. Cast to ``float32`` for the forward pass.
 
         Returns
         -------
         proba : ndarray of shape (n_samples, n_classes)
+            Class probabilities. Each row sums to 1.
         """
         check_is_fitted(self)
         X = check_array(X)
