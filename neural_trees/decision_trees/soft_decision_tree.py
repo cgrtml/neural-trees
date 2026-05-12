@@ -213,6 +213,9 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         device: str = "cpu",
         verbose: bool = False,
     ):
+        if isinstance(depth, bool) or not isinstance(depth, int) or depth < 1:
+            raise ValueError(f"depth must be a positive integer, got {depth!r}")
+
         self.depth = depth
         self.max_epochs = max_epochs
         self.learning_rate = learning_rate
