@@ -72,3 +72,16 @@ def test_different_depths():
         sdt = SoftDecisionTree(depth=depth, max_epochs=10)
         sdt.fit(X, y)
         assert sdt.score(X, y) > 0.3
+
+
+def test_training_reproducible_with_random_state():
+    X, y = load_iris(return_X_y=True)
+    X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    first = SoftDecisionTree(random_state=0, depth=3, max_epochs=10)
+    second = SoftDecisionTree(random_state=0, depth=3, max_epochs=10)
+
+    first.fit(X_train, y_train)
+    second.fit(X_train, y_train)
+
+    assert np.array_equal(first.predict(X_test), second.predict(X_test))

@@ -178,6 +178,8 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         PyTorch device ("cpu" or "cuda").
     verbose : bool, default=False
         Whether to print training progress.
+    random_state : int or None, default=None
+        Seed for model initialization and shuffled mini-batches.
 
     Attributes
     ----------
@@ -212,6 +214,7 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         penalty_coef: float = 1e-3,
         device: str = "cpu",
         verbose: bool = False,
+        random_state: int | None = None,
     ):
         self.depth = depth
         self.max_epochs = max_epochs
@@ -220,6 +223,7 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         self.penalty_coef = penalty_coef
         self.device = device
         self.verbose = verbose
+        self.random_state = random_state
 
     def fit(self, X, y):
         """
@@ -241,6 +245,9 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         self.n_features_in_ = X.shape[1]
         n_classes = len(self.classes_)
 
+        if self.random_state is not None:
+            torch.manual_seed(self.random_state)
+
         device = torch.device(self.device)
         X_t = torch.FloatTensor(X).to(device)
         y_t = torch.LongTensor(y_enc).to(device)
@@ -254,7 +261,16 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
 
         optimizer = torch.optim.Adam(self.model_.parameters(), lr=self.learning_rate)
         dataset = TensorDataset(X_t, y_t)
-        loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        generator = None
+        if self.random_state is not None:
+            generator = torch.Generator()
+            generator.manual_seed(self.random_state)
+        loader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            generator=generator,
+        )
 
         self.training_history_: List[dict] = []
 
