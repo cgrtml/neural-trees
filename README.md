@@ -178,6 +178,11 @@ project is useful to you, a star helps others find it.
 
 Thanks to everyone who has improved this library.
 
+- [@snoopuppy582](https://github.com/snoopuppy582) — symmetric McNemar disagreement test, development requirements
+- [@aribaskagan](https://github.com/aribaskagan) — fixed the coverage target in CI, which had been measuring a module that no longer exists
+
+Full list: [contributors graph](https://github.com/cgrtml/neural-trees/graphs/contributors).
+
 ### WSU Data and Analytics Breakout (May 15, 2026)
 
 Students from Washington State University contributed via the live
