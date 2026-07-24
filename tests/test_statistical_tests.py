@@ -62,6 +62,17 @@ def test_mcnemar_identical_predictions():
     assert not result.reject_null  # identical → no difference
 
 
+def test_mcnemar_symmetric_disagreements():
+    y_true = np.zeros(400, dtype=int)
+    y_pred_A = np.concatenate([np.ones(200, dtype=int), np.zeros(200, dtype=int)])
+    y_pred_B = np.concatenate([np.zeros(200, dtype=int), np.ones(200, dtype=int)])
+
+    result = mcnemar_test(y_true, y_pred_A, y_pred_B)
+
+    assert np.isclose(result.p_value, 1.0, rtol=0.05)
+    assert not result.reject_null
+
+
 def test_paired_t_test(iris_data):
     X, y = iris_data
     result = paired_t_test(
