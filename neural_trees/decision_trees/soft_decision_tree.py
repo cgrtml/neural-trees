@@ -214,7 +214,7 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         penalty_coef: float = 1e-3,
         device: str = "cpu",
         verbose: bool = False,
-        random_state: int | None = None,
+        random_state: Optional[int] = None,
     ):
         self.depth = depth
         self.max_epochs = max_epochs
