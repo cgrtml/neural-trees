@@ -7,6 +7,13 @@ from sklearn.model_selection import train_test_split
 from neural_trees import SoftDecisionTree
 
 
+@pytest.mark.parametrize("depth", [0, -1, 1.5, "3", None, True])
+def test_depth_validation_rejects_invalid_values(depth):
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="depth must be a positive integer"):
+        SoftDecisionTree(depth=depth).fit(X, y)
+
+
 def test_fit_predict_iris():
     X, y = load_iris(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
