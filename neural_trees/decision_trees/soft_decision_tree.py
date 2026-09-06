@@ -23,9 +23,15 @@ Key idea:
 """
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError as exc:  # pragma: no cover - exercised only without torch
+    raise ImportError(
+        "neural-trees requires PyTorch. Install it with: pip install torch "
+        "(see https://pytorch.org/get-started/locally/ for platform specific wheels)."
+    ) from exc
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
