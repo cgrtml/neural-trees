@@ -131,6 +131,21 @@ Standard decision trees use hard splits, which makes them non-differentiable and
 - Performance often lands between CART and ensemble methods
 - The tree stays interpretable, you can still read off split decisions
 
+## Examples
+
+Runnable scripts in [`examples/`](examples):
+
+| Script | What it shows |
+|--------|---------------|
+| [`01_iris_classification.py`](examples/01_iris_classification.py) | Minimal train/test loop on Iris |
+| [`02_pipeline_with_scaler.py`](examples/02_pipeline_with_scaler.py) | `StandardScaler` + `SoftDecisionTree` in a `Pipeline`, 5-fold CV |
+| [`03_classifier_comparison.py`](examples/03_classifier_comparison.py) | Combined 5x2cv F test against CART |
+| [`04_decision_boundary.py`](examples/04_decision_boundary.py) | Decision boundary plot on `make_moons` |
+
+```bash
+python examples/01_iris_classification.py
+```
+
 ## Notebooks
 
 - [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb): training, decision boundary visualization, comparison with CART

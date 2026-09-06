@@ -14,3 +14,4 @@ venv/
 htmlcov/
 *.ipynb_checkpoints/
 .DS_Store
+examples/output/
