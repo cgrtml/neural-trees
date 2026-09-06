@@ -20,6 +20,7 @@ Key idea:
 
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.cluster import KMeans
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
@@ -44,29 +45,47 @@ class _OmnivariateNode:
         self.left: Optional["_OmnivariateNode"] = None
         self.right: Optional["_OmnivariateNode"] = None
 
-    def _select_best_splitter(self, X: np.ndarray, y: np.ndarray):
-        """Cross-validate three split types and return the best one."""
+    def _two_group_labels(self, X: np.ndarray, y: np.ndarray):
+        """
+        Reduce the classes at this node to the two-group problem a binary
+        split has to solve. Two classes map directly; more than two are
+        grouped by clustering their centroids.
+        """
+        present = np.unique(y)
+        if len(present) < 2:
+            return None
+        if len(present) == 2:
+            return (y == present[1]).astype(int)
+
+        centroids = np.vstack([X[y == c].mean(axis=0) for c in present])
+        group_of_class = KMeans(n_clusters=2, n_init=10, random_state=42).fit_predict(centroids)
+        if len(np.unique(group_of_class)) < 2:
+            return None
+        mapping = {c: int(g) for c, g in zip(present, group_of_class)}
+        return np.array([mapping[label] for label in y])
+
+    def _select_best_splitter(self, X: np.ndarray, y_bin: np.ndarray):
+        """Cross-validate the three split types on the two-group problem."""
         candidates = {
-            "univariate": DecisionTreeClassifier(max_depth=1),
+            "univariate": DecisionTreeClassifier(max_depth=1, random_state=42),
             "linear": LinearDiscriminantAnalysis(),
             "nonlinear": MLPClassifier(hidden_layer_sizes=(10,), max_iter=200, random_state=42),
         }
-        best_type = "univariate"
-        best_score = -np.inf
-
-        n_folds = min(self.cv_folds, len(np.unique(y)), len(y))
+        # Folds are bounded by the rarest group, not by the number of groups,
+        # otherwise StratifiedKFold raises on small or skewed nodes.
+        min_group = int(np.bincount(y_bin).min())
+        n_folds = min(self.cv_folds, min_group)
         if n_folds < 2:
             return "univariate", candidates["univariate"]
 
+        best_type, best_score = "univariate", -np.inf
         for split_type, clf in candidates.items():
             try:
-                scores = cross_val_score(clf, X, y, cv=n_folds, scoring="accuracy")
-                mean_score = scores.mean()
-                if mean_score > best_score:
-                    best_score = mean_score
-                    best_type = split_type
+                score = cross_val_score(clf, X, y_bin, cv=n_folds, scoring="accuracy").mean()
             except Exception:
                 continue
+            if score > best_score:
+                best_score, best_type = score, split_type
 
         return best_type, candidates[best_type]
 
@@ -80,12 +99,18 @@ class _OmnivariateNode:
             self.leaf_class = np.bincount(y).argmax()
             return self
 
-        self.split_type, self.classifier = self._select_best_splitter(X, y)
-        self.classifier.fit(X, y)
-        preds = self.classifier.predict(X)
+        y_bin = self._two_group_labels(X, y)
+        if y_bin is None:
+            self.is_leaf = True
+            self.leaf_class = np.bincount(y).argmax()
+            return self
 
-        # Binary split: correct predictions go right, incorrect go left
-        mask_right = preds == y
+        self.split_type, self.classifier = self._select_best_splitter(X, y_bin)
+        self.classifier.fit(X, y_bin)
+
+        # The split is the node classifier's own decision: group 1 goes right,
+        # group 0 goes left. Routing at predict time uses the same rule.
+        mask_right = self.classifier.predict(X) == 1
         mask_left = ~mask_right
 
         if mask_right.sum() == 0 or mask_left.sum() == 0:
@@ -102,14 +127,11 @@ class _OmnivariateNode:
         return self
 
     def predict_one(self, x: np.ndarray) -> int:
-        if self.is_leaf:
-            return self.leaf_class
-        pred = self.classifier.predict(x.reshape(1, -1))[0]
-        true_class_guess = pred
-        # Route: if predicted matches majority, go right, else left
-        if self.right is not None and self.left is not None:
-            return self.right.predict_one(x)
-        return self.leaf_class
+        node = self
+        while not node.is_leaf:
+            goes_right = node.classifier.predict(x.reshape(1, -1))[0] == 1
+            node = node.right if goes_right else node.left
+        return node.leaf_class
 
 
 class OmnivariateDecisionTree(BaseEstimator, ClassifierMixin):

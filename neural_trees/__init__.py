@@ -11,6 +11,7 @@ __author__ = "Cagri Temel"
 
 from neural_trees.decision_trees.soft_decision_tree import SoftDecisionTree
 from neural_trees.decision_trees.omnivariate_tree import OmnivariateDecisionTree
+from neural_trees.decision_trees.multivariate_tree import MultivariateDecisionTree
 from neural_trees.statistical_tests.classifier_comparison import (
     combined_5x2cv_f_test,
     mcnemar_test,
@@ -24,6 +25,7 @@ from neural_trees.classical.naive_bayes import NaiveBayesClassifier
 __all__ = [
     "SoftDecisionTree",
     "OmnivariateDecisionTree",
+    "MultivariateDecisionTree",
     "HierarchicalMixtureOfExperts",
     "GALNetwork",
     "WeightedKNN",

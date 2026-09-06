@@ -21,7 +21,7 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 
 - scikit-learn compatible API (`fit`, `predict`, `score`, works in `Pipeline`)
 - PyTorch backend with GPU support
-- Soft Decision Trees, Hierarchical Mixture of Experts, Omnivariate Trees, GAL
+- Soft Decision Trees, Hierarchical Mixture of Experts, Multivariate and Omnivariate Trees, GAL
 - Combined 5x2cv F test, McNemar's test, paired t-test for classifier comparison
 - Tested on standard benchmarks (Iris, Wine, Breast Cancer)
 
@@ -90,6 +90,7 @@ Implementations based on published research, including work by Ethem Alpaydın.
 | Algorithm | Reference |
 |-----------|-----------|
 | **Soft Decision Trees** | İrsoy, Yıldız, Alpaydın (ICPR 2012) |
+| **Multivariate Decision Trees** | Alpaydın & Çetin (1995), Yıldız & Alpaydın (IEEE TNN 2001) |
 | **Omnivariate Decision Trees** | Yıldız & Alpaydın (IEEE TNN 2001) |
 | **Hierarchical Mixture of Experts with Dropout** | İrsoy & Alpaydın (Neurocomputing 2021) |
 | **GAL: Grow and Learn Networks** | Alpaydın (IJPRAI 1994) |
@@ -150,9 +151,11 @@ python examples/01_iris_classification.py
 
 [![Open 01 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cgrtml/neural-trees/blob/main/notebooks/01_soft_decision_trees.ipynb)
 [![Open 02 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cgrtml/neural-trees/blob/main/notebooks/02_classifier_comparison_tests.ipynb)
+[![Open 03 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cgrtml/neural-trees/blob/main/notebooks/03_multivariate_decision_trees.ipynb)
 
 - [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb): training, decision boundary visualization, comparison with CART
 - [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb): when to use which statistical test
+- [`03_multivariate_decision_trees.ipynb`](notebooks/03_multivariate_decision_trees.ipynb): oblique splits against CART and soft trees
 
 ## Citation
 
