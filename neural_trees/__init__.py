@@ -17,11 +17,17 @@ from neural_trees.statistical_tests.classifier_comparison import (
     paired_t_test,
 )
 from neural_trees.mixture_of_experts.hierarchical_moe import HierarchicalMixtureOfExperts
+from neural_trees.classical.multilayer_perceptron import GALNetwork
+from neural_trees.classical.k_nearest_neighbors import WeightedKNN
+from neural_trees.classical.naive_bayes import NaiveBayesClassifier
 
 __all__ = [
     "SoftDecisionTree",
     "OmnivariateDecisionTree",
     "HierarchicalMixtureOfExperts",
+    "GALNetwork",
+    "WeightedKNN",
+    "NaiveBayesClassifier",
     "combined_5x2cv_f_test",
     "mcnemar_test",
     "paired_t_test",

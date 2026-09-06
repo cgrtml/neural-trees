@@ -92,3 +92,40 @@ def test_training_reproducible_with_random_state():
     second.fit(X_train, y_train)
 
     assert np.array_equal(first.predict(X_test), second.predict(X_test))
+
+
+def test_depth_one_single_split():
+    """A depth=1 tree is one split and two leaves, and must still train."""
+    from sklearn.datasets import make_classification
+
+    X, y = make_classification(
+        n_samples=200, n_features=6, n_informative=4, n_classes=2, random_state=0
+    )
+    X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.25, random_state=0)
+
+    sdt = SoftDecisionTree(depth=1, max_epochs=20, random_state=0)
+    sdt.fit(X_train, y_train)
+    preds = sdt.predict(X_test)
+
+    assert preds.shape == (X_test.shape[0],)
+    assert set(preds).issubset(set(np.unique(y_train)))
+    assert sdt.get_leaf_distributions().shape == (2, 2)
+    assert len(sdt.get_split_weights()) == 1
+
+
+def test_pipeline_and_grid_search_compatible():
+    """The estimator must survive clone(), Pipeline, and GridSearchCV."""
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_iris(return_X_y=True)
+    pipe = Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", SoftDecisionTree(depth=2, max_epochs=5, random_state=0)),
+    ])
+    search = GridSearchCV(pipe, {"model__depth": [2, 3]}, cv=2)
+    search.fit(X, y)
+
+    assert search.best_params_["model__depth"] in (2, 3)
+    assert 0.0 <= search.best_score_ <= 1.0

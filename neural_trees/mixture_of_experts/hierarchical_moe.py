@@ -22,9 +22,15 @@ Architecture (depth=2, branching=2):
 """
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError as exc:  # pragma: no cover - exercised only without torch
+    raise ImportError(
+        "neural-trees requires PyTorch. Install it with: pip install torch "
+        "(see https://pytorch.org/get-started/locally/ for platform specific wheels)."
+    ) from exc
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
@@ -108,27 +114,29 @@ class _HMoEModule(nn.Module):
         """
         batch_size = x.size(0)
         b = self.branching_factor
-
-        # Initialize gate node weights: root has weight 1
         n_gates = len(self.gates)
-        gate_weights = torch.zeros(batch_size, n_gates + self.n_experts, device=x.device)
-        gate_weights[:, 0] = 1.0
+        n_nodes = n_gates + self.n_experts
+
+        # Node weights are kept in a list rather than written into a single
+        # preallocated tensor: in-place index assignment bumps the version of
+        # the shared storage that autograd saved for the multiplication
+        # backward pass, which makes loss.backward() raise.
+        node_weights = [None] * n_nodes
+        node_weights[0] = torch.ones(batch_size, device=x.device)
 
         for gate_idx in range(n_gates):
             gate_out = self.gates[gate_idx](x)  # (batch, b)
+            parent_weight = node_weights[gate_idx]
             for child in range(b):
                 child_idx = b * gate_idx + child + 1
-                if child_idx < n_gates:
-                    gate_weights[:, child_idx] = gate_weights[:, gate_idx] * gate_out[:, child]
-                else:
-                    # This child is a leaf
-                    leaf_idx = child_idx - n_gates
-                    if leaf_idx < self.n_experts:
-                        gate_weights[:, n_gates + leaf_idx] = (
-                            gate_weights[:, gate_idx] * gate_out[:, child]
-                        )
+                if child_idx < n_nodes:
+                    node_weights[child_idx] = parent_weight * gate_out[:, child]
 
-        return gate_weights[:, n_gates:]  # (batch, n_experts)
+        leaf_weights = [
+            w if w is not None else torch.zeros(batch_size, device=x.device)
+            for w in node_weights[n_gates:]
+        ]
+        return torch.stack(leaf_weights, dim=1)  # (batch, n_experts)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -173,6 +181,8 @@ class HierarchicalMixtureOfExperts(BaseEstimator, ClassifierMixin):
     batch_size : int, default=64
     device : str, default="cpu"
     verbose : bool, default=False
+    random_state : int or None, default=None
+        Seed for weight initialization and shuffled mini-batches.
 
     Examples
     --------
@@ -202,6 +212,7 @@ class HierarchicalMixtureOfExperts(BaseEstimator, ClassifierMixin):
         batch_size: int = 64,
         device: str = "cpu",
         verbose: bool = False,
+        random_state: Optional[int] = None,
     ):
         self.depth = depth
         self.branching_factor = branching_factor
@@ -213,9 +224,12 @@ class HierarchicalMixtureOfExperts(BaseEstimator, ClassifierMixin):
         self.batch_size = batch_size
         self.device = device
         self.verbose = verbose
+        self.random_state = random_state
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
+        if self.random_state is not None:
+            torch.manual_seed(self.random_state)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -236,7 +250,16 @@ class HierarchicalMixtureOfExperts(BaseEstimator, ClassifierMixin):
         ).to(device)
 
         optimizer = torch.optim.Adam(self.model_.parameters(), lr=self.learning_rate)
-        loader = DataLoader(TensorDataset(X_t, y_t), batch_size=self.batch_size, shuffle=True)
+        generator = None
+        if self.random_state is not None:
+            generator = torch.Generator()
+            generator.manual_seed(self.random_state)
+        loader = DataLoader(
+            TensorDataset(X_t, y_t),
+            batch_size=self.batch_size,
+            shuffle=True,
+            generator=generator,
+        )
 
         self.training_history_: List[dict] = []
 

@@ -17,13 +17,19 @@ Key idea:
 """
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError as exc:  # pragma: no cover - exercised only without torch
+    raise ImportError(
+        "neural-trees requires PyTorch. Install it with: pip install torch "
+        "(see https://pytorch.org/get-started/locally/ for platform specific wheels)."
+    ) from exc
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from typing import List
+from typing import List, Optional
 
 
 class GALNetwork(BaseEstimator, ClassifierMixin):
@@ -50,6 +56,9 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
         How often (in epochs) to check growth/pruning conditions.
     device : str, default="cpu"
     verbose : bool, default=False
+    random_state : int or None, default=None
+        Seed for weight initialization and for the units added during growth.
+        Set it for reproducible architectures.
 
     References
     ----------
@@ -68,6 +77,7 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
         check_interval: int = 5,
         device: str = "cpu",
         verbose: bool = False,
+        random_state: Optional[int] = None,
     ):
         self.initial_hidden = initial_hidden
         self.max_hidden = max_hidden
@@ -78,6 +88,7 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
         self.check_interval = check_interval
         self.device = device
         self.verbose = verbose
+        self.random_state = random_state
 
     def _build_model(self, n_features: int, n_hidden: int, n_classes: int) -> nn.Sequential:
         return nn.Sequential(
@@ -88,6 +99,8 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
+        if self.random_state is not None:
+            torch.manual_seed(self.random_state)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -102,8 +115,9 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
         model = self._build_model(self.n_features_in_, n_hidden, n_classes).to(device)
         self.architecture_history_: List[dict] = []
 
+        optimizer = torch.optim.SGD(model.parameters(), lr=self.learning_rate)
+
         for epoch in range(self.max_epochs):
-            optimizer = torch.optim.SGD(model.parameters(), lr=self.learning_rate)
             model.train()
             optimizer.zero_grad()
             logits = model(X_t)
@@ -138,11 +152,14 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
                     model[2].weight.data = W2
                     model[2].bias.data = b2
 
+                    optimizer = torch.optim.SGD(model.parameters(), lr=self.learning_rate)
+
                     if self.verbose:
                         print(f"Epoch {epoch+1}: Pruned to {n_hidden} hidden units")
 
                 # Grow if error is high
                 elif error > self.grow_threshold and n_hidden < self.max_hidden:
+                    b2_old = model[2].bias.data.clone()
                     W1_new = torch.cat([
                         model[0].weight.data,
                         torch.randn(1, self.n_features_in_, device=device) * 0.1
@@ -158,6 +175,9 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
                     model[0].weight.data = W1_new
                     model[0].bias.data = b1_new
                     model[2].weight.data = W2_new
+                    model[2].bias.data = b2_old
+
+                    optimizer = torch.optim.SGD(model.parameters(), lr=self.learning_rate)
 
                     if self.verbose:
                         print(f"Epoch {epoch+1}: Grew to {n_hidden} hidden units")
