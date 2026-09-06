@@ -72,16 +72,30 @@ pipe.score(X_test, y_test)
 
 ## Benchmark
 
-5-fold cross-validation accuracy with `StandardScaler` preprocessing:
+5-fold stratified cross-validation accuracy with `StandardScaler` preprocessing,
+averaged over 5 seeds. Every number comes from
+[`benchmarks/run_benchmarks.py`](benchmarks/run_benchmarks.py), so the table can
+be re-run and checked:
+
+```bash
+python benchmarks/run_benchmarks.py --seeds 5
+```
 
 | Model | Iris | Wine | Breast Cancer |
 |-------|:----:|:----:|:-------------:|
-| **Soft Decision Tree** (depth=4) | 0.96 | 0.95 | 0.95 |
-| CART (sklearn) | 0.953 | 0.865 | 0.917 |
-| Random Forest | 0.967 | 0.978 | 0.956 |
-| SVM (RBF) | 0.967 | 0.983 | 0.974 |
+| **Soft Decision Tree** (depth=4) | 0.900 | 0.979 | 0.976 |
+| **Multivariate Tree** (depth=3) | 0.973 | 0.989 | 0.952 |
+| CART (sklearn) | 0.943 | 0.917 | 0.920 |
+| Random Forest | 0.945 | 0.980 | 0.960 |
+| SVM (RBF) | 0.959 | 0.984 | 0.978 |
 
-Soft Decision Trees close most of the gap between CART and ensemble or kernel methods, while staying differentiable and interpretable.
+On Wine and Breast Cancer the soft tree closes most of the gap between CART and
+kernel or ensemble methods while staying differentiable. On Iris it does not:
+150 samples over 3 classes is too little data for a depth-4 tree with 15 gates
+trained for 40 epochs, and a single oblique split does better. That is the
+honest shape of the trade-off, and it is why the comparison scripts in
+[`examples/`](examples) use a hypothesis test rather than a single accuracy
+number.
 
 ## Algorithms
 

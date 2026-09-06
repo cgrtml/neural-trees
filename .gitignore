@@ -15,3 +15,6 @@ htmlcov/
 *.ipynb_checkpoints/
 .DS_Store
 examples/output/
+
+# local, untracked working notes
+.private/
