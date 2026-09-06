@@ -310,13 +310,22 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         """
         Predict class probabilities.
 
+        Each sample reaches every leaf with some probability, so the returned
+        distribution is the path-probability weighted average of the leaf
+        distributions, P(y | x) = sum_l mu_l(x) Q_l(y). This is why the output
+        is smooth rather than the piecewise constant output of a hard tree.
+
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
+            Samples to score. Cast to float32 internally, so any numeric dtype
+            is accepted. Must have the same number of features seen in `fit`.
 
         Returns
         -------
         proba : ndarray of shape (n_samples, n_classes)
+            Class probabilities in the order of `self.classes_`. Each row sums
+            to 1.
         """
         check_is_fitted(self)
         X = check_array(X)

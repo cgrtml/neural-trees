@@ -148,6 +148,9 @@ python examples/01_iris_classification.py
 
 ## Notebooks
 
+[![Open 01 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cgrtml/neural-trees/blob/main/notebooks/01_soft_decision_trees.ipynb)
+[![Open 02 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cgrtml/neural-trees/blob/main/notebooks/02_classifier_comparison_tests.ipynb)
+
 - [`01_soft_decision_trees.ipynb`](notebooks/01_soft_decision_trees.ipynb): training, decision boundary visualization, comparison with CART
 - [`02_classifier_comparison_tests.ipynb`](notebooks/02_classifier_comparison_tests.ipynb): when to use which statistical test
 
@@ -173,6 +176,35 @@ If you use this library in academic work, please cite the original papers:
   year    = {1999}
 }
 ```
+
+To cite this implementation:
+
+```bibtex
+@software{temel_neural_trees,
+  author = {Temel, Cagri},
+  title  = {neural-trees: scikit-learn compatible Soft Decision Trees and Mixture of Experts},
+  year   = {2026},
+  url    = {https://github.com/cgrtml/neural-trees}
+}
+```
+
+## Limitations
+
+neural-trees is not the right tool for every problem:
+
+- **Very high-dimensional data.** Every internal node holds a dense weight
+  vector, so parameter count grows as `2^depth x n_features`. Beyond a few
+  thousand features, reduce dimensionality first or use a linear model.
+- **Streaming or online learning.** Training is batch only; there is no
+  `partial_fit`. Refit from scratch when new data arrives.
+- **Sub-millisecond inference.** The PyTorch backend adds per-call overhead.
+  For extreme latency budgets, export the learned gates and evaluate them in
+  plain numpy.
+- **Very large sample counts.** Training is full-batch gradient descent over
+  epochs, not an optimized tree-growing routine like CART. Millions of rows
+  will be slow on CPU.
+- **Categorical features.** There is no built-in encoding; sigmoid gates
+  expect continuous, scaled inputs. Encode and scale in a `Pipeline`.
 
 ## Contributing
 
