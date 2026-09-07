@@ -1,5 +1,6 @@
 """Shared input validation helpers."""
 
+import numpy as np
 from sklearn.utils.validation import check_array
 
 
@@ -19,4 +20,6 @@ def check_predict_input(estimator, X):
             f"X has {X.shape[1]} features, but {type(estimator).__name__} "
             f"is expecting {n_features} features as input."
         )
-    return X
+    # torch cannot build a tensor from a negatively strided view, which is what
+    # reversed or otherwise reordered input arrives as.
+    return np.ascontiguousarray(X)

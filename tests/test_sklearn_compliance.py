@@ -72,3 +72,33 @@ def test_predict_before_fit_raises_not_fitted(make_estimator, iris):
 
     with pytest.raises(NotFittedError):
         make_estimator().predict(X)
+
+
+@pytest.mark.parametrize("make_estimator", ESTIMATORS, ids=IDS)
+def test_predict_accepts_a_reversed_view(make_estimator, iris):
+    """
+    A reversed slice is a negatively strided array. torch refuses to build a
+    tensor from one, so the torch-backed estimators used to raise ValueError on
+    input as ordinary as `X[::-1]`.
+    """
+    X, y = iris
+    estimator = make_estimator().fit(X, y)
+
+    forward = estimator.predict(X[:40])
+    reversed_back = estimator.predict(X[:40][::-1])[::-1]
+    assert np.array_equal(forward, reversed_back)
+
+
+def test_naive_bayes_log_proba_is_normalized(iris):
+    """
+    predict_log_proba must be the log of predict_proba, not the unnormalized
+    joint log-likelihood: exponentiated rows used to sum to values above 3.
+    """
+    X, y = iris
+    nb = NaiveBayesClassifier().fit(X, y)
+
+    log_proba = nb.predict_log_proba(X)
+    np.testing.assert_allclose(np.exp(log_proba).sum(axis=1), 1.0, atol=1e-9)
+    np.testing.assert_allclose(np.exp(log_proba), nb.predict_proba(X), atol=1e-12)
+    # The unnormalized quantity is still reachable for those who want it.
+    assert nb._joint_log_likelihood(X).shape == log_proba.shape
