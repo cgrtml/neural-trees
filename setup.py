@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name="neural-trees",
-    version="0.1.2",
+    version="0.2.0",
     author="Cagri Temel",
     author_email="cagritemel34@gmail.com",
     description=(
@@ -15,7 +15,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/cgrtml/neural-trees",
-    packages=find_packages(exclude=["tests*", "notebooks*", "examples*"]),
+    packages=find_packages(exclude=["tests*", "notebooks*", "examples*", "benchmarks*"]),
     python_requires=">=3.8",
     install_requires=[
         "numpy>=1.21",
@@ -33,7 +33,7 @@ setup(
         ]
     },
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "Intended Audience :: Education",
         "License :: OSI Approved :: MIT License",
