@@ -36,11 +36,10 @@ neither had tests. If you are on an earlier version, upgrade.
   called before `fit`, and rejects an `X` at predict time whose feature count
   does not match `fit`. That last one used to return meaningless predictions
   instead of an error. `SoftDecisionTree`, `MultivariateDecisionTree`,
-  `OmnivariateDecisionTree`, `WeightedKNN` and
+  `OmnivariateDecisionTree`, `WeightedKNN` and `NaiveBayesClassifier` now pass
   `sklearn.utils.estimator_checks.check_estimator` completely (55/55);
-  `NaiveBayesClassifier` now pass `sklearn.utils.estimator_checks.check_estimator`
-  completely (55/55); `HierarchicalMixtureOfExperts` is at 54/55 and
-  `GALNetwork` at 52/55.
+  `HierarchicalMixtureOfExperts` is at 54/55 and `GALNetwork` at 52/55, both
+  tracked as open issues.
 - **`NaiveBayesClassifier.predict_log_proba` returned unnormalized values.** It
   gave the joint log-likelihood, so exponentiated rows summed to arbitrary
   numbers rather than 1 and it did not match `predict_proba`. It is now
