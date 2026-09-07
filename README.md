@@ -223,6 +223,11 @@ neural-trees is not the right tool for every problem:
 - **Categorical features.** There is no built-in encoding; sigmoid gates
   expect continuous, scaled inputs. Encode and scale in a `Pipeline`.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md). Version 0.2.0 fixes two models that did not
+work in 0.1.x, so upgrade if you are on an earlier release.
+
 ## Contributing
 
 Contributions are welcome. New to open source? See

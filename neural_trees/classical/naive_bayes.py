@@ -10,12 +10,17 @@ Supports Gaussian, Bernoulli, and Multinomial likelihoods.
 """
 
 import numpy as np
+from scipy.special import logsumexp
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
+from sklearn.utils.multiclass import check_classification_targets
 
-class NaiveBayesClassifier(BaseEstimator, ClassifierMixin):
+from neural_trees._validation import check_predict_input
+
+
+class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
     """
     Naive Bayes Classifier with selectable likelihood.
 
@@ -40,6 +45,7 @@ class NaiveBayesClassifier(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
+        check_classification_targets(y)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -84,20 +90,29 @@ class NaiveBayesClassifier(BaseEstimator, ClassifierMixin):
 
         raise ValueError(f"Unknown likelihood: {self.likelihood}")
 
-    def predict_log_proba(self, X):
-        check_is_fitted(self)
-        X = check_array(X)
-        log_probs = np.column_stack([
+    def _joint_log_likelihood(self, X):
+        """Unnormalized log P(y, x) per class, shape (n_samples, n_classes)."""
+        return np.column_stack([
             self.class_log_prior_[c] + self._log_likelihood(X, c)
             for c in range(len(self.classes_))
         ])
-        return log_probs
+
+    def predict_log_proba(self, X):
+        """
+        Log of the posterior class probabilities, shape (n_samples, n_classes).
+
+        Normalized, so `np.exp(predict_log_proba(X))` equals `predict_proba(X)`
+        and each row of the exponential sums to 1. The unnormalized joint
+        log-likelihood is available as `_joint_log_likelihood`.
+        """
+        check_is_fitted(self)
+        X = check_predict_input(self, X)
+        joint = self._joint_log_likelihood(X)
+        return joint - logsumexp(joint, axis=1, keepdims=True)
 
     def predict_proba(self, X):
-        log_probs = self.predict_log_proba(X)
-        log_probs -= log_probs.max(axis=1, keepdims=True)
-        probs = np.exp(log_probs)
-        return probs / probs.sum(axis=1, keepdims=True)
+        """Posterior class probabilities, shape (n_samples, n_classes)."""
+        return np.exp(self.predict_log_proba(X))
 
     def predict(self, X):
         check_is_fitted(self)
