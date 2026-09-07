@@ -17,8 +17,12 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
+from sklearn.utils.multiclass import check_classification_targets
 
-class WeightedKNN(BaseEstimator, ClassifierMixin):
+from neural_trees._validation import check_predict_input
+
+
+class WeightedKNN(ClassifierMixin, BaseEstimator):
     """
     Distance-Weighted K-Nearest Neighbors Classifier.
 
@@ -76,6 +80,7 @@ class WeightedKNN(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
+        check_classification_targets(y)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -91,7 +96,7 @@ class WeightedKNN(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self, X):
         check_is_fitted(self)
-        X = check_array(X)
+        X = check_predict_input(self, X)
         dists = self._distance(X, self.X_train_)  # (n_test, n_train)
         k = min(self.k, len(self.X_train_))
         n_classes = len(self.classes_)
@@ -113,4 +118,5 @@ class WeightedKNN(BaseEstimator, ClassifierMixin):
         return probs
 
     def predict(self, X):
+        check_is_fitted(self)
         return self.le_.inverse_transform(self.predict_proba(X).argmax(axis=1))

@@ -30,6 +30,10 @@ from sklearn.cluster import KMeans
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+
+from sklearn.utils.multiclass import check_classification_targets
+
+from neural_trees._validation import check_predict_input
 from typing import List, Optional, Tuple
 
 
@@ -138,7 +142,7 @@ class _MultivariateNode:
         return node.distribution
 
 
-class MultivariateDecisionTree(BaseEstimator, ClassifierMixin):
+class MultivariateDecisionTree(ClassifierMixin, BaseEstimator):
     """
     Multivariate Decision Tree Classifier (sklearn-compatible).
 
@@ -219,6 +223,7 @@ class MultivariateDecisionTree(BaseEstimator, ClassifierMixin):
             raise ValueError(f"max_depth must be a positive integer, got {self.max_depth!r}")
 
         X, y = check_X_y(X, y)
+        check_classification_targets(y)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -250,7 +255,7 @@ class MultivariateDecisionTree(BaseEstimator, ClassifierMixin):
         proba : ndarray of shape (n_samples, n_classes)
         """
         check_is_fitted(self)
-        X = check_array(X)
+        X = check_predict_input(self, X)
         return np.vstack([self.root_.predict_proba_one(x) for x in X])
 
     def predict(self, X):
@@ -265,6 +270,7 @@ class MultivariateDecisionTree(BaseEstimator, ClassifierMixin):
         -------
         y_pred : ndarray of shape (n_samples,)
         """
+        check_is_fitted(self)
         return self.le_.inverse_transform(np.argmax(self.predict_proba(X), axis=1))
 
     def get_split_weights(self) -> List[Tuple[np.ndarray, float]]:

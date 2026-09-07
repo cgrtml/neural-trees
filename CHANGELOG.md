@@ -30,6 +30,16 @@ neither had tests. If you are on an earlier version, upgrade.
   architecture changed.
 - The `import torch` failure now raises an `ImportError` naming
   `pip install torch` instead of a bare `ModuleNotFoundError`.
+- **scikit-learn estimator contract.** Every classifier now inherits
+  `ClassifierMixin` before `BaseEstimator`, rejects a continuous target in
+  `fit`, raises `NotFittedError` rather than `AttributeError` when `predict` is
+  called before `fit`, and rejects an `X` at predict time whose feature count
+  does not match `fit`. That last one used to return meaningless predictions
+  instead of an error. `SoftDecisionTree`, `MultivariateDecisionTree`,
+  `OmnivariateDecisionTree` and `WeightedKNN` now pass
+  `sklearn.utils.estimator_checks.check_estimator` completely (55/55);
+  `HierarchicalMixtureOfExperts` is at 54/55 and `GALNetwork` and
+  `NaiveBayesClassifier` at 52/55.
 
 ### Added
 
@@ -66,7 +76,7 @@ neither had tests. If you are on an earlier version, upgrade.
   The previous table was not reproducible: it claimed 0.96 / 0.95 / 0.95 for the
   soft tree on Iris / Wine / Breast Cancer, while the measured values are
   0.900 / 0.979 / 0.976.
-- Test suite: 21 tests to 65.
+- Test suite: 21 tests to 93.
 
 ### Contributors
 

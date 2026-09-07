@@ -37,6 +37,10 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+
+from sklearn.utils.multiclass import check_classification_targets
+
+from neural_trees._validation import check_predict_input
 from typing import Optional, List
 
 
@@ -177,7 +181,7 @@ class _SoftTreeModule(nn.Module):
         return total
 
 
-class SoftDecisionTree(BaseEstimator, ClassifierMixin):
+class SoftDecisionTree(ClassifierMixin, BaseEstimator):
     """
     Soft Decision Tree Classifier (sklearn-compatible).
 
@@ -293,6 +297,7 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
             raise ValueError(f"depth must be a positive integer, got {self.depth!r}")
 
         X, y = check_X_y(X, y)
+        check_classification_targets(y)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -452,7 +457,7 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
             to 1.
         """
         check_is_fitted(self)
-        X = check_array(X)
+        X = check_predict_input(self, X)
         device = torch.device(self.device)
         X_t = torch.FloatTensor(X).to(device)
 
@@ -473,6 +478,7 @@ class SoftDecisionTree(BaseEstimator, ClassifierMixin):
         -------
         y_pred : ndarray of shape (n_samples,)
         """
+        check_is_fitted(self)
         proba = self.predict_proba(X)
         idx = np.argmax(proba, axis=1)
         return self.le_.inverse_transform(idx)

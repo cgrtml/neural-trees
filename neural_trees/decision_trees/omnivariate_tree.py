@@ -26,6 +26,10 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+
+from sklearn.utils.multiclass import check_classification_targets
+
+from neural_trees._validation import check_predict_input
 from sklearn.preprocessing import LabelEncoder
 from typing import Optional, Dict, Any
 
@@ -134,7 +138,7 @@ class _OmnivariateNode:
         return node.leaf_class
 
 
-class OmnivariateDecisionTree(BaseEstimator, ClassifierMixin):
+class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
     """
     Omnivariate Decision Tree Classifier (sklearn-compatible).
 
@@ -179,6 +183,7 @@ class OmnivariateDecisionTree(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
+        check_classification_targets(y)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -194,7 +199,7 @@ class OmnivariateDecisionTree(BaseEstimator, ClassifierMixin):
 
     def predict(self, X):
         check_is_fitted(self)
-        X = check_array(X)
+        X = check_predict_input(self, X)
         preds = np.array([self.root_.predict_one(x) for x in X])
         return self.le_.inverse_transform(preds)
 

@@ -29,10 +29,14 @@ except ImportError as exc:  # pragma: no cover - exercised only without torch
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+
+from sklearn.utils.multiclass import check_classification_targets
+
+from neural_trees._validation import check_predict_input
 from typing import List, Optional
 
 
-class GALNetwork(BaseEstimator, ClassifierMixin):
+class GALNetwork(ClassifierMixin, BaseEstimator):
     """
     GAL (Grow and Learn) Constructive Neural Network.
 
@@ -99,6 +103,7 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
+        check_classification_targets(y)
         if self.random_state is not None:
             torch.manual_seed(self.random_state)
         self.le_ = LabelEncoder()
@@ -188,7 +193,7 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self, X):
         check_is_fitted(self)
-        X = check_array(X)
+        X = check_predict_input(self, X)
         device = torch.device(self.device)
         self.model_.eval()
         with torch.no_grad():
@@ -197,4 +202,5 @@ class GALNetwork(BaseEstimator, ClassifierMixin):
         return probs.cpu().numpy()
 
     def predict(self, X):
+        check_is_fitted(self)
         return self.le_.inverse_transform(self.predict_proba(X).argmax(axis=1))
