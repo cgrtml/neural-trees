@@ -33,6 +33,8 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import check_classification_targets
 
 from neural_trees._validation import check_predict_input
+from torch.utils.data import DataLoader, TensorDataset
+
 from typing import List, Optional
 
 
@@ -58,6 +60,12 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     learning_rate : float, default=0.01
     check_interval : int, default=5
         How often (in epochs) to check growth/pruning conditions.
+    batch_size : int, default=32
+        Mini-batch size. Training used to take a single full-batch step per
+        epoch, which left the network barely moved from its initialization when
+        the growth criterion was evaluated.
+    momentum : float, default=0.9
+        Momentum for the SGD optimizer.
     device : str, default="cpu"
     verbose : bool, default=False
     random_state : int or None, default=None
@@ -79,6 +87,8 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         max_epochs: int = 100,
         learning_rate: float = 0.01,
         check_interval: int = 5,
+        batch_size: int = 32,
+        momentum: float = 0.9,
         device: str = "cpu",
         verbose: bool = False,
         random_state: Optional[int] = None,
@@ -90,9 +100,15 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         self.max_epochs = max_epochs
         self.learning_rate = learning_rate
         self.check_interval = check_interval
+        self.batch_size = batch_size
+        self.momentum = momentum
         self.device = device
         self.verbose = verbose
         self.random_state = random_state
+
+    def _make_optimizer(self, model: nn.Sequential) -> "torch.optim.Optimizer":
+        """A fresh optimizer, needed whenever growth or pruning rebuilds the network."""
+        return torch.optim.SGD(model.parameters(), lr=self.learning_rate, momentum=self.momentum)
 
     def _build_model(self, n_features: int, n_hidden: int, n_classes: int) -> nn.Sequential:
         return nn.Sequential(
@@ -120,18 +136,33 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         model = self._build_model(self.n_features_in_, n_hidden, n_classes).to(device)
         self.architecture_history_: List[dict] = []
 
-        optimizer = torch.optim.SGD(model.parameters(), lr=self.learning_rate)
+        optimizer = self._make_optimizer(model)
+
+        generator = None
+        if self.random_state is not None:
+            generator = torch.Generator()
+            generator.manual_seed(self.random_state)
+        loader = DataLoader(
+            TensorDataset(X_t, y_t),
+            batch_size=min(self.batch_size, len(X_t)),
+            shuffle=True,
+            generator=generator,
+        )
 
         for epoch in range(self.max_epochs):
             model.train()
-            optimizer.zero_grad()
-            logits = model(X_t)
-            loss = F.cross_entropy(logits, y_t)
-            loss.backward()
-            optimizer.step()
+            for X_batch, y_batch in loader:
+                optimizer.zero_grad()
+                loss = F.cross_entropy(model(X_batch), y_batch)
+                loss.backward()
+                optimizer.step()
 
-            acc = (logits.argmax(1) == y_t).float().mean().item()
-            error = 1.0 - acc
+            # The growth and pruning criteria have to see the network as it
+            # stands at the end of the epoch, not the logits from one stale
+            # mini-batch.
+            model.eval()
+            with torch.no_grad():
+                error = 1.0 - (model(X_t).argmax(1) == y_t).float().mean().item()
             self.architecture_history_.append(
                 {"epoch": epoch + 1, "n_hidden": n_hidden, "error": error}
             )
@@ -157,7 +188,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
                     model[2].weight.data = W2
                     model[2].bias.data = b2
 
-                    optimizer = torch.optim.SGD(model.parameters(), lr=self.learning_rate)
+                    optimizer = self._make_optimizer(model)
 
                     if self.verbose:
                         print(f"Epoch {epoch+1}: Pruned to {n_hidden} hidden units")
@@ -182,7 +213,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
                     model[2].weight.data = W2_new
                     model[2].bias.data = b2_old
 
-                    optimizer = torch.optim.SGD(model.parameters(), lr=self.learning_rate)
+                    optimizer = self._make_optimizer(model)
 
                     if self.verbose:
                         print(f"Epoch {epoch+1}: Grew to {n_hidden} hidden units")
