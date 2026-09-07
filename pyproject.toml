@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neural-trees"
+version = "0.2.0"
+description = "Soft decision trees, mixture of experts, and statistical model comparison tests for Python. Scikit-learn compatible, PyTorch backend."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+authors = [
+    { name = "Cagri Temel", email = "cagritemel34@gmail.com" },
+]
+keywords = [
+    "machine learning",
+    "soft decision trees",
+    "decision trees",
+    "neural decision trees",
+    "mixture of experts",
+    "hierarchical mixture of experts",
+    "omnivariate decision trees",
+    "statistical tests",
+    "5x2cv f test",
+    "mcnemar test",
+    "classifier comparison",
+    "alpaydin",
+    "sklearn",
+    "scikit-learn",
+    "pytorch",
+    "differentiable trees",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.21",
+    "scipy>=1.7",
+    "scikit-learn>=1.0",
+    "torch>=1.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "matplotlib>=3.4",
+    "jupyter",
+    "plotly",
+    "ruff>=0.4",
+]
+
+[project.urls]
+Source = "https://github.com/cgrtml/neural-trees"
+"Bug Tracker" = "https://github.com/cgrtml/neural-trees/issues"
+Documentation = "https://github.com/cgrtml/neural-trees#readme"
+
+[tool.setuptools.packages.find]
+include = ["neural_trees*"]
+exclude = ["tests*", "notebooks*", "examples*", "benchmarks*"]
+
+[tool.ruff]
+target-version = "py38"
+exclude = ["notebooks/"]
+
+[tool.ruff.lint]
+# Ignore pre-existing patterns that are not part of this issue scope:
+# - F401: unused imports in __init__.py are re-exports for the public API
+# - FA100: `from __future__ import annotations` is a style preference, not a bug
+# - BLE001: pre-existing blind exception catches in library code
+# - C408: pre-existing dict() call style in app.py
+# - S112, RUF059: pre-existing patterns
+ignore = ["F401", "FA100", "BLE001", "C408", "S112", "RUF059"]
