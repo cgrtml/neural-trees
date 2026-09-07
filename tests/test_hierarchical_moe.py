@@ -91,11 +91,58 @@ def test_dropout_is_active_in_training_mode_only(wine_split):
     np.testing.assert_allclose(moe.predict_proba(X_train[:16]), moe.predict_proba(X_train[:16]))
 
 
+def test_subtree_dropout_removes_a_branch():
+    """
+    The mechanism from Irsoy & Alpaydin (2021): a gating node drops one of its
+    children, so that subtree receives no probability mass for that sample.
+    With rate 1.0 and two children, every gate output must be one-hot.
+    """
+    X, y = load_wine(return_X_y=True)
+    moe = HierarchicalMixtureOfExperts(
+        depth=2, branching_factor=2, dropout_rate=1.0, dropout_type="subtree",
+        max_epochs=3, random_state=0,
+    ).fit(X, y)
+
+    batch = torch.FloatTensor(StandardScaler().fit_transform(X)[:32])
+    moe.model_.train()
+    with torch.no_grad():
+        gate_out = moe.model_._drop_subtrees(moe.model_.gates[0](batch))
+
+    np.testing.assert_allclose(gate_out.sum(dim=1).numpy(), 1.0, atol=1e-5)
+    assert ((gate_out > 1 - 1e-5) | (gate_out < 1e-5)).all()
+
+    # Leaf mixing weights stay a distribution while subtrees are dropped.
+    with torch.no_grad():
+        weights = moe.model_._compute_leaf_weights(batch)
+    np.testing.assert_allclose(weights.sum(dim=1).numpy(), 1.0, atol=1e-5)
+
+
+def test_activation_dropout_perturbs_but_never_removes_a_branch():
+    """The pre-2021 mechanism, kept for comparison: no gate output is zeroed."""
+    X, y = load_wine(return_X_y=True)
+    moe = HierarchicalMixtureOfExperts(
+        depth=2, dropout_rate=0.9, dropout_type="activation", max_epochs=3, random_state=0,
+    ).fit(X, y)
+
+    batch = torch.FloatTensor(StandardScaler().fit_transform(X)[:32])
+    moe.model_.train()
+    with torch.no_grad():
+        gate_out = moe.model_.gates[0](batch)
+    assert (gate_out > 1e-6).all()
+
+
+def test_dropout_type_is_validated():
+    X, y = load_wine(return_X_y=True)
+    with pytest.raises(ValueError, match="dropout_type must be"):
+        HierarchicalMixtureOfExperts(dropout_type="bogus").fit(X, y)
+
+
 def test_dropout_does_not_worsen_the_generalization_gap():
     """
-    Regression guard, not a proof: averaged over seeds, gating dropout should
-    not widen the train-test gap on a noisy toy problem. The effect is small
-    because dropout here applies to gating activations only, not to experts.
+    Regression guard, not a proof: averaged over seeds, subtree dropout should
+    not widen the train-test gap on a noisy toy problem. The measured effect is
+    real but modest, see the numbers in the module docstring of this test file's
+    companion study.
     """
     X, y = make_classification(
         n_samples=160, n_features=20, n_informative=5, n_redundant=0,

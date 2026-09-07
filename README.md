@@ -106,7 +106,7 @@ Implementations based on published research, including work by Ethem Alpaydın.
 | **Soft Decision Trees** | İrsoy, Yıldız, Alpaydın (ICPR 2012) |
 | **Multivariate Decision Trees** | Alpaydın & Çetin (1995), Yıldız & Alpaydın (IEEE TNN 2001) |
 | **Omnivariate Decision Trees** | Yıldız & Alpaydın (IEEE TNN 2001) |
-| **Hierarchical Mixture of Experts with Dropout** | İrsoy & Alpaydın (Neurocomputing 2021) |
+| **Hierarchical Mixture of Experts with subtree dropout** | İrsoy & Alpaydın (Neurocomputing 2021) |
 | **GAL: Grow and Learn Networks** | Alpaydın (IJPRAI 1994) |
 | **Combined 5x2cv F Test** | Alpaydın (Neural Computation 1999) |
 | **McNemar's Test, Paired t-test** | Standard references |
