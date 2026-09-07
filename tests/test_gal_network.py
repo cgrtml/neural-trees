@@ -30,6 +30,37 @@ def test_fit_predict_shapes(iris_split):
     np.testing.assert_allclose(proba.sum(axis=1), 1.0, atol=1e-5)
 
 
+def test_learns_a_separable_problem(iris_split):
+    """
+    Regression test for the training loop. GAL used to take exactly one
+    full-batch SGD step per epoch, so growth and pruning decisions were made on
+    a network that had barely moved from its initialization. On three well
+    separated blobs it scored 0.333, which is chance for three classes.
+    """
+    from sklearn.datasets import make_blobs
+
+    X, y = make_blobs(n_samples=300, centers=3, cluster_std=0.1, random_state=0)
+    gal = GALNetwork(max_epochs=100, random_state=0).fit(X, y)
+
+    assert gal.score(X, y) > 0.9
+
+
+def test_beats_the_majority_baseline_on_iris(iris_split):
+    X_train, X_test, y_train, y_test = iris_split
+    gal = GALNetwork(max_epochs=100, random_state=0).fit(X_train, y_train)
+
+    majority = np.bincount(y_test).max() / len(y_test)
+    assert gal.score(X_test, y_test) > majority
+
+
+def test_error_decreases_over_training(iris_split):
+    X_train, _, y_train, _ = iris_split
+    gal = GALNetwork(max_epochs=100, random_state=0).fit(X_train, y_train)
+
+    history = [h["error"] for h in gal.architecture_history_]
+    assert history[-1] < history[0]
+
+
 def test_architecture_grows_and_is_recorded(iris_split):
     X_train, _, y_train, _ = iris_split
     gal = GALNetwork(initial_hidden=2, max_hidden=8, max_epochs=60, random_state=0)
