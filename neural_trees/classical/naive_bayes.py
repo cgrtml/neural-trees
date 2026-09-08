@@ -44,6 +44,12 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
         self.var_smoothing = var_smoothing
 
     def fit(self, X, y):
+        if self.likelihood not in ("gaussian", "bernoulli", "multinomial"):
+            raise ValueError(
+                "likelihood must be 'gaussian', 'bernoulli' or 'multinomial', got "
+                f"{self.likelihood!r}"
+            )
+
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         self.le_ = LabelEncoder()

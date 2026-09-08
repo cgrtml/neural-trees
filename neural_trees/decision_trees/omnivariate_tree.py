@@ -37,8 +37,11 @@ from typing import Optional, Dict, Any
 class _OmnivariateNode:
     """A single node in an omnivariate decision tree."""
 
-    def __init__(self, depth: int, max_depth: int, min_samples_split: int, cv_folds: int):
+    def __init__(self, depth: int, max_depth: int, min_samples_split: int, cv_folds: int,
+                 n_classes: int = 0):
         self.depth = depth
+        self.n_classes = n_classes
+        self.distribution: Optional[np.ndarray] = None
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.cv_folds = cv_folds
@@ -48,6 +51,13 @@ class _OmnivariateNode:
         self.leaf_class = None
         self.left: Optional["_OmnivariateNode"] = None
         self.right: Optional["_OmnivariateNode"] = None
+
+    def _make_leaf(self, y: np.ndarray) -> "_OmnivariateNode":
+        counts = np.bincount(y, minlength=self.n_classes).astype(float)
+        self.is_leaf = True
+        self.leaf_class = int(counts.argmax())
+        self.distribution = counts / counts.sum() if counts.sum() else counts
+        return self
 
     def _two_group_labels(self, X: np.ndarray, y: np.ndarray):
         """
@@ -99,15 +109,11 @@ class _OmnivariateNode:
             or len(X) < self.min_samples_split
             or len(np.unique(y)) == 1
         ):
-            self.is_leaf = True
-            self.leaf_class = np.bincount(y).argmax()
-            return self
+            return self._make_leaf(y)
 
         y_bin = self._two_group_labels(X, y)
         if y_bin is None:
-            self.is_leaf = True
-            self.leaf_class = np.bincount(y).argmax()
-            return self
+            return self._make_leaf(y)
 
         self.split_type, self.classifier = self._select_best_splitter(X, y_bin)
         self.classifier.fit(X, y_bin)
@@ -118,24 +124,28 @@ class _OmnivariateNode:
         mask_left = ~mask_right
 
         if mask_right.sum() == 0 or mask_left.sum() == 0:
-            self.is_leaf = True
-            self.leaf_class = np.bincount(y).argmax()
-            return self
+            return self._make_leaf(y)
 
         self.left = _OmnivariateNode(
-            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds
+            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds, self.n_classes
         ).fit(X[mask_left], y[mask_left])
         self.right = _OmnivariateNode(
-            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds
+            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds, self.n_classes
         ).fit(X[mask_right], y[mask_right])
         return self
 
-    def predict_one(self, x: np.ndarray) -> int:
+    def _leaf_for(self, x: np.ndarray) -> "_OmnivariateNode":
         node = self
         while not node.is_leaf:
             goes_right = node.classifier.predict(x.reshape(1, -1))[0] == 1
             node = node.right if goes_right else node.left
-        return node.leaf_class
+        return node
+
+    def predict_one(self, x: np.ndarray) -> int:
+        return self._leaf_for(x).leaf_class
+
+    def predict_proba_one(self, x: np.ndarray) -> np.ndarray:
+        return self._leaf_for(x).distribution
 
 
 class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
@@ -194,8 +204,27 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
             max_depth=self.max_depth,
             min_samples_split=self.min_samples_split,
             cv_folds=self.cv_folds,
+            n_classes=len(self.classes_),
         ).fit(X, y_enc)
         return self
+
+    def predict_proba(self, X):
+        """
+        Predict class probabilities from the reached leaf's class distribution.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+
+        Returns
+        -------
+        proba : ndarray of shape (n_samples, n_classes)
+            Class probabilities in the order of `self.classes_`, each row
+            summing to 1.
+        """
+        check_is_fitted(self)
+        X = check_predict_input(self, X)
+        return np.vstack([self.root_.predict_proba_one(x) for x in X])
 
     def predict(self, X):
         check_is_fitted(self)
