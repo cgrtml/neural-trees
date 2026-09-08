@@ -24,17 +24,17 @@ Key idea:
     binary tree is grown with discriminant splits.
 """
 
+from typing import List, Optional, Tuple
+
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.cluster import KMeans
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-
 from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 from neural_trees._validation import check_predict_input
-from typing import List, Optional, Tuple
 
 
 def _gini(y: np.ndarray, n_classes: int) -> float:
@@ -56,8 +56,8 @@ class _MultivariateNode:
         self.distribution: Optional[np.ndarray] = None
         self.weights: Optional[np.ndarray] = None
         self.bias: float = 0.0
-        self.left: Optional["_MultivariateNode"] = None
-        self.right: Optional["_MultivariateNode"] = None
+        self.left: Optional[_MultivariateNode] = None
+        self.right: Optional[_MultivariateNode] = None
 
     def _make_leaf(self, y: np.ndarray) -> "_MultivariateNode":
         n_classes = self.params["n_classes"]

@@ -17,25 +17,25 @@ Key idea:
 """
 
 import numpy as np
+
 try:
     import torch
-    import torch.nn as nn
     import torch.nn.functional as F
+    from torch import nn
 except ImportError as exc:  # pragma: no cover - exercised only without torch
     raise ImportError(
         "neural-trees requires PyTorch. Install it with: pip install torch "
         "(see https://pytorch.org/get-started/locally/ for platform specific wheels)."
     ) from exc
+from typing import List, Optional
+
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-
 from sklearn.utils.multiclass import check_classification_targets
-
-from neural_trees._validation import check_predict_input
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 from torch.utils.data import DataLoader, TensorDataset
 
-from typing import List, Optional
+from neural_trees._validation import check_predict_input
 
 
 class GALNetwork(ClassifierMixin, BaseEstimator):

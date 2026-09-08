@@ -1,9 +1,9 @@
 """Tests for statistical classifier comparison tests."""
 import numpy as np
 import pytest
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 from neural_trees.statistical_tests import (
     combined_5x2cv_f_test,

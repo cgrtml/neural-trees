@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neural-trees"
-version = "0.2.0"
+version = "0.3.0"
 description = "Soft decision trees, mixture of experts, and statistical model comparison tests for Python. Scikit-learn compatible, PyTorch backend."
 readme = "README.md"
 license = { text = "MIT" }
@@ -73,6 +73,11 @@ target-version = "py38"
 exclude = ["notebooks/"]
 
 [tool.ruff.lint]
+# Explicit rule selection (pinned alongside ruff==0.16.6 in CI): a future ruff
+# release must not turn the build red on its own by widening the default set.
+# These are exactly the rules verified clean below (I001/UP037/PLR0402/RUF022
+# findings were applied with `ruff check --fix`).
+select = ["E4", "E7", "E9", "F", "I001", "UP037", "PLR0402", "RUF022"]
 # Ignore pre-existing patterns that are not part of this issue scope:
 # - F401: unused imports in __init__.py are re-exports for the public API
 # - FA100: `from __future__ import annotations` is a style preference, not a bug
