@@ -233,12 +233,24 @@ work in 0.1.x, so upgrade if you are on an earlier release.
 Contributions are welcome. New to open source? See
 [CONTRIBUTING.md](CONTRIBUTING.md) for a beginner-friendly walkthrough.
 
-Good starting points:
+Every open issue states what would close it, so you can judge the size before
+you start.
 
-- Browse issues tagged [`good first issue`](https://github.com/cgrtml/neural-trees/labels/good%20first%20issue)
-- Add an algorithm from Alpaydın's papers
-- Improve test coverage
-- Add a notebook or example
+**First contribution**, no deep ML background needed, tagged
+[`good first issue`](https://github.com/cgrtml/neural-trees/labels/good%20first%20issue):
+write a test file for one of the pure-numpy estimators, wire `ruff` into CI,
+move packaging to `pyproject.toml`, add a coverage threshold, or run the
+notebooks in CI so their committed outputs cannot go stale.
+
+**If you know scikit-learn and PyTorch:** `sample_weight` and `class_weight`
+support, or vectorizing the mixture-of-experts gating tree the way
+`SoftDecisionTree` already is (that one has a worked reference implementation
+in the repo to copy).
+
+**If you want a research problem:** incremental tree growing from İrsoy, Yıldız
+and Alpaydın (ICPR 2012), which the fixed-depth implementation here does not
+do, or distilling a trained soft tree into a hard one for readable rules and
+fast inference.
 
 For larger changes, open an issue first to discuss the approach. If this
 project is useful to you, a star helps others find it.
