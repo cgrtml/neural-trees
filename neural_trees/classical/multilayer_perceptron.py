@@ -117,6 +117,76 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
             nn.Linear(n_hidden, n_classes),
         )
 
+    @staticmethod
+    def _hidden_activations(model: nn.Sequential, X_t: "torch.Tensor") -> "torch.Tensor":
+        with torch.no_grad():
+            return model[1](model[0](X_t))
+
+    def _contributions(self, model: nn.Sequential, X_t: "torch.Tensor") -> "torch.Tensor":
+        """
+        How much each hidden unit actually moves the output.
+
+        Activation variance alone, which is what pruning used to look at, says
+        nothing about whether the unit matters: a nearly constant unit with a
+        large outgoing weight still shifts every logit. Weighting the spread of
+        a unit's activation by the size of its outgoing weights measures the
+        thing pruning is supposed to care about.
+        """
+        activations = self._hidden_activations(model, X_t)
+        spread = activations.std(dim=0)
+        outgoing = model[2].weight.data.abs().sum(dim=0)
+        return spread * outgoing
+
+    def _rebuild_with_units(
+        self, model: nn.Sequential, keep_idx, n_classes: int, device
+    ) -> nn.Sequential:
+        """Return a copy of `model` holding only the hidden units in `keep_idx`."""
+        rebuilt = self._build_model(self.n_features_in_, len(keep_idx), n_classes).to(device)
+        rebuilt[0].weight.data = model[0].weight.data[keep_idx].clone()
+        rebuilt[0].bias.data = model[0].bias.data[keep_idx].clone()
+        rebuilt[2].weight.data = model[2].weight.data[:, keep_idx].clone()
+        rebuilt[2].bias.data = model[2].bias.data.clone()
+        return rebuilt
+
+    def _grown(self, model: nn.Sequential, n_classes: int, device) -> nn.Sequential:
+        """Return a copy of `model` with one more hidden unit."""
+        n_hidden = model[0].weight.shape[0]
+        grown = self._build_model(self.n_features_in_, n_hidden + 1, n_classes).to(device)
+        grown[0].weight.data = torch.cat([
+            model[0].weight.data,
+            torch.randn(1, self.n_features_in_, device=device) * 0.1,
+        ], dim=0)
+        grown[0].bias.data = torch.cat([
+            model[0].bias.data, torch.zeros(1, device=device)
+        ])
+        grown[2].weight.data = torch.cat([
+            model[2].weight.data,
+            torch.randn(n_classes, 1, device=device) * 0.1,
+        ], dim=1)
+        grown[2].bias.data = model[2].bias.data.clone()
+        return grown
+
+    @staticmethod
+    def _evaluate(model: nn.Sequential, X_t: "torch.Tensor", y_t: "torch.Tensor"):
+        model.eval()
+        with torch.no_grad():
+            logits = model(X_t)
+            loss = F.cross_entropy(logits, y_t).item()
+            error = 1.0 - (logits.argmax(1) == y_t).float().mean().item()
+        return loss, error
+
+    @staticmethod
+    def _snapshot(model: nn.Sequential) -> dict:
+        return {
+            "n_hidden": model[0].weight.shape[0],
+            "state": {k: v.detach().clone() for k, v in model.state_dict().items()},
+        }
+
+    def _restore(self, snapshot: dict, n_classes: int, device) -> nn.Sequential:
+        model = self._build_model(self.n_features_in_, snapshot["n_hidden"], n_classes).to(device)
+        model.load_state_dict(snapshot["state"])
+        return model
+
     def fit(self, X, y):
         X, y = check_X_y(X, y)
         check_classification_targets(y)
