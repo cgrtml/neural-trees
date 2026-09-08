@@ -239,8 +239,8 @@ neural-trees is not the right tool for every problem:
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md). Version 0.2.0 fixes two models that did not
-work in 0.1.x, so upgrade if you are on an earlier release.
+See [CHANGELOG.md](CHANGELOG.md). Versions 0.2.0 and 0.3.0 fixed four models
+that did not work in 0.1.x, so upgrade if you are on an earlier release.
 
 ## Contributing
 

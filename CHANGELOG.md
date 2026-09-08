@@ -3,6 +3,70 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-09-07
+
+Every model in the library now works and is tested. Two of them did not learn
+at all before this release.
+
+### Fixed
+
+- **`GALNetwork` was not learning.** `fit` took exactly one full-batch SGD step
+  per epoch, so `max_epochs=100` meant 100 gradient steps in total, and the
+  growth and pruning criteria were evaluated on a network that had barely moved
+  from its initialization. Training now iterates mini-batches (new `batch_size`
+  and `momentum` parameters), and the error driving growth is measured on the
+  full training set at the end of each epoch.
+
+  | | before | after |
+  |---|:---:|:---:|
+  | three separable blobs, train | 0.333 | 1.000 |
+  | Iris, 5-fold | 0.333 | 0.893 |
+  | Wine, 5-fold | 0.518 | 0.983 |
+  | Breast Cancer, 5-fold | 0.627 | 0.974 |
+
+- **Condensed nearest neighbour was inconsistent.** `WeightedKNN._condense`
+  made a single sweep of the training set, so samples seen early were judged
+  against a store that later grew, and the result did not classify the training
+  set correctly. It now sweeps until a full pass adds nothing, which is Hart's
+  algorithm, and honours the `metric` parameter instead of always using the
+  Euclidean norm. 5-fold accuracy with `condense=True`: Iris 0.747 to 0.933,
+  Wine 0.792 to 0.933, Breast Cancer 0.935 to 0.951.
+- **Exact matches were diluted in `WeightedKNN`.** A zero nearest distance fell
+  back to uniform weights, letting `k - 1` unrelated neighbours outvote a
+  training sample identical to the query. Zero-distance neighbours now carry
+  the whole vote.
+- `metric`, `k`, `likelihood` and `dropout_type` are validated in `fit` rather
+  than failing later inside a distance, likelihood or forward computation.
+
+### Added
+
+- **`OmnivariateDecisionTree.predict_proba`.** It was the only estimator without
+  it, which ruled out ROC AUC, calibration and soft voting. Leaves keep the full
+  class distribution now.
+- Test files for `WeightedKNN` and `NaiveBayesClassifier`. Condensing, the
+  manhattan metric, and the bernoulli and multinomial likelihoods previously had
+  no coverage at all.
+- `tests/test_app_contract.py`, which checks the Streamlit playground against
+  the library API so it cannot drift out of step unnoticed.
+- Notebooks 01 and 02 are executed with their outputs committed.
+
+### Changed
+
+- **`HierarchicalMixtureOfExperts` now implements the subtree dropout it cites.**
+  The previous mechanism was a plain `nn.Dropout` on the gating networks' hidden
+  activations, which perturbs a gate but never removes a branch. With
+  probability `dropout_rate` a gating node now withholds all mass from one child
+  and renormalizes the rest, switching off that subtree for the sample. Measured
+  over 5 seeds on a noisy 20-feature problem, test accuracy goes from 0.588 to
+  0.634 and the train/test gap from 0.412 to 0.364; on Breast Cancer every
+  setting sits within noise of the others. `dropout_type="activation"` keeps the
+  old behaviour.
+- The README no longer claims the modules are implementations of the cited
+  papers. They start from those algorithms and depart from them where this
+  library makes its own choices; deliberate deviations are noted in the module
+  docstrings.
+- Test suite: 101 to 135, coverage 97%.
+
 ## [0.2.0] - 2026-09-06
 
 Correctness release. Two of the four models shipped in 0.1.x did not work, and
