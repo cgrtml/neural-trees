@@ -12,7 +12,7 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 
 [![PyPI](https://img.shields.io/pypi/v/neural-trees)](https://pypi.org/project/neural-trees/)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/neural-trees?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/neural-trees)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://github.com/cgrtml/neural-trees/actions/workflows/tests.yml/badge.svg)](https://github.com/cgrtml/neural-trees/actions)
 [![GitHub Stars](https://img.shields.io/github/stars/cgrtml/neural-trees?style=social)](https://github.com/cgrtml/neural-trees/stargazers)
@@ -278,6 +278,7 @@ Thanks to everyone who has improved this library.
 |---|---|
 | [@snoopuppy582](https://github.com/snoopuppy582) | Symmetric McNemar disagreement test (#20), development requirements (#23), depth validation (#22), reproducibility test (#24) |
 | [@aribaskagan](https://github.com/aribaskagan) | Fixed the coverage target in CI, which had been measuring a module that no longer exists (#25) |
+| [@yunaremaia](https://github.com/yunaremaia) | Migrated packaging to `pyproject.toml` and wired ruff into CI (#46) |
 <!-- CONTRIBUTORS-END -->
 
 The list began with the GitHub Sprint segment of the WSU Data and Analytics
