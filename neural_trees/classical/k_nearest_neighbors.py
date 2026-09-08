@@ -15,9 +15,8 @@ Also implements "Condensed Nearest Neighbor" (Alpaydın, 1997):
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-
 from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 from neural_trees._validation import check_predict_input
 

@@ -4,26 +4,32 @@ Run: streamlit run app.py
 """
 
 import numpy as np
-import streamlit as st
 import plotly.graph_objects as go
+import streamlit as st
 from plotly.subplots import make_subplots
-from sklearn.datasets import load_iris, load_wine, load_breast_cancer, make_moons, make_circles
+from sklearn.datasets import (
+    load_breast_cancer,
+    load_iris,
+    load_wine,
+    make_circles,
+    make_moons,
+)
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 
 from neural_trees import (
-    SoftDecisionTree,
-    OmnivariateDecisionTree,
     HierarchicalMixtureOfExperts,
+    OmnivariateDecisionTree,
+    SoftDecisionTree,
     combined_5x2cv_f_test,
 )
 from neural_trees.classical.k_nearest_neighbors import WeightedKNN
-from neural_trees.classical.naive_bayes import NaiveBayesClassifier
 from neural_trees.classical.multilayer_perceptron import GALNetwork
+from neural_trees.classical.naive_bayes import NaiveBayesClassifier
 
 # ──────────────────────────────────────────────
 # Page config

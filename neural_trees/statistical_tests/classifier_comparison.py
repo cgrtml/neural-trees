@@ -26,13 +26,14 @@ Usage
 >>> print(result)
 """
 
+from dataclasses import dataclass
+from typing import Any
+
 import numpy as np
 from scipy import stats
 from sklearn.base import clone
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.validation import check_X_y
-from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass

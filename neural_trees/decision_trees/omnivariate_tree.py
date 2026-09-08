@@ -18,20 +18,20 @@ Key idea:
         - Nonlinear (MLP): split on a 1-hidden-layer perceptron
 """
 
+from typing import Any, Dict, Optional
+
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.cluster import KMeans
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 from neural_trees._validation import check_predict_input
-from sklearn.preprocessing import LabelEncoder
-from typing import Optional, Dict, Any
 
 
 class _OmnivariateNode:
@@ -49,8 +49,8 @@ class _OmnivariateNode:
         self.classifier = None
         self.is_leaf = False
         self.leaf_class = None
-        self.left: Optional["_OmnivariateNode"] = None
-        self.right: Optional["_OmnivariateNode"] = None
+        self.left: Optional[_OmnivariateNode] = None
+        self.right: Optional[_OmnivariateNode] = None
 
     def _make_leaf(self, y: np.ndarray) -> "_OmnivariateNode":
         counts = np.bincount(y, minlength=self.n_classes).astype(float)
