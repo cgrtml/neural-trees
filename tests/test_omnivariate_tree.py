@@ -68,3 +68,34 @@ def test_works_in_a_pipeline():
     ])
     pipe.fit(X, y)
     assert pipe.score(X, y) > 0.7
+
+
+def test_predict_proba_is_a_distribution(wine_split):
+    """
+    This was the one estimator in the library without predict_proba, so it
+    could not be used for ROC AUC, calibration or soft voting.
+    """
+    X_train, X_test, y_train, _ = wine_split
+    odt = OmnivariateDecisionTree(max_depth=3).fit(X_train, y_train)
+
+    proba = odt.predict_proba(X_test)
+    assert proba.shape == (len(X_test), 3)
+    assert (proba >= 0).all()
+    np.testing.assert_allclose(proba.sum(axis=1), 1.0, atol=1e-9)
+
+
+def test_predict_proba_agrees_with_predict(wine_split):
+    X_train, X_test, y_train, _ = wine_split
+    odt = OmnivariateDecisionTree(max_depth=3).fit(X_train, y_train)
+
+    from_proba = odt.classes_[odt.predict_proba(X_test).argmax(axis=1)]
+    assert np.array_equal(from_proba, odt.predict(X_test))
+
+
+def test_works_with_roc_auc(wine_split):
+    from sklearn.metrics import roc_auc_score
+
+    X_train, X_test, y_train, y_test = wine_split
+    odt = OmnivariateDecisionTree(max_depth=3).fit(X_train, y_train)
+    auc = roc_auc_score(y_test, odt.predict_proba(X_test), multi_class="ovr")
+    assert 0.0 <= auc <= 1.0

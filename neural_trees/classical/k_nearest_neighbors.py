@@ -64,21 +64,44 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         raise ValueError(f"Unknown metric: {self.metric}")
 
     def _condense(self, X: np.ndarray, y: np.ndarray):
-        """Condensed Nearest Neighbor: keep minimal prototypical subset."""
-        store_X = [X[0]]
-        store_y = [y[0]]
+        """
+        Condensed Nearest Neighbor (Hart, 1968).
 
-        for i in range(1, len(X)):
-            xi, yi = X[i], y[i]
-            dists = np.array([np.linalg.norm(xi - s) for s in store_X])
-            nearest_idx = np.argmin(dists)
-            if store_y[nearest_idx] != yi:
-                store_X.append(xi)
-                store_y.append(yi)
+        Sweep the training set repeatedly, moving into the store any sample the
+        current store misclassifies under the 1-nearest-neighbor rule, until a
+        full sweep adds nothing. The result is *consistent*: the store
+        classifies every training sample correctly.
 
-        return np.array(store_X), np.array(store_y)
+        A single sweep, which is what this used to do, stops before that
+        property holds, because samples seen early are judged against a store
+        that later grows.
+        """
+        store_idx = [0]
+        remaining = list(range(1, len(X)))
+
+        changed = True
+        while changed:
+            changed = False
+            still_remaining = []
+            for i in remaining:
+                dists = self._distance(X[i][None, :], X[store_idx])[0]
+                if y[store_idx[int(np.argmin(dists))]] != y[i]:
+                    store_idx.append(i)
+                    changed = True
+                else:
+                    still_remaining.append(i)
+            remaining = still_remaining
+
+        return X[store_idx], y[store_idx]
 
     def fit(self, X, y):
+        if self.metric not in ("euclidean", "manhattan"):
+            raise ValueError(
+                f"metric must be 'euclidean' or 'manhattan', got {self.metric!r}"
+            )
+        if isinstance(self.k, bool) or not isinstance(self.k, int) or self.k < 1:
+            raise ValueError(f"k must be a positive integer, got {self.k!r}")
+
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         self.le_ = LabelEncoder()
@@ -106,8 +129,13 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
             nn_idx = np.argsort(row)[:k]
             nn_dists = row[nn_idx]
 
-            if self.weight_power == 0 or nn_dists[0] == 0:
+            if self.weight_power == 0:
                 weights = np.ones(k)
+            elif nn_dists[0] == 0:
+                # Exact matches carry the whole vote. Falling back to uniform
+                # weights here, as this used to, let k - 1 unrelated neighbors
+                # outvote a sample identical to the query.
+                weights = (nn_dists == 0).astype(float)
             else:
                 weights = 1.0 / (nn_dists ** self.weight_power + 1e-10)
 
