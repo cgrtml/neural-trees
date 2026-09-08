@@ -70,6 +70,17 @@ pipe.fit(X_train, y_train)
 pipe.score(X_test, y_test)
 ```
 
+## Interactive playground
+
+[`app.py`](app.py) is a Streamlit dashboard for comparing the models side by
+side on standard and synthetic datasets, with live decision boundaries and
+hyperparameter controls:
+
+```bash
+pip install streamlit plotly
+streamlit run app.py
+```
+
 ## Benchmark
 
 5-fold stratified cross-validation accuracy with `StandardScaler` preprocessing,
@@ -99,7 +110,10 @@ number.
 
 ## Algorithms
 
-Implementations based on published research, including work by Ethem Alpaydın.
+These implementations start from the published algorithms below and depart
+from them where this library makes its own design choices. Where an
+implementation deviates deliberately, the module docstring says so. Treat the
+references as the lineage of an idea, not as a claim of exact reproduction.
 
 | Algorithm | Reference |
 |-----------|-----------|
@@ -259,20 +273,16 @@ project is useful to you, a star helps others find it.
 
 Thanks to everyone who has improved this library.
 
-- [@snoopuppy582](https://github.com/snoopuppy582) — symmetric McNemar disagreement test, development requirements
-- [@aribaskagan](https://github.com/aribaskagan) — fixed the coverage target in CI, which had been measuring a module that no longer exists
+<!-- CONTRIBUTORS-START -->
+| Contributor | Contribution |
+|---|---|
+| [@snoopuppy582](https://github.com/snoopuppy582) | Symmetric McNemar disagreement test (#20), development requirements (#23), depth validation (#22), reproducibility test (#24) |
+| [@aribaskagan](https://github.com/aribaskagan) | Fixed the coverage target in CI, which had been measuring a module that no longer exists (#25) |
+<!-- CONTRIBUTORS-END -->
 
-Full list: [contributors graph](https://github.com/cgrtml/neural-trees/graphs/contributors).
-
-### WSU Data and Analytics Breakout (May 15, 2026)
-
-Students from Washington State University contributed via the live
-GitHub Sprint segment of the workshop. Their merged pull requests
-appear below as the event proceeds:
-
-<!-- WSU-CONTRIBUTORS-START -->
-*To be populated during and after the workshop.*
-<!-- WSU-CONTRIBUTORS-END -->
+The list began with the GitHub Sprint segment of the WSU Data and Analytics
+Breakout (May 15, 2026) and stays open to anyone. Full history: the
+[contributors graph](https://github.com/cgrtml/neural-trees/graphs/contributors).
 
 ## License
 
