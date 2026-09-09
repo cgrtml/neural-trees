@@ -3,6 +3,80 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-09-09
+
+Work on GALNetwork, plus weighting for the soft tree. Every classifier in the
+library now passes scikit-learn's estimator checks.
+
+### Added
+
+- **`GALNetwork(growth_init="residual")`, now the default.** A new hidden unit
+  used to arrive with random incoming *and* outgoing weights: it perturbed every
+  logit the moment it appeared and then had to be trained up from noise. It is
+  now fitted to the residual error of the frozen network, maximizing the
+  correlation between its activation and `p - y` (Fahlman & Lebiere, 1990), and
+  installed with **zero** outgoing weights, so the network computes the same
+  function at the moment of growth. Growth can no longer make the model worse.
+
+  Over 3 seeds of 5-fold CV, accuracy and mean final hidden units:
+
+  | | random | residual |
+  |---|:---:|:---:|
+  | Iris | 0.931 / 22.9 u | **0.958 / 7.1 u** |
+  | Wine | 0.983 / 6.8 u | 0.981 / **4.2 u** |
+  | Breast Cancer | 0.975 / 2.0 u | 0.975 / 2.0 u |
+  | 3 separable blobs | 1.000 / 6.9 u | 1.000 / **4.1 u** |
+  | 6 separable blobs | 0.967 / 15.1 u | **0.989** / 17.9 u |
+
+  Equal or better accuracy everywhere, with a third of the units on Iris, and no
+  runtime cost. `growth_init="random"` restores the old behaviour.
+
+- **`GALNetwork(growth_policy="validation")`**, opt-in. Holds out
+  `validation_fraction`, leaves the architecture alone while validation loss is
+  still improving by more than `tol`, and when it stalls tries removing the
+  least useful unit before adding one. Stops after `patience` changes that fail
+  to pay off, restoring the best epoch. It reaches far smaller networks and wins
+  where capacity is not the constraint (Breast Cancer 0.977 with 3.9 units
+  against 0.975 with 2.0), but under-grows where it is (6 blobs 0.733 against
+  0.989), so it is not the default.
+
+- **`SoftDecisionTree.fit(X, y, sample_weight=...)` and `class_weight`**
+  (`None`, `"balanced"`, or a dict). They combine multiplicatively and are
+  normalized to mean 1, so `learning_rate` and `penalty_coef` keep their
+  meaning. On a 600-sample problem where one class holds 6%,
+  `class_weight="balanced"` lifts recall on that class from 0.500 to 0.976 while
+  accuracy moves 0.962 to 0.957.
+
+### Fixed
+
+- **HMoE predictions no longer depend on row order.** Rows are independent, but
+  BLAS blocks differently for different memory layouts, so in float32 the same
+  sample scored inside a reordered batch came out up to 1.2e-07 different, and a
+  borderline argmax could flip with it. Prediction runs in float64, putting that
+  at 2.2e-16. Training stays float32.
+- **NaN in the GAL candidate objective.** It clamped after the square root,
+  leaving `sqrt(0)` in the graph. Its gradient is infinite, so a candidate whose
+  sigmoid saturated into a constant activation returned NaN and took every later
+  candidate's score with it, leaving growth with no unit to install.
+- GAL prunes on **contribution**, the spread of a unit's activation scaled by
+  the size of its outgoing weights, rather than activation variance alone.
+  Variance says nothing about whether a unit matters: a nearly constant unit
+  with large outgoing weights still shifts every logit.
+
+### Changed
+
+- All seven classifiers pass `sklearn.utils.estimator_checks.check_estimator`.
+  `SoftDecisionTree` is at 62 of 63: declaring `sample_weight` activates the
+  weight checks, and
+  `check_sample_weight_equivalence_on_dense_data` demands that weighting a row
+  be bit-identical to repeating it, which no stochastic mini-batch learner can
+  satisfy. The loss equivalence that does hold is tested directly.
+- Python support is 3.9 to 3.13, all tested in CI. The package previously
+  claimed 3.8, which was never exercised and reached end of life in 2024.
+- Packaging moved to `pyproject.toml`, and `ruff` runs in CI, both contributed
+  by @yunaremaia.
+- Test suite: 135 to 156.
+
 ## [0.3.0] - 2026-09-07
 
 Every model in the library now works and is tested. Two of them did not learn
