@@ -190,3 +190,98 @@ def test_pruning_uses_contribution_not_bare_variance():
     # Contribution is the spread scaled by outgoing weight, so it differs from
     # the bare spread whenever the outgoing weights are not all equal.
     assert not torch.allclose(contributions, activations.std(dim=0))
+
+
+def test_residual_growth_does_not_disturb_the_network():
+    """
+    A residual-fitted unit enters with zero outgoing weights, so the network
+    computes exactly the same function the moment it grows. A random unit
+    perturbs every logit on arrival.
+    """
+    import torch
+
+    X, y = load_iris(return_X_y=True)
+    gal = GALNetwork(max_epochs=10, random_state=0).fit(X, y)
+    X_t = torch.FloatTensor(X)
+    y_t = torch.LongTensor(gal.le_.transform(y))
+
+    before = gal.model_(X_t).detach()
+    residual_grown = gal._grown(gal.model_, 3, torch.device("cpu"), X_t, y_t)
+    random_gal = GALNetwork(growth_init="random", max_epochs=10, random_state=0).fit(X, y)
+    random_grown = random_gal._grown(random_gal.model_, 3, torch.device("cpu"), X_t, y_t)
+
+    assert residual_grown[0].weight.shape[0] == gal.model_[0].weight.shape[0] + 1
+    torch.testing.assert_close(residual_grown(X_t).detach(), before)
+    assert not torch.allclose(random_grown(X_t).detach(), random_gal.model_(X_t).detach())
+
+
+def test_candidate_correlates_with_the_residual_better_than_a_random_unit():
+    """The candidate is fitted to what the network still gets wrong, so it
+    should explain more of the residual than an arbitrary unit does."""
+    import torch
+
+    X, y = load_iris(return_X_y=True)
+    gal = GALNetwork(max_epochs=20, random_state=0).fit(X, y)
+    X_t = torch.FloatTensor(X)
+    y_t = torch.LongTensor(gal.le_.transform(y))
+    residual = gal._residual(gal.model_, X_t, y_t, 3)
+
+    _, _, fitted_score = gal._train_candidate(X_t, residual, torch.device("cpu"))
+
+    torch.manual_seed(0)
+    random_unit = torch.nn.Linear(X.shape[1], 1)
+    with torch.no_grad():
+        activation = torch.sigmoid(random_unit(X_t)).squeeze(-1)
+        centered = activation - activation.mean()
+        covariance = (centered.unsqueeze(1) * residual).sum(dim=0).abs().sum()
+        random_score = (covariance / centered.pow(2).sum().sqrt().clamp_min(1e-8)).item()
+
+    assert np.isfinite(fitted_score)
+    assert fitted_score > random_score
+
+
+def test_residual_growth_reaches_a_smaller_network_on_iris():
+    """
+    The headline of fitting units to the residual: the same or better accuracy
+    from far fewer units, because each one arrives already useful.
+    """
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_iris(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+
+    residual = GALNetwork(max_epochs=150, growth_init="residual", random_state=0).fit(X, y)
+    random_init = GALNetwork(max_epochs=150, growth_init="random", random_state=0).fit(X, y)
+
+    assert residual.n_hidden_final_ < random_init.n_hidden_final_
+    assert residual.score(X, y) >= random_init.score(X, y)
+    assert np.isfinite(residual.last_candidate_score_)
+
+
+def test_growth_init_is_validated():
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="growth_init must be"):
+        GALNetwork(growth_init="bogus").fit(X, y)
+
+
+def test_saturated_candidate_does_not_poison_growth():
+    """
+    Regression test: the correlation objective divides by the norm of the
+    centred activation. Clamping after the square root left sqrt(0) in the
+    graph, whose gradient is infinite, so a candidate that saturated into a
+    constant activation returned NaN and took every later candidate with it,
+    leaving growth with no unit to install.
+    """
+    import torch
+
+    gal = GALNetwork(random_state=0)
+    gal.n_features_in_ = 2
+    # Inputs far enough out that the sigmoid saturates to a constant.
+    X_t = torch.full((32, 2), 1e6)
+    residual = torch.randn(32, 3)
+
+    weight, bias, score = gal._train_candidate(X_t, residual, torch.device("cpu"))
+
+    assert weight is not None and bias is not None
+    assert torch.isfinite(weight).all() and torch.isfinite(bias).all()
+    assert np.isfinite(score)
