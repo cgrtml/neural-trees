@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "neural-trees: soft decision trees, hierarchical mixture of experts and statistical model comparison for Python"
+authors:
+  - family-names: Temel
+    given-names: Cagri
+    orcid: "https://orcid.org/0009-0003-3359-6939"
+repository-code: "https://github.com/cgrtml/neural-trees"
+abstract: "A scikit-learn compatible library implementing soft decision trees, hierarchical mixture of experts and the combined 5x2cv F test, with a PyTorch backend."
+version: "0.2.0"
+date-released: 2026-09-09
+license: MIT
+keywords:
+  - soft decision trees
+  - mixture of experts
+  - interpretable machine learning
+  - model comparison
+  - pytorch
