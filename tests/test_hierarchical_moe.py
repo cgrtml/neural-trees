@@ -189,3 +189,39 @@ def test_pipeline_and_clone_compatible():
     pipe.fit(X, y)
     assert 0.0 <= pipe.score(X, y) <= 1.0
     assert clone(pipe).named_steps["moe"].get_params()["depth"] == 1
+
+
+def test_predictions_do_not_depend_on_row_order(wine_split):
+    """
+    Rows are independent, but BLAS blocks differently for different memory
+    layouts, so in float32 the same sample scored inside a reordered batch came
+    out up to 1.2e-07 different, and a borderline argmax could flip with it.
+    """
+    X_train, X_test, y_train, _ = wine_split
+    moe = HierarchicalMixtureOfExperts(depth=2, max_epochs=30, random_state=0).fit(
+        X_train, y_train
+    )
+
+    forward = moe.predict_proba(X_test)
+    reversed_back = moe.predict_proba(X_test[::-1])[::-1]
+    np.testing.assert_allclose(forward, reversed_back, rtol=1e-9, atol=1e-12)
+    assert np.array_equal(moe.predict(X_test), moe.predict(X_test[::-1])[::-1])
+
+    shuffle = np.random.RandomState(0).permutation(len(X_test))
+    inverse = np.argsort(shuffle)
+    np.testing.assert_allclose(
+        forward, moe.predict_proba(X_test[shuffle])[inverse], rtol=1e-9, atol=1e-12
+    )
+
+
+def test_refitting_rebuilds_the_prediction_model(wine_split):
+    """The cached float64 copy must not survive a refit."""
+    X_train, _, y_train, _ = wine_split
+    moe = HierarchicalMixtureOfExperts(depth=2, max_epochs=5, random_state=0)
+
+    moe.fit(X_train, y_train)
+    first = moe.predict_proba(X_train[:10])
+    moe.fit(X_train, y_train[::-1])
+    second = moe.predict_proba(X_train[:10])
+
+    assert not np.allclose(first, second)

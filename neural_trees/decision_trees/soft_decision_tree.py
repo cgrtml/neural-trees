@@ -38,8 +38,14 @@ from typing import List, Optional
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import (
+    _check_sample_weight,
+    check_array,
+    check_is_fitted,
+    check_X_y,
+)
 from torch.utils.data import DataLoader, TensorDataset
 
 from neural_trees._validation import check_predict_input
@@ -208,6 +214,11 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         Whether to print training progress.
     random_state : int or None, default=None
         Seed for model initialization and shuffled mini-batches.
+    class_weight : dict, "balanced" or None, default=None
+        Weights per class, combined multiplicatively with `sample_weight`.
+        `"balanced"` uses `n_samples / (n_classes * bincount(y))`, which is what
+        an imbalanced target usually needs: without it a rare class contributes
+        so little to the loss that the tree can ignore it entirely.
     learn_temperature : bool, default=False
         Learn a per-node inverse temperature on the gate, so a node can sharpen
         its split instead of saturating in the flat part of the sigmoid
@@ -263,6 +274,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         device: str = "cpu",
         verbose: bool = False,
         random_state: Optional[int] = None,
+        class_weight=None,
         learn_temperature: bool = False,
         early_stopping: bool = False,
         validation_fraction: float = 0.1,
@@ -276,12 +288,13 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.device = device
         self.verbose = verbose
         self.random_state = random_state
+        self.class_weight = class_weight
         self.learn_temperature = learn_temperature
         self.early_stopping = early_stopping
         self.validation_fraction = validation_fraction
         self.n_iter_no_change = n_iter_no_change
 
-    def fit(self, X, y):
+    def fit(self, X, y, sample_weight=None):
         """
         Fit the Soft Decision Tree.
 
@@ -289,6 +302,19 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         ----------
         X : array-like of shape (n_samples, n_features)
         y : array-like of shape (n_samples,)
+        sample_weight : array-like of shape (n_samples,), default=None
+            Per-sample weights applied to the loss. Combined multiplicatively
+            with `class_weight` when both are given. The entropy penalty is
+            left unweighted: it regularizes the shape of the tree, not the fit
+            to any particular sample.
+
+            Weighting a sample by k gives the same loss and the same gradient
+            as repeating it k times, but not bit-for-bit the same *fit*: the
+            repeated dataset is larger, so mini-batches are composed
+            differently and the optimizer follows a different path. This is why
+            `check_sample_weight_equivalence_on_dense_data` is the one
+            estimator check this class does not pass (62 of 63), and it is not
+            satisfiable by any stochastic mini-batch learner.
 
         Returns
         -------
@@ -305,10 +331,20 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.n_features_in_ = X.shape[1]
         n_classes = len(self.classes_)
 
+        weights = _check_sample_weight(sample_weight, X, dtype=np.float64)
+        if self.class_weight is not None:
+            class_weights = compute_class_weight(
+                self.class_weight, classes=np.arange(n_classes), y=y_enc
+            )
+            weights = weights * class_weights[y_enc]
+        # Normalizing to mean 1 keeps the loss on the same scale as the
+        # unweighted fit, so learning_rate and penalty_coef keep their meaning.
+        weights = weights * (len(weights) / weights.sum())
+
         if self.random_state is not None:
             torch.manual_seed(self.random_state)
 
-        X_fit, y_fit = X, y_enc
+        X_fit, y_fit, w_fit = X, y_enc, weights
         X_val = y_val = None
         if self.early_stopping:
             if not 0.0 < self.validation_fraction < 1.0:
@@ -317,9 +353,10 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                     f"{self.validation_fraction!r}"
                 )
             stratify = y_enc if np.bincount(y_enc).min() >= 2 else None
-            X_fit, X_val, y_fit, y_val = train_test_split(
+            X_fit, X_val, y_fit, y_val, w_fit, _ = train_test_split(
                 X,
                 y_enc,
+                weights,
                 test_size=self.validation_fraction,
                 random_state=self.random_state,
                 stratify=stratify,
@@ -328,6 +365,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         device = torch.device(self.device)
         X_t = torch.FloatTensor(X_fit).to(device)
         y_t = torch.LongTensor(y_fit).to(device)
+        w_t = torch.FloatTensor(w_fit).to(device)
 
         self.model_ = _SoftTreeModule(
             n_features=self.n_features_in_,
@@ -338,7 +376,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         ).to(device)
 
         optimizer = torch.optim.Adam(self.model_.parameters(), lr=self.learning_rate)
-        dataset = TensorDataset(X_t, y_t)
+        dataset = TensorDataset(X_t, y_t, w_t)
         generator = None
         if self.random_state is not None:
             generator = torch.Generator()
@@ -365,10 +403,11 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             correct = 0
             total = 0
 
-            for X_batch, y_batch in loader:
+            for X_batch, y_batch, w_batch in loader:
                 optimizer.zero_grad()
                 log_probs = self.model_.log_forward(X_batch)
-                loss = F.nll_loss(log_probs, y_batch)
+                per_sample = F.nll_loss(log_probs, y_batch, reduction="none")
+                loss = (per_sample * w_batch).sum() / w_batch.sum().clamp_min(1e-12)
                 penalty = self.model_.penalty(X_batch)
                 total_loss = loss + penalty
                 total_loss.backward()
