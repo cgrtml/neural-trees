@@ -34,6 +34,8 @@ Architecture (depth=2, branching=2):
          E1  E2   E3  E4    (Expert leaves)
 """
 
+import copy
+
 import numpy as np
 
 try:
@@ -364,16 +366,34 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
             if self.verbose and (epoch + 1) % 10 == 0:
                 print(f"Epoch {epoch+1}/{self.max_epochs}  loss={avg_loss:.4f}  acc={acc:.4f}")
 
+        # Built here rather than lazily in predict_proba: an estimator must not
+        # mutate its own __dict__ while predicting.
+        self.model_double_ = copy.deepcopy(self.model_).to(device).double()
+        self.model_double_.eval()
         return self
 
     def predict_proba(self, X):
+        """
+        Predict class probabilities, shape (n_samples, n_classes).
+
+        The forward pass runs in float64. Rows are independent, but BLAS picks
+        different blocking for different memory layouts, so in float32 the same
+        sample scored inside a reordered batch came out up to 1.2e-07 different
+        and a borderline argmax could flip with it. Doubling the width of the
+        predict-time arithmetic puts that at 2.2e-16, which makes predictions a
+        property of the sample rather than of its position in the batch.
+        Training stays in float32.
+        """
         check_is_fitted(self)
         X = check_predict_input(self, X)
         device = torch.device(self.device)
-        self.model_.eval()
         with torch.no_grad():
-            probs = self.model_(torch.FloatTensor(X).to(device))
-        return probs.cpu().numpy()
+            probs = self.model_double_(
+                torch.from_numpy(np.ascontiguousarray(X, dtype=np.float64)).to(device)
+            )
+        return probs.cpu().numpy().astype(np.float64)
+
+
 
     def predict(self, X):
         check_is_fitted(self)

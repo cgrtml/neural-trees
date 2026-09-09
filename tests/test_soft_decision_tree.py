@@ -214,3 +214,108 @@ def test_learnable_temperature_is_a_trained_parameter():
     plain.fit(X, y)
     assert not plain.model_.log_beta.requires_grad
     np.testing.assert_allclose(plain.model_.log_beta.detach().numpy(), 0.0)
+
+
+def test_uniform_sample_weight_matches_the_unweighted_fit():
+    X, y = load_iris(return_X_y=True)
+    plain = SoftDecisionTree(depth=3, max_epochs=20, random_state=0).fit(X, y)
+    weighted = SoftDecisionTree(depth=3, max_epochs=20, random_state=0).fit(
+        X, y, sample_weight=np.full(len(X), 3.0)
+    )
+
+    np.testing.assert_allclose(
+        plain.predict_proba(X), weighted.predict_proba(X), rtol=1e-5, atol=1e-6
+    )
+
+
+def test_weighting_a_row_equals_duplicating_it_in_the_loss():
+    """
+    The mathematical claim behind sample_weight, tested on the loss itself
+    rather than on two training runs, which would differ by batch composition
+    alone.
+    """
+    import torch
+    import torch.nn.functional as F
+
+    X, y = load_iris(return_X_y=True)
+    model = SoftDecisionTree(depth=3, max_epochs=5, random_state=0).fit(X, y)
+
+    weights = np.ones(len(X))
+    weights[:20] = 2.0
+    duplicated_X = np.vstack([X, X[:20]])
+    duplicated_y = np.concatenate([y, y[:20]])
+
+    with torch.no_grad():
+        per_sample = F.nll_loss(
+            model.model_.log_forward(torch.FloatTensor(X)),
+            torch.LongTensor(y),
+            reduction="none",
+        )
+        w = torch.FloatTensor(weights)
+        weighted_loss = (per_sample * w).sum() / w.sum()
+
+        duplicated_loss = F.nll_loss(
+            model.model_.log_forward(torch.FloatTensor(duplicated_X)),
+            torch.LongTensor(duplicated_y),
+        )
+
+    torch.testing.assert_close(weighted_loss, duplicated_loss, rtol=1e-5, atol=1e-6)
+
+
+def test_zero_weight_removes_a_class():
+    X, y = load_iris(return_X_y=True)
+    weights = np.where(y == 2, 0.0, 1.0)
+
+    sdt = SoftDecisionTree(depth=3, max_epochs=40, random_state=0).fit(
+        X, y, sample_weight=weights
+    )
+
+    # Class 2 remains a known label, but nothing should ever be predicted into it.
+    assert list(sdt.classes_) == [0, 1, 2]
+    assert 2 not in set(sdt.predict(X))
+
+
+def test_class_weight_balanced_lifts_minority_recall():
+    """
+    Without reweighting, a class holding 7% of the samples contributes too
+    little loss to matter and the tree half ignores it, while overall accuracy
+    stays high enough to hide that.
+    """
+    from sklearn.datasets import make_classification
+    from sklearn.metrics import recall_score
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = make_classification(
+        n_samples=600, n_features=10, n_informative=4, n_redundant=0,
+        weights=[0.94, 0.06], flip_y=0.02, class_sep=0.7, random_state=0,
+    )
+    X = StandardScaler().fit_transform(X)
+
+    plain = SoftDecisionTree(depth=4, max_epochs=60, random_state=0).fit(X, y)
+    balanced = SoftDecisionTree(
+        depth=4, max_epochs=60, random_state=0, class_weight="balanced"
+    ).fit(X, y)
+
+    plain_recall = recall_score(y, plain.predict(X), pos_label=1)
+    balanced_recall = recall_score(y, balanced.predict(X), pos_label=1)
+
+    assert balanced_recall > plain_recall + 0.2
+    # And it should not pay for that with a collapse in overall accuracy.
+    assert balanced.score(X, y) > plain.score(X, y) - 0.05
+
+
+def test_sample_weight_survives_early_stopping():
+    X, y = load_iris(return_X_y=True)
+    sdt = SoftDecisionTree(
+        depth=3, max_epochs=40, early_stopping=True, validation_fraction=0.2,
+        random_state=0,
+    ).fit(X, y, sample_weight=np.linspace(0.5, 1.5, len(X)))
+
+    assert sdt.n_iter_ >= 1
+    assert sdt.score(X, y) > 0.7
+
+
+def test_sample_weight_length_is_validated():
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError):
+        SoftDecisionTree(depth=2, max_epochs=2).fit(X, y, sample_weight=np.ones(5))
