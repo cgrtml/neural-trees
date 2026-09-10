@@ -52,8 +52,14 @@ from typing import List, Optional
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import (
+    _check_sample_weight,
+    check_array,
+    check_is_fitted,
+    check_X_y,
+)
 from torch.utils.data import DataLoader, TensorDataset
 
 from neural_trees._validation import check_predict_input, resolve_device
@@ -256,6 +262,10 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
     verbose : bool, default=False
     random_state : int or None, default=None
         Seed for weight initialization and shuffled mini-batches.
+    class_weight : dict, "balanced" or None, default=None
+        Weights per class, combined multiplicatively with `sample_weight`.
+        `"balanced"` uses `n_samples / (n_classes * bincount(y))`. Without it a
+        rare class contributes so little loss that the model can ignore it.
 
     Examples
     --------
@@ -287,6 +297,7 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         device: str = "cpu",
         verbose: bool = False,
         random_state: Optional[int] = None,
+        class_weight=None,
     ):
         self.depth = depth
         self.branching_factor = branching_factor
@@ -300,8 +311,9 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         self.device = device
         self.verbose = verbose
         self.random_state = random_state
+        self.class_weight = class_weight
 
-    def fit(self, X, y) -> "HierarchicalMixtureOfExperts":
+    def fit(self, X, y, sample_weight=None) -> "HierarchicalMixtureOfExperts":
         if self.dropout_type not in ("subtree", "activation"):
             raise ValueError(
                 "dropout_type must be 'subtree' or 'activation', got "
@@ -316,9 +328,20 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         self.classes_ = self.le_.classes_
         self.n_features_in_ = X.shape[1]
 
+        weights = _check_sample_weight(sample_weight, X, dtype=np.float64)
+        if self.class_weight is not None:
+            class_weights = compute_class_weight(
+                self.class_weight, classes=np.arange(len(self.classes_)), y=y_enc
+            )
+            weights = weights * class_weights[y_enc]
+        # Normalizing to mean 1 keeps the loss on the same scale as the
+        # unweighted fit, so learning_rate keeps its meaning.
+        weights = weights * (len(weights) / weights.sum())
+
         device = self.device_ = resolve_device(self.device)
         X_t = torch.FloatTensor(X).to(device)
         y_t = torch.LongTensor(y_enc).to(device)
+        w_t = torch.FloatTensor(weights).to(device)
 
         self.model_ = _HMoEModule(
             n_features=self.n_features_in_,
@@ -337,7 +360,7 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
             generator = torch.Generator()
             generator.manual_seed(self.random_state)
         loader = DataLoader(
-            TensorDataset(X_t, y_t),
+            TensorDataset(X_t, y_t, w_t),
             batch_size=self.batch_size,
             shuffle=True,
             generator=generator,
@@ -351,10 +374,11 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
             correct = 0
             total = 0
 
-            for X_b, y_b in loader:
+            for X_b, y_b, w_b in loader:
                 optimizer.zero_grad()
                 log_probs = self.model_.log_forward(X_b)
-                loss = F.nll_loss(log_probs, y_b)
+                per_sample = F.nll_loss(log_probs, y_b, reduction="none")
+                loss = (per_sample * w_b).sum() / w_b.sum().clamp_min(1e-12)
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item() * X_b.size(0)
