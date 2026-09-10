@@ -126,6 +126,7 @@ references as the lineage of an idea, not as a claim of exact reproduction.
 |-----------|-----------|
 | **Soft Decision Trees** | İrsoy, Yıldız, Alpaydın (ICPR 2012) |
 | **Hard export of a soft tree** | `to_hard_tree()`, this library |
+| **Hard routing export of a mixture** | `to_hard_router()`, this library |
 | **Multivariate Decision Trees** | Alpaydın & Çetin (1995), Yıldız & Alpaydın (IEEE TNN 2001) |
 | **Omnivariate Decision Trees** | Yıldız & Alpaydın (IEEE TNN 2001) |
 | **Hierarchical Mixture of Experts with subtree dropout** | İrsoy & Alpaydın (Neurocomputing 2021) |
@@ -240,6 +241,8 @@ neural-trees is not the right tool for every problem:
   `SoftDecisionTree.to_hard_tree()` exports the learned gates as a plain numpy
   model that predicts about 5x faster and prints its rules, at the cost of
   reading each gate as a hard decision rather than a soft one.
+  `HierarchicalMixtureOfExperts.to_hard_router()` does the same for the
+  mixture, evaluating one expert instead of all of them.
 - **Very large sample counts.** Training is full-batch gradient descent over
   epochs, not an optimized tree-growing routine like CART. Millions of rows
   will be slow on CPU.

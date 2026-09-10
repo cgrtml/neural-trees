@@ -16,6 +16,7 @@ from neural_trees.decision_trees.hard_tree import HardDecisionTree
 from neural_trees.decision_trees.multivariate_tree import MultivariateDecisionTree
 from neural_trees.decision_trees.omnivariate_tree import OmnivariateDecisionTree
 from neural_trees.decision_trees.soft_decision_tree import SoftDecisionTree
+from neural_trees.mixture_of_experts.hard_router import HardRoutedExperts
 from neural_trees.mixture_of_experts.hierarchical_moe import (
     HierarchicalMixtureOfExperts,
 )
@@ -28,6 +29,7 @@ from neural_trees.statistical_tests.classifier_comparison import (
 __all__ = [
     "GALNetwork",
     "HardDecisionTree",
+    "HardRoutedExperts",
     "HierarchicalMixtureOfExperts",
     "MultivariateDecisionTree",
     "NaiveBayesClassifier",

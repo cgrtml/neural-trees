@@ -1,1 +1,2 @@
+from .hard_router import HardRoutedExperts
 from .hierarchical_moe import HierarchicalMixtureOfExperts

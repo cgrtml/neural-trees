@@ -63,6 +63,7 @@ from sklearn.utils.validation import (
 from torch.utils.data import DataLoader, TensorDataset
 
 from neural_trees._validation import check_predict_input, resolve_device
+from neural_trees.mixture_of_experts.hard_router import HardRoutedExperts
 
 
 class _StackedMLP(nn.Module):
@@ -427,6 +428,44 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         return probs.numpy().astype(np.float64)
 
 
+
+    def to_hard_router(self) -> "HardRoutedExperts":
+        """
+        Export the trained mixture with its gates read as hard routing.
+
+        A trained mixture evaluates every expert for every sample and blends
+        them, so one prediction costs `branching_factor^depth` expert forward
+        passes. Each gating node has a preferred child for any given input;
+        taking that preference as a decision sends a sample down one path to
+        one expert, in numpy.
+
+        This is a different model, not a re-encoding: a blend of experts is not
+        one expert, and the two disagree where the gating was undecided.
+        Measure the agreement on held-out data before relying on it.
+
+        Returns
+        -------
+        HardRoutedExperts
+        """
+        check_is_fitted(self)
+
+        def unpack(bank, index):
+            return (
+                bank.weight_in[index].detach().cpu().numpy().astype(np.float64),
+                bank.bias_in[index].detach().cpu().numpy().astype(np.float64),
+                bank.weight_out[index].detach().cpu().numpy().astype(np.float64),
+                bank.bias_out[index].detach().cpu().numpy().astype(np.float64),
+            )
+
+        module = self.model_
+        return HardRoutedExperts(
+            gate_weights=[unpack(module.gates, i) for i in range(module.n_gates)],
+            expert_weights=[unpack(module.experts, i) for i in range(module.n_experts)],
+            classes=self.classes_,
+            n_features_in=self.n_features_in_,
+            depth=self.depth,
+            branching_factor=self.branching_factor,
+        )
 
     def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
