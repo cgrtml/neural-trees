@@ -35,6 +35,7 @@ Architecture (depth=2, branching=2):
 """
 
 import copy
+import math
 
 import numpy as np
 
@@ -58,44 +59,57 @@ from torch.utils.data import DataLoader, TensorDataset
 from neural_trees._validation import check_predict_input
 
 
-class _GatingNetwork(nn.Module):
-    """Gating network that outputs a soft probability distribution over children."""
+class _StackedMLP(nn.Module):
+    """
+    A bank of identically shaped two-layer MLPs evaluated in one pass.
 
-    def __init__(self, n_features: int, n_children: int, hidden_size: int, activation_dropout: float):
+    A tree of depth 3 with branching factor 4 holds 21 gating networks and 64
+    experts. Running them as a ModuleList means 170 small matmuls per forward,
+    each too small to keep a CPU busy. Stacking the weights into
+    (n_networks, out, in) tensors turns that into two batched matmuls.
+    """
+
+    def __init__(self, n_networks: int, n_in: int, n_hidden: int, n_out: int, activation):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(n_features, hidden_size),
-            nn.Tanh(),
-            nn.Dropout(p=activation_dropout),
-            nn.Linear(hidden_size, n_children),
-        )
+        self.activation = activation
+        self.weight_in = nn.Parameter(torch.empty(n_networks, n_hidden, n_in))
+        self.bias_in = nn.Parameter(torch.empty(n_networks, n_hidden))
+        self.weight_out = nn.Parameter(torch.empty(n_networks, n_out, n_hidden))
+        self.bias_out = nn.Parameter(torch.empty(n_networks, n_out))
+        self._reset_parameters(n_in, n_hidden)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Returns softmax probabilities over children."""
-        return F.softmax(self.net(x), dim=-1)
+    def _reset_parameters(self, n_in: int, n_hidden: int):
+        """Initialize every slice the way nn.Linear would initialize itself."""
+        for weight, bias, fan_in in (
+            (self.weight_in, self.bias_in, n_in),
+            (self.weight_out, self.bias_out, n_hidden),
+        ):
+            for i in range(weight.shape[0]):
+                nn.init.kaiming_uniform_(weight[i], a=math.sqrt(5))
+            bound = 1.0 / math.sqrt(fan_in)
+            nn.init.uniform_(bias, -bound, bound)
 
-
-class _ExpertNetwork(nn.Module):
-    """Leaf expert network that maps input to class probabilities."""
-
-    def __init__(self, n_features: int, n_classes: int, hidden_size: int):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(n_features, hidden_size),
-            nn.ReLU(),
-            nn.Linear(hidden_size, n_classes),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return F.softmax(self.net(x), dim=-1)
+    def forward(self, x: torch.Tensor, dropout: float = 0.0) -> torch.Tensor:
+        """
+        Returns the logits of every network, shape (batch, n_networks, n_out).
+        """
+        hidden = self.activation(torch.einsum("bf,nhf->bnh", x, self.weight_in) + self.bias_in)
+        if dropout > 0.0 and self.training:
+            hidden = F.dropout(hidden, p=dropout, training=True)
+        return torch.einsum("bnh,noh->bno", hidden, self.weight_out) + self.bias_out
 
 
 class _HMoEModule(nn.Module):
     """
     Hierarchical Mixture of Experts PyTorch module.
 
-    Creates a complete binary tree of depth `depth` with `branching_factor`
+    Creates a complete b-ary tree of depth `depth` with `branching_factor`
     children per gate. Leaves are experts.
+
+    Gates and experts are each evaluated as one stacked bank rather than node
+    by node, and mixing weights are accumulated in log space: a leaf at depth d
+    is reached with probability on the order of b^-d, which underflows float32
+    as the tree grows.
     """
 
     def __init__(
@@ -113,105 +127,90 @@ class _HMoEModule(nn.Module):
         self.depth = depth
         self.branching_factor = branching_factor
         self.n_experts = branching_factor ** depth
+        self.n_gates = sum(branching_factor ** d for d in range(depth))
         self.dropout_rate = dropout_rate
         self.dropout_type = dropout_type
 
-        # Compute number of gating nodes (internal nodes in a complete b-ary tree)
-        n_gates = sum(branching_factor ** d for d in range(depth))
+        self.gates = _StackedMLP(
+            self.n_gates, n_features, gate_hidden, branching_factor, torch.tanh
+        )
+        self.experts = _StackedMLP(
+            self.n_experts, n_features, expert_hidden, n_classes, torch.relu
+        )
 
-        # Subtree dropout acts on the gate's output distribution, so the
-        # gating network itself carries no activation dropout in that mode.
-        activation_dropout = dropout_rate if dropout_type == "activation" else 0.0
-        self.gates = nn.ModuleList([
-            _GatingNetwork(n_features, branching_factor, gate_hidden, activation_dropout)
-            for _ in range(n_gates)
-        ])
-        self.experts = nn.ModuleList([
-            _ExpertNetwork(n_features, n_classes, expert_hidden)
-            for _ in range(self.n_experts)
-        ])
-
-    def _drop_subtrees(self, gate_out: torch.Tensor) -> torch.Tensor:
+    def _log_gate_probabilities(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Subtree dropout from Irsoy & Alpaydin (2021).
+        Log P(child | x) for every gating node, shape (batch, n_gates, b).
 
-        With probability `dropout_rate`, a gating node drops one of its
-        children for that sample: the child's branch receives no probability
-        mass and the remaining children are renormalized, so the whole subtree
-        below it is switched off for that training step. The gate output stays
-        a distribution, which is why no test-time rescaling is needed; at
-        evaluation the full soft mixture is used.
-
-        This is the tree-structured analogue of dropping hidden units, and it
-        is not the same as putting `nn.Dropout` on the gating network's hidden
-        activations, which perturbs the gate but never removes a branch.
+        Subtree dropout is applied here, in log space: a dropped child gets
+        -inf and the row is renormalized with logsumexp, which is exact and
+        keeps the result a proper distribution.
         """
-        if not self.training or self.dropout_rate <= 0.0 or self.dropout_type != "subtree":
-            return gate_out
+        activation_dropout = self.dropout_rate if self.dropout_type == "activation" else 0.0
+        logits = self.gates(x, dropout=activation_dropout)
+        log_probs = F.log_softmax(logits, dim=-1)
 
-        batch_size, n_children = gate_out.shape
-        if n_children < 2:
-            return gate_out
+        subtree_dropout = (
+            self.training
+            and self.dropout_rate > 0.0
+            and self.dropout_type == "subtree"
+            and self.branching_factor > 1
+        )
+        if not subtree_dropout:
+            return log_probs
 
-        drop = torch.rand(batch_size, device=gate_out.device) < self.dropout_rate
-        victim = torch.randint(0, n_children, (batch_size,), device=gate_out.device)
-        keep_mask = torch.ones_like(gate_out)
-        keep_mask[torch.arange(batch_size, device=gate_out.device), victim] = 0.0
-        keep_mask = torch.where(drop.unsqueeze(1), keep_mask, torch.ones_like(gate_out))
+        batch, n_gates, n_children = log_probs.shape
+        drop = torch.rand(batch, n_gates, device=x.device) < self.dropout_rate
+        victim = torch.randint(0, n_children, (batch, n_gates), device=x.device)
+        penalty = torch.zeros_like(log_probs).scatter_(
+            2, victim.unsqueeze(2), float("-inf")
+        )
+        dropped = torch.where(drop.unsqueeze(2), log_probs + penalty, log_probs)
+        return dropped - torch.logsumexp(dropped, dim=2, keepdim=True)
 
-        dropped = gate_out * keep_mask
-        # A gate that put all of its mass on the dropped child would leave a
-        # zero row; fall back to the untouched distribution there.
-        total = dropped.sum(dim=1, keepdim=True)
-        return torch.where(total > 1e-12, dropped / total.clamp_min(1e-12), gate_out)
+    def _log_leaf_weights(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Log mixing weight of every expert, shape (batch, n_experts).
+
+        Walks the tree level by level. The children of the i-th node at one
+        level occupy positions i*b to i*b+b-1 at the next, which is exactly what
+        the reshape below produces.
+        """
+        log_gates = self._log_gate_probabilities(x)
+        b = self.branching_factor
+        log_mu = torch.zeros(x.size(0), 1, device=x.device)
+
+        start = 0
+        for level in range(self.depth):
+            width = b ** level
+            level_gates = log_gates[:, start:start + width, :]
+            log_mu = (log_mu.unsqueeze(2) + level_gates).reshape(x.size(0), width * b)
+            start += width
+
+        return log_mu
 
     def _compute_leaf_weights(self, x: torch.Tensor) -> torch.Tensor:
+        """Mixing weights over experts, shape (batch, n_experts)."""
+        return self._log_leaf_weights(x).exp()
+
+    def log_forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Compute mixing weights for each expert (leaf) using a top-down pass.
+        log P(y | x) = logsumexp_e [ log g_e(x) + log P_e(y | x) ].
 
-        Returns:
-            Tensor of shape (batch_size, n_experts)
+        Returns a tensor of shape (batch_size, n_classes).
         """
-        batch_size = x.size(0)
-        b = self.branching_factor
-        n_gates = len(self.gates)
-        n_nodes = n_gates + self.n_experts
-
-        # Node weights are kept in a list rather than written into a single
-        # preallocated tensor: in-place index assignment bumps the version of
-        # the shared storage that autograd saved for the multiplication
-        # backward pass, which makes loss.backward() raise.
-        node_weights = [None] * n_nodes
-        node_weights[0] = torch.ones(batch_size, device=x.device)
-
-        for gate_idx in range(n_gates):
-            gate_out = self._drop_subtrees(self.gates[gate_idx](x))  # (batch, b)
-            parent_weight = node_weights[gate_idx]
-            for child in range(b):
-                child_idx = b * gate_idx + child + 1
-                if child_idx < n_nodes:
-                    node_weights[child_idx] = parent_weight * gate_out[:, child]
-
-        leaf_weights = [
-            w if w is not None else torch.zeros(batch_size, device=x.device)
-            for w in node_weights[n_gates:]
-        ]
-        return torch.stack(leaf_weights, dim=1)  # (batch, n_experts)
+        log_leaf_weights = self._log_leaf_weights(x)
+        log_expert_probs = F.log_softmax(self.experts(x), dim=-1)
+        return torch.logsumexp(log_leaf_weights.unsqueeze(2) + log_expert_probs, dim=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Compute mixture output: P(y|x) = Σ_e g_e(x) · P_e(y|x)
+        Compute mixture output: P(y|x) = sum_e g_e(x) P_e(y|x)
 
         Returns:
-            Tensor of shape (batch_size, n_classes)
+            Tensor of shape (batch_size, n_classes).
         """
-        leaf_weights = self._compute_leaf_weights(x)  # (batch, n_experts)
-        expert_outputs = torch.stack(
-            [expert(x) for expert in self.experts], dim=1
-        )  # (batch, n_experts, n_classes)
-
-        output = (leaf_weights.unsqueeze(-1) * expert_outputs).sum(dim=1)
-        return output  # (batch, n_classes)
+        return self.log_forward(x).exp()
 
 
 class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
@@ -351,12 +350,12 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
 
             for X_b, y_b in loader:
                 optimizer.zero_grad()
-                probs = self.model_(X_b)
-                loss = F.nll_loss(torch.log(probs.clamp(1e-7)), y_b)
+                log_probs = self.model_.log_forward(X_b)
+                loss = F.nll_loss(log_probs, y_b)
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item() * X_b.size(0)
-                correct += (probs.argmax(1) == y_b).sum().item()
+                correct += (log_probs.argmax(1) == y_b).sum().item()
                 total += X_b.size(0)
 
             avg_loss = total_loss / total
