@@ -106,10 +106,10 @@ def test_subtree_dropout_removes_a_branch():
     batch = torch.FloatTensor(StandardScaler().fit_transform(X)[:32])
     moe.model_.train()
     with torch.no_grad():
-        gate_out = moe.model_._drop_subtrees(moe.model_.gates[0](batch))
+        gate_probs = moe.model_._log_gate_probabilities(batch).exp()
 
-    np.testing.assert_allclose(gate_out.sum(dim=1).numpy(), 1.0, atol=1e-5)
-    assert ((gate_out > 1 - 1e-5) | (gate_out < 1e-5)).all()
+    np.testing.assert_allclose(gate_probs.sum(dim=2).numpy(), 1.0, atol=1e-5)
+    assert ((gate_probs > 1 - 1e-5) | (gate_probs < 1e-5)).all()
 
     # Leaf mixing weights stay a distribution while subtrees are dropped.
     with torch.no_grad():
@@ -127,8 +127,8 @@ def test_activation_dropout_perturbs_but_never_removes_a_branch():
     batch = torch.FloatTensor(StandardScaler().fit_transform(X)[:32])
     moe.model_.train()
     with torch.no_grad():
-        gate_out = moe.model_.gates[0](batch)
-    assert (gate_out > 1e-6).all()
+        gate_probs = moe.model_._log_gate_probabilities(batch).exp()
+    assert (gate_probs > 1e-6).all()
 
 
 def test_dropout_type_is_validated():
@@ -225,3 +225,81 @@ def test_refitting_rebuilds_the_prediction_model(wine_split):
     second = moe.predict_proba(X_train[:10])
 
     assert not np.allclose(first, second)
+
+
+@pytest.mark.parametrize("depth,branching_factor", [(1, 2), (2, 2), (2, 4), (3, 2)])
+def test_leaf_weights_follow_the_tree_layout(depth, branching_factor):
+    """
+    The gates are evaluated as one stacked bank, so the level-by-level walk has
+    to reproduce the tree's child ordering: the children of the i-th node at one
+    level occupy positions i*b to i*b+b-1 at the next.
+    """
+    X, y = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+    moe = HierarchicalMixtureOfExperts(
+        depth=depth, branching_factor=branching_factor, max_epochs=3, random_state=0
+    ).fit(X, y)
+    moe.model_.eval()
+
+    batch = torch.FloatTensor(X[:16])
+    with torch.no_grad():
+        log_gates = moe.model_._log_gate_probabilities(batch)
+        leaf_weights = moe.model_._compute_leaf_weights(batch)
+
+    assert log_gates.shape == (16, moe.model_.n_gates, branching_factor)
+    assert leaf_weights.shape == (16, branching_factor ** depth)
+    np.testing.assert_allclose(leaf_weights.sum(dim=1).numpy(), 1.0, atol=1e-5)
+
+    # Reproduce the walk by hand, node by node, and require the same answer.
+    gates = log_gates.exp().numpy()
+    expected = np.ones((16, 1))
+    start = 0
+    for level in range(depth):
+        width = branching_factor ** level
+        expected = np.concatenate(
+            [expected[:, [i]] * gates[:, start + i, :] for i in range(width)], axis=1
+        )
+        start += width
+    np.testing.assert_allclose(leaf_weights.numpy(), expected, rtol=1e-5, atol=1e-6)
+
+
+def test_log_forward_stays_finite_on_a_deep_tree():
+    """
+    A leaf at depth d is reached with probability on the order of b^-d. The
+    training path accumulates in log space, so it needs no clamp of the kind
+    torch.log(probs.clamp(1e-7)) that silently floors small probabilities.
+    """
+    X, y = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+    moe = HierarchicalMixtureOfExperts(
+        depth=4, branching_factor=3, max_epochs=2, random_state=0
+    ).fit(X, y)
+    moe.model_.eval()
+
+    X_t = torch.FloatTensor(X)
+    log_probs = moe.model_.log_forward(X_t)
+    assert torch.isfinite(log_probs).all()
+    np.testing.assert_allclose(log_probs.exp().sum(dim=1).detach().numpy(), 1.0, atol=1e-4)
+
+    loss = torch.nn.functional.nll_loss(log_probs, torch.LongTensor(y))
+    loss.backward()
+    assert torch.isfinite(moe.model_.gates.weight_in.grad).all()
+    assert moe.model_.gates.weight_in.grad.abs().sum() > 0
+
+
+def test_dropped_subtrees_carry_exactly_zero_weight():
+    X, y = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+    moe = HierarchicalMixtureOfExperts(
+        depth=2, dropout_rate=0.5, max_epochs=3, random_state=0
+    ).fit(X, y)
+
+    batch = torch.FloatTensor(X[:64])
+    moe.model_.train()
+    with torch.no_grad():
+        weights = moe.model_._compute_leaf_weights(batch)
+
+    # Dropping a subtree is exact: those experts get weight 0, not a small
+    # clamped number, and what remains is still a distribution.
+    assert (weights == 0).any()
+    np.testing.assert_allclose(weights.sum(dim=1).numpy(), 1.0, atol=1e-5)
