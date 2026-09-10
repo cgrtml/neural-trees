@@ -99,3 +99,62 @@ def test_works_with_roc_auc(wine_split):
     odt = OmnivariateDecisionTree(max_depth=3).fit(X_train, y_train)
     auc = roc_auc_score(y_test, odt.predict_proba(X_test), multi_class="ovr")
     assert 0.0 <= auc <= 1.0
+
+
+def test_test_based_selection_prefers_simpler_splits(wine_split):
+    """
+    The library ships a hypothesis test and its README argues against ad hoc
+    accuracy comparisons; `selection="test"` makes the node selection follow
+    that advice, keeping the simplest split type that is not significantly
+    worse.
+    """
+    X_train, _, y_train, _ = wine_split
+
+    by_accuracy = OmnivariateDecisionTree(max_depth=3, selection="accuracy").fit(
+        X_train, y_train
+    )
+    by_test = OmnivariateDecisionTree(
+        max_depth=3, selection="test", min_samples_test=2
+    ).fit(X_train, y_train)
+
+    simple_accuracy = by_accuracy.get_split_type_distribution()["univariate"]
+    simple_test = by_test.get_split_type_distribution()["univariate"]
+    assert simple_test >= simple_accuracy
+
+
+def test_small_nodes_fall_back_rather_than_trusting_a_powerless_test(wine_split):
+    """
+    Below min_samples_test the 5x2cv test cannot resolve anything, and treating
+    "failed to reject" as "no difference" there is how the tree ends up choosing
+    the simplest split everywhere.
+    """
+    X_train, _, y_train, _ = wine_split
+
+    huge_threshold = OmnivariateDecisionTree(
+        max_depth=3, selection="test", min_samples_test=10**6
+    ).fit(X_train, y_train)
+    by_accuracy = OmnivariateDecisionTree(max_depth=3, selection="accuracy").fit(
+        X_train, y_train
+    )
+
+    # With the test never firing, the two must agree exactly.
+    assert (
+        huge_threshold.get_split_type_distribution()
+        == by_accuracy.get_split_type_distribution()
+    )
+
+
+def test_selection_is_validated():
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="selection must be"):
+        OmnivariateDecisionTree(selection="bogus").fit(X, y)
+
+
+def test_both_selections_still_classify(wine_split):
+    X_train, X_test, y_train, y_test = wine_split
+    for selection in ("accuracy", "test"):
+        tree = OmnivariateDecisionTree(max_depth=3, selection=selection).fit(
+            X_train, y_train
+        )
+        assert tree.score(X_test, y_test) > 0.8
+        np.testing.assert_allclose(tree.predict_proba(X_test).sum(axis=1), 1.0, atol=1e-9)
