@@ -12,10 +12,9 @@ open an issue and ask.
    git clone https://github.com/YOUR-USERNAME/neural-trees.git
    cd neural-trees
    ```
-3. **Install** in editable mode with the test extras:
+3. **Install** in editable mode with the development extras:
    ```bash
-   pip install -e .
-   pip install pytest pytest-cov
+   pip install -e ".[dev]"
    ```
 4. **Create a branch** for your change:
    ```bash
@@ -58,6 +57,13 @@ Before opening your PR, please make sure:
 
 - [ ] Your branch is based on the latest `main`.
 - [ ] You have run the tests locally: `pytest tests/`.
+- [ ] Coverage has not dropped below **95%**, which CI enforces:
+      `pytest tests/ --cov=neural_trees --cov-fail-under=95`. It currently sits
+      at 97%, so there is a little room, but new code should come with tests.
+- [ ] `ruff check .` passes. CI pins `ruff==0.16.6`.
+- [ ] If you changed a model, the notebooks still run:
+      `python scripts/run_notebooks.py`. They are committed with their outputs,
+      so a model change can silently turn a printed number into a wrong one.
 - [ ] Code style is consistent with the existing files (PEP 8, four-space
       indentation, plain ASCII in source).
 - [ ] Public functions and classes have docstrings.
