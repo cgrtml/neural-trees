@@ -48,7 +48,7 @@ from sklearn.utils.validation import (
 )
 from torch.utils.data import DataLoader, TensorDataset
 
-from neural_trees._validation import check_predict_input
+from neural_trees._validation import check_predict_input, resolve_device
 from neural_trees.decision_trees.hard_tree import HardDecisionTree
 
 
@@ -254,7 +254,10 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         Regularization coefficient for the entropy penalty on internal nodes.
         Higher values encourage more balanced splits.
     device : str, default="cpu"
-        PyTorch device ("cpu" or "cuda").
+        PyTorch device. `"auto"` picks CUDA if it is available, then Apple
+        silicon's MPS, then CPU. Anything else is passed to torch as given, so
+        `"cuda:1"` works. Resolved once in `fit` and recorded as `device_`, so
+        prediction always runs where training did.
     verbose : bool, default=False
         Whether to print training progress.
     random_state : int or None, default=None
@@ -437,7 +440,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         # it falls back to building the full depth. growth_ records what ran.
         self.growth_ = self.growth if X_val is not None else "none"
 
-        device = torch.device(self.device)
+        device = self.device_ = resolve_device(self.device)
         X_t = torch.FloatTensor(X_fit).to(device)
         y_t = torch.LongTensor(y_fit).to(device)
         w_t = torch.FloatTensor(w_fit).to(device)
@@ -676,7 +679,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         """
         check_is_fitted(self)
         X = check_predict_input(self, X)
-        device = torch.device(self.device)
+        device = self.device_
         X_t = torch.FloatTensor(X).to(device)
 
         self.model_.eval()
