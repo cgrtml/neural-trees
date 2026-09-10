@@ -120,6 +120,7 @@ references as the lineage of an idea, not as a claim of exact reproduction.
 | Algorithm | Reference |
 |-----------|-----------|
 | **Soft Decision Trees** | İrsoy, Yıldız, Alpaydın (ICPR 2012) |
+| **Hard export of a soft tree** | `to_hard_tree()`, this library |
 | **Multivariate Decision Trees** | Alpaydın & Çetin (1995), Yıldız & Alpaydın (IEEE TNN 2001) |
 | **Omnivariate Decision Trees** | Yıldız & Alpaydın (IEEE TNN 2001) |
 | **Hierarchical Mixture of Experts with subtree dropout** | İrsoy & Alpaydın (Neurocomputing 2021) |
@@ -231,8 +232,9 @@ neural-trees is not the right tool for every problem:
 - **Streaming or online learning.** Training is batch only; there is no
   `partial_fit`. Refit from scratch when new data arrives.
 - **Sub-millisecond inference.** The PyTorch backend adds per-call overhead.
-  For extreme latency budgets, export the learned gates and evaluate them in
-  plain numpy.
+  `SoftDecisionTree.to_hard_tree()` exports the learned gates as a plain numpy
+  model that predicts about 5x faster and prints its rules, at the cost of
+  reading each gate as a hard decision rather than a soft one.
 - **Very large sample counts.** Training is full-batch gradient descent over
   epochs, not an optimized tree-growing routine like CART. Millions of rows
   will be slow on CPU.
