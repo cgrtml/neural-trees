@@ -1,3 +1,4 @@
+from .hard_tree import HardDecisionTree
 from .multivariate_tree import MultivariateDecisionTree
 from .omnivariate_tree import OmnivariateDecisionTree
 from .soft_decision_tree import SoftDecisionTree

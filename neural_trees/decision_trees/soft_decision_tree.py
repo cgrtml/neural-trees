@@ -49,6 +49,7 @@ from sklearn.utils.validation import (
 from torch.utils.data import DataLoader, TensorDataset
 
 from neural_trees._validation import check_predict_input
+from neural_trees.decision_trees.hard_tree import HardDecisionTree
 
 
 class _SoftTreeModule(nn.Module):
@@ -536,6 +537,42 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         with torch.no_grad():
             dists = F.softmax(self.model_.leaf_logits, dim=1)
         return dists.cpu().numpy()
+
+    def to_hard_tree(self):
+        """
+        Export the trained tree with its gates read as hard decisions.
+
+        Each internal node's gate is `sigmoid(beta * (w . x + b))`; the sign of
+        `w . x + b` is the decision it has settled on, and beta only sharpens
+        it. Taking that sign and routing each sample down one path gives a plain
+        numpy model with readable rules and no PyTorch in the prediction path.
+
+        This is a different model, not a re-encoding: a mixture over leaves is
+        not a single path, and the two disagree on samples that sit near a
+        split. Measure the agreement on held-out data before relying on it.
+
+        Returns
+        -------
+        HardDecisionTree
+
+        Examples
+        --------
+        >>> hard = sdt.to_hard_tree()
+        >>> (hard.predict(X_test) == sdt.predict(X_test)).mean()
+        >>> print(hard.export_text(feature_names=feature_names))
+        """
+        check_is_fitted(self)
+        self.model_.eval()
+        with torch.no_grad():
+            weights = self.model_.gates.weight.detach().cpu().numpy()
+            biases = self.model_.gates.bias.detach().cpu().numpy()
+        return HardDecisionTree(
+            weights=weights,
+            biases=biases,
+            leaf_distributions=self.get_leaf_distributions(),
+            classes=self.classes_,
+            n_features_in=self.n_features_in_,
+        )
 
     def get_split_weights(self) -> List[np.ndarray]:
         """

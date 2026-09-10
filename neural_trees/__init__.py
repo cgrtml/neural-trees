@@ -12,6 +12,7 @@ __author__ = "Cagri Temel"
 from neural_trees.classical.k_nearest_neighbors import WeightedKNN
 from neural_trees.classical.multilayer_perceptron import GALNetwork
 from neural_trees.classical.naive_bayes import NaiveBayesClassifier
+from neural_trees.decision_trees.hard_tree import HardDecisionTree
 from neural_trees.decision_trees.multivariate_tree import MultivariateDecisionTree
 from neural_trees.decision_trees.omnivariate_tree import OmnivariateDecisionTree
 from neural_trees.decision_trees.soft_decision_tree import SoftDecisionTree
@@ -26,6 +27,7 @@ from neural_trees.statistical_tests.classifier_comparison import (
 
 __all__ = [
     "GALNetwork",
+    "HardDecisionTree",
     "HierarchicalMixtureOfExperts",
     "MultivariateDecisionTree",
     "NaiveBayesClassifier",
