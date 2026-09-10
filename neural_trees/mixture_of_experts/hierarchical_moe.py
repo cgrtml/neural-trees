@@ -56,7 +56,7 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 from torch.utils.data import DataLoader, TensorDataset
 
-from neural_trees._validation import check_predict_input
+from neural_trees._validation import check_predict_input, resolve_device
 
 
 class _StackedMLP(nn.Module):
@@ -250,6 +250,9 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         Adam learning rate.
     batch_size : int, default=64
     device : str, default="cpu"
+        PyTorch device. `"auto"` picks CUDA if it is available, then Apple
+        silicon's MPS, then CPU. Resolved once in `fit` and recorded as
+        `device_`.
     verbose : bool, default=False
     random_state : int or None, default=None
         Seed for weight initialization and shuffled mini-batches.
@@ -313,7 +316,7 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         self.classes_ = self.le_.classes_
         self.n_features_in_ = X.shape[1]
 
-        device = torch.device(self.device)
+        device = self.device_ = resolve_device(self.device)
         X_t = torch.FloatTensor(X).to(device)
         y_t = torch.LongTensor(y_enc).to(device)
 
@@ -367,7 +370,13 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
 
         # Built here rather than lazily in predict_proba: an estimator must not
         # mutate its own __dict__ while predicting.
-        self.model_double_ = copy.deepcopy(self.model_).to(device).double()
+        #
+        # Always on CPU, whatever device training used. This copy exists to make
+        # predictions independent of row order, which needs float64, and MPS has
+        # no float64 at all while CUDA's is slow. Prediction is a single forward
+        # pass, so the move costs little next to getting the same answer for the
+        # same sample every time.
+        self.model_double_ = copy.deepcopy(self.model_).to("cpu").double()
         self.model_double_.eval()
         return self
 
@@ -375,22 +384,23 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         """
         Predict class probabilities, shape (n_samples, n_classes).
 
-        The forward pass runs in float64. Rows are independent, but BLAS picks
-        different blocking for different memory layouts, so in float32 the same
-        sample scored inside a reordered batch came out up to 1.2e-07 different
-        and a borderline argmax could flip with it. Doubling the width of the
-        predict-time arithmetic puts that at 2.2e-16, which makes predictions a
-        property of the sample rather than of its position in the batch.
-        Training stays in float32.
+        The forward pass runs in float64 on the CPU, whatever device training
+        used. Rows are independent, but BLAS picks different blocking for
+        different memory layouts, so in float32 the same sample scored inside a
+        reordered batch came out up to 1.2e-07 different and a borderline argmax
+        could flip with it. Doubling the width of the predict-time arithmetic
+        puts that at 2.2e-16, which makes a prediction a property of the sample
+        rather than of its position in the batch. It is pinned to the CPU
+        because MPS has no float64 and CUDA's is slow. Training stays float32,
+        on whichever device was chosen.
         """
         check_is_fitted(self)
         X = check_predict_input(self, X)
-        device = torch.device(self.device)
         with torch.no_grad():
             probs = self.model_double_(
-                torch.from_numpy(np.ascontiguousarray(X, dtype=np.float64)).to(device)
+                torch.from_numpy(np.ascontiguousarray(X, dtype=np.float64))
             )
-        return probs.cpu().numpy().astype(np.float64)
+        return probs.numpy().astype(np.float64)
 
 
 

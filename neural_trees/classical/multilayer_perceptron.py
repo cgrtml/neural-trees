@@ -44,7 +44,7 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 from torch.utils.data import DataLoader, TensorDataset
 
-from neural_trees._validation import check_predict_input
+from neural_trees._validation import check_predict_input, resolve_device
 
 
 class GALNetwork(ClassifierMixin, BaseEstimator):
@@ -132,6 +132,9 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     momentum : float, default=0.9
         Momentum for the SGD optimizer.
     device : str, default="cpu"
+        PyTorch device. `"auto"` picks CUDA if it is available, then Apple
+        silicon's MPS, then CPU. Resolved once in `fit` and recorded as
+        `device_`.
     verbose : bool, default=False
     random_state : int or None, default=None
         Seed for weight initialization and for the units added during growth.
@@ -377,7 +380,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         self.classes_ = self.le_.classes_
         self.n_features_in_ = X.shape[1]
         n_classes = len(self.classes_)
-        device = torch.device(self.device)
+        device = self.device_ = resolve_device(self.device)
 
         X_fit, y_fit, X_val, y_val = self._split_for_validation(X, y_enc)
         self.growth_policy_ = "validation" if X_val is not None else "error_threshold"
@@ -587,7 +590,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     def predict_proba(self, X) -> np.ndarray:
         check_is_fitted(self)
         X = check_predict_input(self, X)
-        device = torch.device(self.device)
+        device = self.device_
         self.model_.eval()
         with torch.no_grad():
             logits = self.model_(torch.FloatTensor(X).to(device))

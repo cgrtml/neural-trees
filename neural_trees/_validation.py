@@ -23,3 +23,33 @@ def check_predict_input(estimator, X):
     # torch cannot build a tensor from a negatively strided view, which is what
     # reversed or otherwise reordered input arrives as.
     return np.ascontiguousarray(X)
+
+
+def resolve_device(device):
+    """
+    Turn a `device` parameter into a concrete torch device.
+
+    `"auto"` picks the fastest backend that is actually present: CUDA, then
+    Apple silicon's MPS, then CPU. Anything else is handed to torch as given,
+    so an explicit `"cuda:1"` still works, and an unusable value fails here,
+    with the parameter named, rather than deep inside a forward pass.
+
+    Imported lazily so that the estimators that do not use torch keep working
+    without it installed.
+    """
+    import torch
+
+    if device == "auto":
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        mps = getattr(torch.backends, "mps", None)
+        if mps is not None and mps.is_available():
+            return torch.device("mps")
+        return torch.device("cpu")
+
+    try:
+        return torch.device(device)
+    except (RuntimeError, TypeError, ValueError) as exc:
+        raise ValueError(
+            f"device must be 'auto' or a torch device string, got {device!r}"
+        ) from exc
