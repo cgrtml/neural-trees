@@ -152,6 +152,10 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     random_state : int or None, default=None
         Seed for weight initialization and for the units added during growth.
         Set it for reproducible architectures.
+    warm_start : bool, default=False
+        When True, a second call to `fit` continues from the network the first
+        one left, keeping both its weights and the architecture growth chose,
+        instead of restarting from `initial_hidden`.
     class_weight : dict, "balanced" or None, default=None
         Weights per class, combined multiplicatively with `sample_weight`.
         `"balanced"` uses `n_samples / (n_classes * bincount(y))`. Without it a
@@ -162,6 +166,11 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     Alpaydın, E. (1994). GAL: Networks that Grow when they Learn and Shrink
     when they Forget. IJPRAI, 8, 391-414.
     """
+
+    # Declared so the type is known where warm_start reads it back, before the
+    # assignment at the end of fit. A bare annotation adds nothing to the
+    # instance, so sklearn's "no attributes set in __init__" check is unaffected.
+    model_: nn.Sequential
 
     def __init__(
         self,
@@ -186,6 +195,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         verbose: bool = False,
         random_state: Optional[int] = None,
         class_weight=None,
+        warm_start: bool = False,
     ):
         self.initial_hidden = initial_hidden
         self.max_hidden = max_hidden
@@ -208,6 +218,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         self.verbose = verbose
         self.random_state = random_state
         self.class_weight = class_weight
+        self.warm_start = warm_start
 
     def _make_optimizer(self, model: nn.Sequential) -> "torch.optim.Optimizer":
         """A fresh optimizer, needed whenever growth or pruning rebuilds the network."""
@@ -439,6 +450,23 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         model.load_state_dict(snapshot["state"])
         return model
 
+    def _reuse_existing_model(self, n_classes: int) -> bool:
+        """
+        Whether a previous fit's network can be continued from.
+
+        Refusing loudly when the label set changed is deliberate: silently
+        reinitializing would make warm_start look like it worked while throwing
+        away everything the first fit learned, architecture included.
+        """
+        if not self.warm_start or not hasattr(self, "model_"):
+            return False
+        if len(getattr(self, "classes_", [])) != n_classes:
+            raise ValueError(
+                "warm_start=True requires the same classes across calls to fit; "
+                "the label set changed, and this model cannot grow its output layer."
+            )
+        return True
+
     def fit(self, X, y, sample_weight=None) -> "GALNetwork":
         """
         Fit the network, growing and pruning hidden units as it trains.
@@ -470,9 +498,11 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         check_classification_targets(y)
         if self.random_state is not None:
             torch.manual_seed(self.random_state)
-        self.le_ = LabelEncoder()
-        y_enc = self.le_.fit_transform(y)
-        self.classes_ = self.le_.classes_
+        encoder = LabelEncoder()
+        y_enc = encoder.fit_transform(y)
+        continuing = self._reuse_existing_model(len(encoder.classes_))
+        self.le_ = encoder
+        self.classes_ = encoder.classes_
         self.n_features_in_ = X.shape[1]
 
         weights = _check_sample_weight(sample_weight, X, dtype=np.float64)
@@ -501,7 +531,13 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         else:
             X_val_t, y_val_t, w_val_t = X_t, y_t, w_t
 
-        model = self._build_model(self.n_features_in_, self.initial_hidden, n_classes).to(device)
+        # Continuing keeps the architecture the previous fit grew, not just its
+        # weights: restarting from initial_hidden would throw away the search.
+        model: nn.Sequential = (
+            self.model_
+            if continuing
+            else self._build_model(self.n_features_in_, self.initial_hidden, n_classes).to(device)
+        )
         optimizer = self._make_optimizer(model)
 
         generator = None
