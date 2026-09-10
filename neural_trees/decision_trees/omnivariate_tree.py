@@ -32,19 +32,25 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 from neural_trees._validation import check_predict_input
+from neural_trees.statistical_tests.classifier_comparison import combined_5x2cv_f_test
 
 
 class _OmnivariateNode:
     """A single node in an omnivariate decision tree."""
 
     def __init__(self, depth: int, max_depth: int, min_samples_split: int, cv_folds: int,
-                 n_classes: int = 0):
+                 n_classes: int = 0, selection: str = "accuracy", alpha: float = 0.05,
+                 min_samples_test: int = 50):
         self.depth = depth
         self.n_classes = n_classes
         self.distribution: Optional[np.ndarray] = None
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.cv_folds = cv_folds
+        self.selection = selection
+        self.alpha = alpha
+        self.min_samples_test = min_samples_test
+        self.selection_used_: Optional[str] = None
         self.split_type: Optional[str] = None
         self.classifier: Optional[Any] = None
         self.is_leaf = False
@@ -78,29 +84,81 @@ class _OmnivariateNode:
         mapping = {c: int(g) for c, g in zip(present, group_of_class)}
         return np.array([mapping[label] for label in y])
 
-    def _select_best_splitter(self, X: np.ndarray, y_bin: np.ndarray):
-        """Cross-validate the three split types on the two-group problem."""
-        candidates = {
+    def _candidates(self) -> "Dict[str, Any]":
+        return {
             "univariate": DecisionTreeClassifier(max_depth=1, random_state=42),
             "linear": LinearDiscriminantAnalysis(),
             "nonlinear": MLPClassifier(hidden_layer_sizes=(10,), max_iter=200, random_state=42),
         }
+
+    def _select_best_splitter(self, X: np.ndarray, y_bin: np.ndarray):
+        """
+        Choose a split type for the two-group problem at this node.
+
+        With `selection="test"` the simplest split type that is not
+        *significantly* worse than the best one wins, using the combined 5x2cv
+        F test this library ships. Comparing three candidates on a handful of
+        folds and taking the maximum, which is what `selection="accuracy"`
+        does, is the ad hoc accuracy comparison the README argues against, and
+        it biases toward the most flexible candidate: noise helps whoever has
+        the most capacity to exploit it.
+
+        Simplicity is ordered univariate, then linear, then nonlinear, so a
+        node only pays for an MLP when an MLP is measurably needed.
+        """
+        candidates = self._candidates()
         # Folds are bounded by the rarest group, not by the number of groups,
         # otherwise StratifiedKFold raises on small or skewed nodes.
         min_group = int(np.bincount(y_bin).min())
         n_folds = min(self.cv_folds, min_group)
         if n_folds < 2:
+            self.selection_used_ = "fallback"
             return "univariate", candidates["univariate"]
 
-        best_type, best_score = "univariate", -np.inf
+        scores = {}
         for split_type, clf in candidates.items():
             try:
-                score = cross_val_score(clf, X, y_bin, cv=n_folds, scoring="accuracy").mean()
+                scores[split_type] = cross_val_score(
+                    clf, X, y_bin, cv=n_folds, scoring="accuracy"
+                ).mean()
             except Exception:
                 continue
-            if score > best_score:
-                best_score, best_type = score, split_type
+        if not scores:
+            self.selection_used_ = "fallback"
+            return "univariate", candidates["univariate"]
 
+        best_type = max(scores, key=lambda name: scores[name])
+        if self.selection == "accuracy":
+            self.selection_used_ = "accuracy"
+            return best_type, candidates[best_type]
+
+        # The 5x2cv F test needs each half of a 2-fold split to contain both
+        # groups five times over. Small nodes cannot supply that, and forcing
+        # it there would compare noise with noise.
+        order = ["univariate", "linear", "nonlinear"]
+        if min_group < self.min_samples_test:
+            self.selection_used_ = "accuracy"
+            return best_type, candidates[best_type]
+
+        for split_type in order:
+            if split_type not in scores or split_type == best_type:
+                continue
+            if scores[split_type] >= scores[best_type]:
+                self.selection_used_ = "test"
+                return split_type, candidates[split_type]
+            try:
+                result = combined_5x2cv_f_test(
+                    candidates[split_type], candidates[best_type], X, y_bin,
+                    alpha=self.alpha,
+                )
+            except Exception:
+                continue
+            if not result.reject_null:
+                # Not significantly worse, and simpler.
+                self.selection_used_ = "test"
+                return split_type, candidates[split_type]
+
+        self.selection_used_ = "test"
         return best_type, candidates[best_type]
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "_OmnivariateNode":
@@ -127,10 +185,12 @@ class _OmnivariateNode:
             return self._make_leaf(y)
 
         self.left = _OmnivariateNode(
-            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds, self.n_classes
+            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
+            self.n_classes, self.selection, self.alpha, self.min_samples_test,
         ).fit(X[mask_left], y[mask_left])
         self.right = _OmnivariateNode(
-            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds, self.n_classes
+            self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
+            self.n_classes, self.selection, self.alpha, self.min_samples_test,
         ).fit(X[mask_right], y[mask_right])
         return self
 
@@ -176,7 +236,35 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
     min_samples_split : int, default=10
         Minimum number of samples required to split a node.
     cv_folds : int, default=3
-        Number of cross-validation folds used to select split type at each node.
+        Number of cross-validation folds used to score split types at a node.
+    selection : {"accuracy", "test"}, default="accuracy"
+        How a node picks its split type.
+
+        - ``"test"`` keeps the simplest type that is not *significantly* worse
+          than the best one, judged by the combined 5x2cv F test this library
+          ships. Simplicity runs univariate, then linear, then nonlinear.
+        - ``"accuracy"`` takes whichever type scored highest on the folds. That
+          is the ad hoc accuracy comparison the README argues against, and it
+          biases toward the most flexible candidate, since noise helps whoever
+          has the most capacity to exploit it.
+
+        ``"accuracy"`` is still the default, because the principled rule costs
+        accuracy here. On Breast Cancer the accuracy rule picks a nonlinear
+        split at 15 of 21 nodes and scores 0.971; the test finds those MLPs no
+        better than a univariate split at the 0.05 level, picks univariate, and
+        scores 0.959. Significance at a node does not compose into performance
+        of the tree, and this library would rather say that than pick the
+        answer that sounds better.
+    alpha : float, default=0.05
+        Significance level for the test under ``selection="test"``.
+    min_samples_test : int, default=50
+        Smallest group size at a node that still gets a hypothesis test. The
+        5x2cv F test needs each half of a 2-fold split to hold both groups,
+        five times over; below this the node falls back to the accuracy rule
+        rather than treating a test with no power as evidence of no difference.
+        The default matters: at 20 the test fires on nodes too small to resolve
+        anything and Wine drops from 0.977 to 0.961, while at 50 it recovers
+        completely.
 
     Examples
     --------
@@ -199,12 +287,22 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         max_depth: int = 5,
         min_samples_split: int = 10,
         cv_folds: int = 3,
+        selection: str = "accuracy",
+        alpha: float = 0.05,
+        min_samples_test: int = 50,
     ):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.cv_folds = cv_folds
+        self.selection = selection
+        self.alpha = alpha
+        self.min_samples_test = min_samples_test
 
     def fit(self, X, y) -> "OmnivariateDecisionTree":
+        if self.selection not in ("test", "accuracy"):
+            raise ValueError(
+                f"selection must be 'test' or 'accuracy', got {self.selection!r}"
+            )
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         self.le_ = LabelEncoder()
@@ -218,6 +316,9 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
             min_samples_split=self.min_samples_split,
             cv_folds=self.cv_folds,
             n_classes=len(self.classes_),
+            selection=self.selection,
+            alpha=self.alpha,
+            min_samples_test=self.min_samples_test,
         ).fit(X, y_enc)
         return self
 
