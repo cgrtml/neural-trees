@@ -42,7 +42,7 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
         self.alpha = alpha
         self.var_smoothing = var_smoothing
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> "NaiveBayesClassifier":
         if self.likelihood not in ("gaussian", "bernoulli", "multinomial"):
             raise ValueError(
                 "likelihood must be 'gaussian', 'bernoulli' or 'multinomial', got "
@@ -102,7 +102,7 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
             for c in range(len(self.classes_))
         ])
 
-    def predict_log_proba(self, X):
+    def predict_log_proba(self, X) -> np.ndarray:
         """
         Log of the posterior class probabilities, shape (n_samples, n_classes).
 
@@ -115,10 +115,10 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
         joint = self._joint_log_likelihood(X)
         return joint - logsumexp(joint, axis=1, keepdims=True)
 
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
         """Posterior class probabilities, shape (n_samples, n_classes)."""
         return np.exp(self.predict_log_proba(X))
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
         return self.le_.inverse_transform(self.predict_log_proba(X).argmax(axis=1))

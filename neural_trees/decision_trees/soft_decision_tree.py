@@ -361,7 +361,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.validation_fraction = validation_fraction
         self.n_iter_no_change = n_iter_no_change
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y, sample_weight=None) -> "SoftDecisionTree":
         """
         Fit the Soft Decision Tree.
 
@@ -649,11 +649,11 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             weights = self.model_.gates.weight.abs()  # (n_internal, n_features)
             importances = (node_mass.unsqueeze(1) * weights).sum(dim=0)
 
-        importances = importances.cpu().numpy()
-        total = importances.sum()
-        return importances / total if total > 0 else importances
+        scores = importances.cpu().numpy()
+        total = scores.sum()
+        return scores / total if total > 0 else scores
 
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
         """
         Predict class probabilities.
 
@@ -684,7 +684,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             probs = self.model_.log_forward(X_t).exp()
         return probs.cpu().numpy()
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         """
         Predict class labels.
 

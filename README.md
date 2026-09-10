@@ -98,19 +98,22 @@ python benchmarks/run_benchmarks.py --seeds 5
 |-------|:----:|:----:|:-------------:|
 | **Soft Decision Tree** (depth=4) | 0.900 | 0.979 | 0.976 |
 | **Multivariate Tree** (depth=3) | 0.973 | 0.989 | 0.952 |
+| **Hierarchical MoE** (depth=2) | 0.904 | 0.979 | 0.977 |
+| **GAL Network** | 0.951 | 0.980 | 0.978 |
 | CART (sklearn) | 0.943 | 0.917 | 0.920 |
 | Random Forest | 0.945 | 0.980 | 0.960 |
 | SVM (RBF) | 0.959 | 0.984 | 0.978 |
 
-On Wine and Breast Cancer the soft tree closes most of the gap between CART and
-kernel or ensemble methods while staying differentiable. On Iris it does not:
-150 samples over 3 classes is too little data for a depth-4 tree with 15 gates
-trained for 40 epochs, and a single oblique split does better. `growth="incremental"`
-lets the tree choose its own depth against a validation split rather than being
-given one. That is the
-honest shape of the trade-off, and it is why the comparison scripts in
-[`examples/`](examples) use a hypothesis test rather than a single accuracy
-number.
+On Wine and Breast Cancer every model here beats CART by five points or more,
+and the mixture of experts and GAL land within noise of Random Forest and SVM.
+
+Iris is the honest counterexample. The two depth-based tree models sit *below*
+CART there (0.900 and 0.904 against 0.943): 150 samples over 3 classes is too
+little data for a depth-4 tree with 15 gates trained for 40 epochs, and a single
+oblique split does better. `growth="incremental"` lets a soft tree choose its own
+depth against a validation split rather than being handed one. This is also why
+the comparison scripts in [`examples/`](examples) use a hypothesis test rather
+than a single accuracy number.
 
 ## Algorithms
 
