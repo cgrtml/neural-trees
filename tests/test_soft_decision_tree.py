@@ -319,3 +319,144 @@ def test_sample_weight_length_is_validated():
     X, y = load_iris(return_X_y=True)
     with pytest.raises(ValueError):
         SoftDecisionTree(depth=2, max_epochs=2).fit(X, y, sample_weight=np.ones(5))
+
+
+def test_deepening_nearly_preserves_the_function():
+    """
+    A deepened tree splits each leaf's mass evenly between two children that
+    start from the parent's distribution, so the mixture barely moves.
+    """
+    import torch
+
+    X, y = load_wine(return_X_y=True)
+    sdt = SoftDecisionTree(depth=2, max_epochs=30, random_state=0).fit(X, y)
+    X_t = torch.FloatTensor(X)
+
+    before = sdt.model_.log_forward(X_t).detach()
+    deeper = sdt.model_.deepen(3, jitter=0.0)
+    after = deeper.log_forward(X_t).detach()
+
+    assert deeper.depth == sdt.model_.depth + 1
+    torch.testing.assert_close(after, before, rtol=1e-4, atol=1e-5)
+
+
+def test_deepening_breaks_the_symmetry_between_new_children():
+    """
+    Regression test for a dead level. With identical children the mixture does
+    not depend on the new gate, so its gradient is exactly zero and the children
+    receive identical gradients forever. Growing that way reached 0.756 on Iris
+    against 0.958 for a tree of the same depth trained from scratch.
+    """
+    import torch
+
+    X, y = load_wine(return_X_y=True)
+    sdt = SoftDecisionTree(depth=2, max_epochs=10, random_state=0).fit(X, y)
+
+    identical = sdt.model_.deepen(3, jitter=0.0)
+    siblings = identical.leaf_logits.detach()
+    assert torch.allclose(siblings[0::2], siblings[1::2])
+
+    jittered = sdt.model_.deepen(3)
+    siblings = jittered.leaf_logits.detach()
+    assert not torch.allclose(siblings[0::2], siblings[1::2])
+
+    # With identical children the new gates get no gradient at all.
+    X_t = torch.FloatTensor(X)
+    loss = torch.nn.functional.nll_loss(
+        identical.log_forward(X_t), torch.LongTensor(y)
+    )
+    loss.backward()
+    new_gate_grads = identical.gates.weight.grad[identical.n_internal // 2:]
+    assert torch.allclose(new_gate_grads, torch.zeros_like(new_gate_grads), atol=1e-7)
+
+
+def test_incremental_growth_chooses_its_own_depth():
+    """`depth` becomes an upper bound; tree_depth_ reports what was kept."""
+    from sklearn.datasets import make_classification
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = make_classification(
+        n_samples=800, n_features=20, n_informative=6, n_redundant=0,
+        flip_y=0.05, class_sep=0.9, random_state=0,
+    )
+    X = StandardScaler().fit_transform(X)
+
+    grown = SoftDecisionTree(
+        depth=6, max_epochs=60, growth="incremental", random_state=0
+    ).fit(X, y)
+
+    assert 1 <= grown.tree_depth_ <= 6
+    assert grown.model_.depth == grown.tree_depth_
+    assert grown.get_leaf_distributions().shape[0] == 2 ** grown.tree_depth_
+    assert len(grown.get_split_weights()) == 2 ** grown.tree_depth_ - 1
+    assert grown.score(X, y) > 0.7
+
+
+def test_incremental_growth_records_the_depth_of_each_epoch():
+    X, y = load_iris(return_X_y=True)
+    grown = SoftDecisionTree(
+        depth=3, max_epochs=30, growth="incremental", random_state=0
+    ).fit(X, y)
+
+    depths = [record["depth"] for record in grown.training_history_]
+    assert depths[0] == 1
+    assert max(depths) <= 3
+    assert depths == sorted(depths)  # the tree only ever gets deeper
+    assert all("val_loss" in record for record in grown.training_history_)
+
+
+def test_incremental_growth_works_with_the_rest_of_the_api():
+    X, y = load_wine(return_X_y=True)
+    grown = SoftDecisionTree(
+        depth=3, max_epochs=30, growth="incremental", random_state=0
+    ).fit(X, y)
+
+    assert grown.feature_importances_.shape == (X.shape[1],)
+    np.testing.assert_allclose(grown.predict_proba(X).sum(axis=1), 1.0, atol=1e-5)
+    hard = grown.to_hard_tree()
+    assert hard.depth == grown.tree_depth_
+
+
+def test_growth_is_validated():
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="growth must be"):
+        SoftDecisionTree(growth="bogus").fit(X, y)
+
+
+def test_growth_falls_back_when_no_validation_split_is_possible():
+    """
+    Growth decides on held-out evidence, and a class with a single member
+    cannot be stratified into a split. The estimator falls back instead of
+    raising, and says so.
+    """
+    X = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]])
+    y = np.array([0, 0, 0, 0, 1])
+
+    sdt = SoftDecisionTree(
+        depth=2, max_epochs=10, growth="incremental", random_state=0
+    ).fit(X, y)
+
+    assert sdt.growth_ == "none"
+    assert sdt.tree_depth_ == 2
+    assert sdt.predict(X).shape == y.shape
+
+
+def test_early_stopping_also_survives_an_unsplittable_dataset():
+    X = np.array([[0.0], [1.0], [2.0], [3.0], [4.0]])
+    y = np.array([0, 0, 0, 0, 1])
+
+    sdt = SoftDecisionTree(
+        depth=2, max_epochs=10, early_stopping=True, random_state=0
+    ).fit(X, y)
+
+    assert sdt.n_iter_ == 10  # nothing to stop early against
+    assert sdt.predict(X).shape == y.shape
+
+
+def test_growth_attribute_reports_incremental_when_it_ran():
+    X, y = load_wine(return_X_y=True)
+    sdt = SoftDecisionTree(
+        depth=3, max_epochs=60, growth="incremental", random_state=0
+    ).fit(X, y)
+
+    assert sdt.growth_ == "incremental"
