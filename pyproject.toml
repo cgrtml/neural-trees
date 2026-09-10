@@ -57,6 +57,7 @@ dev = [
     "matplotlib>=3.4",
     "jupyter",
     "nbclient>=0.7",
+    "mypy>=1.8",
     "nbformat>=5.0",
     "plotly",
     "ruff>=0.4",
@@ -66,6 +67,9 @@ dev = [
 Source = "https://github.com/cgrtml/neural-trees"
 "Bug Tracker" = "https://github.com/cgrtml/neural-trees/issues"
 Documentation = "https://github.com/cgrtml/neural-trees#readme"
+
+[tool.setuptools.package-data]
+neural_trees = ["py.typed"]
 
 [tool.setuptools.packages.find]
 include = ["neural_trees*"]
@@ -88,3 +92,12 @@ select = ["E4", "E7", "E9", "F", "I001", "UP037", "PLR0402", "RUF022"]
 # - C408: pre-existing dict() call style in app.py
 # - S112, RUF059: pre-existing patterns
 ignore = ["F401", "FA100", "BLE001", "C408", "S112", "RUF059"]
+
+[tool.mypy]
+files = ["neural_trees"]
+ignore_missing_imports = true
+# Signatures are checked, and the bodies of annotated functions with them. The
+# bodies of unannotated internals are not: turning that on today reports noise
+# from numpy and torch stubs rather than real defects, and a check nobody can
+# keep green is a check people learn to ignore.
+check_untyped_defs = false

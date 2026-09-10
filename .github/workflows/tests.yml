@@ -23,6 +23,12 @@ jobs:
       - name: Run ruff
         run: ruff check .
 
+      - name: Install mypy and typed dependencies
+        run: pip install "mypy==1.7.1" numpy scikit-learn
+
+      - name: Run mypy
+        run: mypy
+
   test:
     runs-on: ubuntu-latest
     strategy:

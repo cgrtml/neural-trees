@@ -141,10 +141,10 @@ def combined_5x2cv_f_test(
         for d in rep_diffs:
             sq_diffs.append((d - mean_rep) ** 2)
 
-    diffs = np.array(diffs)  # shape (10,)
+    differences = np.asarray(diffs)  # shape (10,)
 
     # F statistic = (sum p^2) / (2 * sum s^2)
-    numerator = np.sum(diffs ** 2)
+    numerator = np.sum(differences ** 2)
     denominator = 2.0 * sum(sq_diffs)
 
     if denominator < 1e-12:
@@ -279,8 +279,8 @@ def paired_t_test(
         acc_b = (b.predict(X_test) == y_test).mean()
         diffs.append(acc_a - acc_b)
 
-    diffs = np.array(diffs)
-    t_stat, p_value = stats.ttest_1samp(diffs, 0)
+    differences = np.asarray(diffs)
+    t_stat, p_value = stats.ttest_1samp(differences, 0)
     reject = p_value < alpha
 
     return TestResult(

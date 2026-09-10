@@ -61,6 +61,8 @@ Before opening your PR, please make sure:
       `pytest tests/ --cov=neural_trees --cov-fail-under=95`. It currently sits
       at 97%, so there is a little room, but new code should come with tests.
 - [ ] `ruff check .` passes. CI pins `ruff==0.16.6`.
+- [ ] `mypy` passes. The package ships a `py.typed` marker, so its annotations
+      are what type checkers see in downstream code.
 - [ ] If you changed a model, the notebooks still run:
       `python scripts/run_notebooks.py`. They are committed with their outputs,
       so a model change can silently turn a printed number into a wrong one.

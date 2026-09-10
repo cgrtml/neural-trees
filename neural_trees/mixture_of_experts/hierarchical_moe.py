@@ -298,7 +298,7 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         self.verbose = verbose
         self.random_state = random_state
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> "HierarchicalMixtureOfExperts":
         if self.dropout_type not in ("subtree", "activation"):
             raise ValueError(
                 "dropout_type must be 'subtree' or 'activation', got "
@@ -371,7 +371,7 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         self.model_double_.eval()
         return self
 
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
         """
         Predict class probabilities, shape (n_samples, n_classes).
 
@@ -394,7 +394,7 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
 
 
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
         proba = self.predict_proba(X)
         return self.le_.inverse_transform(np.argmax(proba, axis=1))

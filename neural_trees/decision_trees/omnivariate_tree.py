@@ -46,9 +46,9 @@ class _OmnivariateNode:
         self.min_samples_split = min_samples_split
         self.cv_folds = cv_folds
         self.split_type: Optional[str] = None
-        self.classifier = None
+        self.classifier: Optional[Any] = None
         self.is_leaf = False
-        self.leaf_class = None
+        self.leaf_class: Optional[int] = None
         self.left: Optional[_OmnivariateNode] = None
         self.right: Optional[_OmnivariateNode] = None
 
@@ -103,7 +103,7 @@ class _OmnivariateNode:
 
         return best_type, candidates[best_type]
 
-    def fit(self, X: np.ndarray, y: np.ndarray):
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "_OmnivariateNode":
         if (
             self.depth >= self.max_depth
             or len(X) < self.min_samples_split
@@ -135,17 +135,30 @@ class _OmnivariateNode:
         return self
 
     def _leaf_for(self, x: np.ndarray) -> "_OmnivariateNode":
+        """
+        Walk to the leaf this sample belongs in.
+
+        A non-leaf node always has a classifier and both children; `fit` turns
+        the node into a leaf rather than leaving any of them unset, so the
+        asserts document that invariant instead of guarding against it.
+        """
         node = self
         while not node.is_leaf:
+            assert node.classifier is not None
+            assert node.left is not None and node.right is not None
             goes_right = node.classifier.predict(x.reshape(1, -1))[0] == 1
             node = node.right if goes_right else node.left
         return node
 
     def predict_one(self, x: np.ndarray) -> int:
-        return self._leaf_for(x).leaf_class
+        leaf_class = self._leaf_for(x).leaf_class
+        assert leaf_class is not None
+        return leaf_class
 
     def predict_proba_one(self, x: np.ndarray) -> np.ndarray:
-        return self._leaf_for(x).distribution
+        distribution = self._leaf_for(x).distribution
+        assert distribution is not None
+        return distribution
 
 
 class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
@@ -191,7 +204,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         self.min_samples_split = min_samples_split
         self.cv_folds = cv_folds
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> "OmnivariateDecisionTree":
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         self.le_ = LabelEncoder()
@@ -208,7 +221,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         ).fit(X, y_enc)
         return self
 
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
         """
         Predict class probabilities from the reached leaf's class distribution.
 
@@ -226,7 +239,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         X = check_predict_input(self, X)
         return np.vstack([self.root_.predict_proba_one(x) for x in X])
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
         X = check_predict_input(self, X)
         preds = np.array([self.root_.predict_one(x) for x in X])

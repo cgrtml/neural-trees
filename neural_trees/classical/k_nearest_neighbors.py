@@ -93,7 +93,7 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
 
         return X[store_idx], y[store_idx]
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> "WeightedKNN":
         if self.metric not in ("euclidean", "manhattan"):
             raise ValueError(
                 f"metric must be 'euclidean' or 'manhattan', got {self.metric!r}"
@@ -116,7 +116,7 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
 
         return self
 
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
         check_is_fitted(self)
         X = check_predict_input(self, X)
         dists = self._distance(X, self.X_train_)  # (n_test, n_train)
@@ -144,6 +144,6 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         probs /= probs.sum(axis=1, keepdims=True)
         return probs
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
         return self.le_.inverse_transform(self.predict_proba(X).argmax(axis=1))

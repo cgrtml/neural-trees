@@ -20,7 +20,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from neural_trees import MultivariateDecisionTree, SoftDecisionTree
+from neural_trees import (
+    GALNetwork,
+    HierarchicalMixtureOfExperts,
+    MultivariateDecisionTree,
+    SoftDecisionTree,
+)
 
 DATASETS = {
     "Iris": load_iris,
@@ -35,6 +40,10 @@ MODELS = {
     "Multivariate Tree (depth=3)": lambda seed: MultivariateDecisionTree(
         max_depth=3, random_state=seed
     ),
+    "Hierarchical MoE (depth=2)": lambda seed: HierarchicalMixtureOfExperts(
+        depth=2, max_epochs=60, random_state=seed
+    ),
+    "GAL Network": lambda seed: GALNetwork(max_epochs=100, random_state=seed),
     "CART (sklearn)": lambda seed: DecisionTreeClassifier(random_state=seed),
     "Random Forest": lambda seed: RandomForestClassifier(random_state=seed),
     "SVM (RBF)": lambda seed: SVC(kernel="rbf", random_state=seed),

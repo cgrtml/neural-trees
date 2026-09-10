@@ -136,9 +136,19 @@ class _MultivariateNode:
         return self
 
     def predict_proba_one(self, x: np.ndarray) -> np.ndarray:
+        """
+        Walk to the leaf this sample belongs in.
+
+        A non-leaf node always has a hyperplane and both children; `fit` turns
+        the node into a leaf rather than leaving any of them unset, so the
+        asserts document that invariant instead of guarding against it.
+        """
         node = self
         while not node.is_leaf:
+            assert node.weights is not None
+            assert node.left is not None and node.right is not None
             node = node.right if float(x @ node.weights + node.bias) > 0 else node.left
+        assert node.distribution is not None
         return node.distribution
 
 
@@ -206,7 +216,7 @@ class MultivariateDecisionTree(ClassifierMixin, BaseEstimator):
         self.min_impurity_decrease = min_impurity_decrease
         self.random_state = random_state
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> "MultivariateDecisionTree":
         """
         Fit the multivariate tree.
 
@@ -242,7 +252,7 @@ class MultivariateDecisionTree(ClassifierMixin, BaseEstimator):
         self.n_nodes_ = len(self.get_split_weights())
         return self
 
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
         """
         Predict class probabilities from the reached leaf's class distribution.
 
@@ -258,7 +268,7 @@ class MultivariateDecisionTree(ClassifierMixin, BaseEstimator):
         X = check_predict_input(self, X)
         return np.vstack([self.root_.predict_proba_one(x) for x in X])
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         """
         Predict class labels.
 

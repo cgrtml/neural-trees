@@ -341,7 +341,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         model.load_state_dict(snapshot["state"])
         return model
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> "GALNetwork":
         """
         Fit the network, growing and pruning hidden units as it trains.
 
@@ -584,7 +584,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
 
         return model, optimizer, record
 
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
         check_is_fitted(self)
         X = check_predict_input(self, X)
         device = torch.device(self.device)
@@ -594,6 +594,6 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
             probs = F.softmax(logits, dim=1)
         return probs.cpu().numpy()
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
         return self.le_.inverse_transform(self.predict_proba(X).argmax(axis=1))
