@@ -6,7 +6,7 @@ Reference:
     Alpaydın, E. (2020). Introduction to Machine Learning (4th ed.). MIT Press.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 __author__ = "Cagri Temel"
 
 from neural_trees.classical.k_nearest_neighbors import WeightedKNN
