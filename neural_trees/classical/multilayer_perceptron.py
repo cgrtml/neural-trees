@@ -133,6 +133,11 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     patience : int, default=5
         Consecutive architecture changes without a validation improvement
         before training stops.
+    error_patience : int, default=2
+        Checks without any improvement in validation *error* before the
+        architecture is reconsidered, even while validation loss is still
+        falling. A network that has run out of capacity keeps sharpening the
+        same mistakes, which shows up as a falling loss over a flat error.
     batch_size : int, default=32
         Mini-batch size. Training used to take a single full-batch step per
         epoch, which left the network barely moved from its initialization when
@@ -174,6 +179,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         validation_fraction: float = 0.2,
         tol: float = 1e-2,
         patience: int = 5,
+        error_patience: int = 2,
         batch_size: int = 32,
         momentum: float = 0.9,
         device: str = "cpu",
@@ -195,6 +201,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         self.validation_fraction = validation_fraction
         self.tol = tol
         self.patience = patience
+        self.error_patience = error_patience
         self.batch_size = batch_size
         self.momentum = momentum
         self.device = device
@@ -205,6 +212,60 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     def _make_optimizer(self, model: nn.Sequential) -> "torch.optim.Optimizer":
         """A fresh optimizer, needed whenever growth or pruning rebuilds the network."""
         return torch.optim.SGD(model.parameters(), lr=self.learning_rate, momentum=self.momentum)
+
+    def _carry_optimizer(
+        self,
+        optimizer: "torch.optim.Optimizer",
+        old_model: nn.Sequential,
+        new_model: nn.Sequential,
+        keep_idx=None,
+    ) -> "torch.optim.Optimizer":
+        """
+        Rebuild the optimizer for a changed architecture, keeping the momentum
+        of the units that survived.
+
+        Growth and pruning replace the module, and a fresh optimizer starts
+        every surviving unit from a standstill. Training then has to rebuild
+        the momentum it had before it can make progress, which is why the
+        network looked like it had stopped improving whenever the architecture
+        moved.
+
+        The buffers are reshaped exactly the way the weights are: pruning keeps
+        `keep_idx`, growth appends a zero row and column for the new unit,
+        which has no history to carry.
+        """
+        new_optimizer = self._make_optimizer(new_model)
+        if self.momentum == 0:
+            return new_optimizer
+
+        old_params = list(old_model.parameters())
+        new_params = list(new_model.parameters())
+        for position, (old_param, new_param) in enumerate(zip(old_params, new_params)):
+            buffer = optimizer.state.get(old_param, {}).get("momentum_buffer")
+            if buffer is None:
+                continue
+
+            if keep_idx is not None:
+                if position == 0:          # first layer weight, one row per unit
+                    carried = buffer[keep_idx]
+                elif position == 1:        # first layer bias
+                    carried = buffer[keep_idx]
+                elif position == 2:        # second layer weight, one column per unit
+                    carried = buffer[:, keep_idx]
+                else:                      # second layer bias, unit independent
+                    carried = buffer
+            else:
+                carried = torch.zeros_like(new_param)
+                if position == 2:
+                    carried[:, : buffer.shape[1]] = buffer
+                elif position == 3:
+                    carried = buffer.clone()
+                else:
+                    carried[: buffer.shape[0]] = buffer
+
+            new_optimizer.state[new_param]["momentum_buffer"] = carried.clone()
+
+        return new_optimizer
 
     def _build_model(self, n_features: int, n_hidden: int, n_classes: int) -> nn.Sequential:
         return nn.Sequential(
@@ -427,7 +488,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         n_classes = len(self.classes_)
         device = self.device_ = resolve_device(self.device)
 
-        X_fit, y_fit, w_fit, X_val, y_val = self._split_for_validation(X, y_enc, weights)
+        X_fit, y_fit, w_fit, X_val, y_val, w_val = self._split_for_validation(X, y_enc, weights)
         self.growth_policy_ = "validation" if X_val is not None else "error_threshold"
 
         X_t = torch.FloatTensor(X_fit).to(device)
@@ -436,8 +497,9 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         if X_val is not None:
             X_val_t = torch.FloatTensor(X_val).to(device)
             y_val_t = torch.LongTensor(y_val).to(device)
+            w_val_t = torch.FloatTensor(w_val).to(device)
         else:
-            X_val_t, y_val_t = X_t, y_t
+            X_val_t, y_val_t, w_val_t = X_t, y_t, w_t
 
         model = self._build_model(self.n_features_in_, self.initial_hidden, n_classes).to(device)
         optimizer = self._make_optimizer(model)
@@ -462,6 +524,8 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         # as the reference made the network prune itself at the very first
         # check, before it had trained at all.
         reference_loss = np.inf
+        best_error = np.inf
+        checks_without_error_gain = 0
         changes_without_gain = 0
 
         for epoch in range(self.max_epochs):
@@ -477,7 +541,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
             # of the epoch, not at one stale mini-batch's logits.
             train_loss, train_error = self._evaluate(model, X_t, y_t, w_t)
             val_loss, val_error = (
-                self._evaluate(model, X_val_t, y_val_t)
+                self._evaluate(model, X_val_t, y_val_t, w_val_t)
                 if X_val is not None
                 else (train_loss, train_error)
             )
@@ -494,10 +558,19 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
 
             if (epoch + 1) % self.check_interval == 0:
                 if self.growth_policy_ == "validation":
+                    if val_error < best_error - 1e-9:
+                        best_error = val_error
+                        checks_without_error_gain = 0
+                    else:
+                        checks_without_error_gain += 1
+
                     model, optimizer, record, changes_without_gain = self._validation_step(
-                        model, optimizer, record, X_t, y_t, X_val_t, y_val_t,
-                        n_classes, device, val_loss, reference_loss, changes_without_gain,
+                        model, optimizer, record, X_t, y_t, X_val_t, y_val_t, w_val_t,
+                        n_classes, device, val_loss, reference_loss,
+                        checks_without_error_gain, changes_without_gain,
                     )
+                    if record["action"] in ("grow", "prune"):
+                        checks_without_error_gain = 0
                     if val_loss < best_loss:
                         best_loss, best_snapshot = val_loss, self._snapshot(model)
 
@@ -507,7 +580,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
                     # random unit causes, which stopped the search after three
                     # attempts before any added unit had time to become useful.
                     reference_loss = (
-                        self._evaluate(model, X_val_t, y_val_t)[0]
+                        self._evaluate(model, X_val_t, y_val_t, w_val_t)[0]
                         if record["action"] in ("grow", "prune")
                         else val_loss
                     )
@@ -559,15 +632,15 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         back rather than failing.
         """
         if self.growth_policy != "validation":
-            return X, y_enc, weights, None, None
+            return X, y_enc, weights, None, None, None
 
         counts = np.bincount(y_enc)
         n_classes = len(counts)
         n_val = int(round(len(X) * self.validation_fraction))
         if counts.min() < 2 or n_val < n_classes or len(X) - n_val < n_classes:
-            return X, y_enc, weights, None, None
+            return X, y_enc, weights, None, None, None
 
-        X_fit, X_val, y_fit, y_val, w_fit, _ = train_test_split(
+        X_fit, X_val, y_fit, y_val, w_fit, w_val = train_test_split(
             X,
             y_enc,
             weights,
@@ -575,11 +648,11 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
             random_state=self.random_state,
             stratify=y_enc,
         )
-        return X_fit, y_fit, w_fit, X_val, y_val
+        return X_fit, y_fit, w_fit, X_val, y_val, w_val
 
     def _validation_step(
-        self, model, optimizer, record, X_t, y_t, X_val_t, y_val_t, n_classes, device,
-        val_loss, reference_loss, changes_without_gain,
+        self, model, optimizer, record, X_t, y_t, X_val_t, y_val_t, w_val_t, n_classes, device,
+        val_loss, reference_loss, checks_without_error_gain, changes_without_gain,
     ):
         """
         Change the architecture only when validation loss says the current one
@@ -590,7 +663,14 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         useful unit first: a smaller network that validates just as well is
         strictly better. Only if that fails is a unit added.
         """
-        if val_loss < reference_loss * (1.0 - self.tol):
+        # Falling loss alone does not mean the architecture is adequate. A
+        # capacity-starved network keeps getting more confident about the same
+        # mistakes: on six separable blobs the validation loss fell from 1.81 to
+        # 1.17 while the error sat at 0.46 the whole time, so a loss-only rule
+        # never grew past three units. Progress has to show up in the error too.
+        loss_improving = val_loss < reference_loss * (1.0 - self.tol)
+        error_stalled = checks_without_error_gain >= self.error_patience
+        if loss_improving and not error_stalled:
             record["action"] = "keep"
             return model, optimizer, record, 0
 
@@ -601,7 +681,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
             victim = int(contributions.argmin())
             keep_idx = [i for i in range(n_hidden) if i != victim]
             candidate = self._rebuild_with_units(model, keep_idx, n_classes, device)
-            candidate_loss, _ = self._evaluate(candidate, X_val_t, y_val_t)
+            candidate_loss, _ = self._evaluate(candidate, X_val_t, y_val_t, w_val_t)
             # Removing a unit is worth it only if validation loss does not get
             # worse than it already is: a smaller network that validates the
             # same is strictly the better model.
@@ -609,7 +689,9 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
                 record["action"] = "prune"
                 record["n_hidden"] = n_hidden - 1
                 return (
-                    candidate, self._make_optimizer(candidate), record,
+                    candidate,
+                    self._carry_optimizer(optimizer, model, candidate, keep_idx),
+                    record,
                     changes_without_gain + 1,
                 )
 
@@ -617,7 +699,12 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
             grown = self._grown(model, n_classes, device, X_t, y_t)
             record["action"] = "grow"
             record["n_hidden"] = n_hidden + 1
-            return grown, self._make_optimizer(grown), record, changes_without_gain + 1
+            return (
+                grown,
+                self._carry_optimizer(optimizer, model, grown),
+                record,
+                changes_without_gain + 1,
+            )
 
         record["action"] = "capped"
         return model, optimizer, record, changes_without_gain + 1
@@ -630,16 +717,16 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
 
         if 1 <= int(keep_mask.sum()) < n_hidden:
             keep_idx = keep_mask.nonzero(as_tuple=True)[0].tolist()
-            model = self._rebuild_with_units(model, keep_idx, n_classes, device)
+            pruned = self._rebuild_with_units(model, keep_idx, n_classes, device)
             record["action"] = "prune"
             record["n_hidden"] = len(keep_idx)
-            return model, self._make_optimizer(model), record
+            return pruned, self._carry_optimizer(optimizer, model, pruned, keep_idx), record
 
         if train_error > self.grow_threshold and n_hidden < self.max_hidden:
-            model = self._grown(model, n_classes, device, X_t, y_t)
+            grown = self._grown(model, n_classes, device, X_t, y_t)
             record["action"] = "grow"
             record["n_hidden"] = n_hidden + 1
-            return model, self._make_optimizer(model), record
+            return grown, self._carry_optimizer(optimizer, model, grown), record
 
         return model, optimizer, record
 
