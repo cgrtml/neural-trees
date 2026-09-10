@@ -105,7 +105,9 @@ python benchmarks/run_benchmarks.py --seeds 5
 On Wine and Breast Cancer the soft tree closes most of the gap between CART and
 kernel or ensemble methods while staying differentiable. On Iris it does not:
 150 samples over 3 classes is too little data for a depth-4 tree with 15 gates
-trained for 40 epochs, and a single oblique split does better. That is the
+trained for 40 epochs, and a single oblique split does better. `growth="incremental"`
+lets the tree choose its own depth against a validation split rather than being
+given one. That is the
 honest shape of the trade-off, and it is why the comparison scripts in
 [`examples/`](examples) use a hypothesis test rather than a single accuracy
 number.
