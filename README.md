@@ -235,8 +235,11 @@ neural-trees is not the right tool for every problem:
 - **Very high-dimensional data.** Every internal node holds a dense weight
   vector, so parameter count grows as `2^depth x n_features`. Beyond a few
   thousand features, reduce dimensionality first or use a linear model.
-- **Streaming or online learning.** Training is batch only; there is no
-  `partial_fit`. Refit from scratch when new data arrives.
+- **Streaming or online learning.** Training is batch only. `warm_start=True`
+  continues a fit from where the last one stopped, which covers training in
+  stages, but there is no `partial_fit`: mini-batch gradient descent over a
+  second dataset drifts toward that dataset rather than toward the union, so
+  the contract `partial_fit` implies would not hold.
 - **Sub-millisecond inference.** The PyTorch backend adds per-call overhead.
   `SoftDecisionTree.to_hard_tree()` exports the learned gates as a plain numpy
   model that predicts about 5x faster and prints its rules, at the cost of

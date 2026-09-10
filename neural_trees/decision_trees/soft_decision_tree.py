@@ -267,6 +267,21 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         `"balanced"` uses `n_samples / (n_classes * bincount(y))`, which is what
         an imbalanced target usually needs: without it a rare class contributes
         so little to the loss that the tree can ignore it entirely.
+    warm_start : bool, default=False
+        When True, a second call to `fit` continues from the parameters the
+        first one left, instead of reinitializing. Useful for training in
+        stages, or for extending a run that turned out too short.
+
+        This is `warm_start` rather than `partial_fit` deliberately. sklearn's
+        `partial_fit` contract promises that a model updated on batches
+        approaches one trained on the union, and requires handling classes that
+        were absent from the first call. Neither holds here: the architecture
+        is fixed at the first fit, and mini-batch gradient descent over a second
+        dataset drifts toward that dataset rather than the union. `warm_start`
+        promises only what is actually delivered, which is continuation.
+
+        The label set must not change between calls; a new class would need an
+        output layer this model cannot grow.
     growth : {"none", "incremental"}, default="none"
         How the tree reaches its depth.
 
@@ -344,6 +359,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         random_state: Optional[int] = None,
         class_weight=None,
         growth: str = "none",
+        warm_start: bool = False,
         learn_temperature: bool = False,
         early_stopping: bool = False,
         validation_fraction: float = 0.1,
@@ -359,6 +375,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.random_state = random_state
         self.class_weight = class_weight
         self.growth = growth
+        self.warm_start = warm_start
         self.learn_temperature = learn_temperature
         self.early_stopping = early_stopping
         self.validation_fraction = validation_fraction
@@ -399,9 +416,11 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
 
         X, y = check_X_y(X, y)
         check_classification_targets(y)
-        self.le_ = LabelEncoder()
-        y_enc = self.le_.fit_transform(y)
-        self.classes_ = self.le_.classes_
+        encoder = LabelEncoder()
+        y_enc = encoder.fit_transform(y)
+        continuing = self._reuse_existing_model(len(encoder.classes_))
+        self.le_ = encoder
+        self.classes_ = encoder.classes_
         self.n_features_in_ = X.shape[1]
         n_classes = len(self.classes_)
 
@@ -460,16 +479,24 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
 
         self.training_history_: List[dict] = []
 
+        if self.growth_ == "incremental" and continuing:
+            raise ValueError(
+                "warm_start=True is not supported with growth='incremental': the "
+                "second fit would restart the search from a single split and "
+                "discard the depth the first one chose."
+            )
+
         if self.growth_ == "incremental":
             self._fit_incrementally(loader, X_val_t, y_val_t, n_classes, device)
         else:
-            self.model_ = _SoftTreeModule(
-                n_features=self.n_features_in_,
-                n_classes=n_classes,
-                depth=self.depth,
-                penalty_coef=self.penalty_coef,
-                learn_temperature=self.learn_temperature,
-            ).to(device)
+            if not continuing:
+                self.model_ = _SoftTreeModule(
+                    n_features=self.n_features_in_,
+                    n_classes=n_classes,
+                    depth=self.depth,
+                    penalty_coef=self.penalty_coef,
+                    learn_temperature=self.learn_temperature,
+                ).to(device)
             optimizer = torch.optim.Adam(self.model_.parameters(), lr=self.learning_rate)
             _, best_state = self._train_epochs(
                 self.model_, loader, optimizer, self.max_epochs, X_val_t, y_val_t,
@@ -482,6 +509,23 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.n_iter_ = len(self.training_history_)
         self.feature_importances_ = self._compute_feature_importances(X_t)
         return self
+
+    def _reuse_existing_model(self, n_classes: int) -> bool:
+        """
+        Whether a previous fit's parameters can be continued from.
+
+        Refusing loudly when the label set changed is deliberate: silently
+        reinitializing would make warm_start look like it worked while throwing
+        away everything the first fit learned.
+        """
+        if not self.warm_start or not hasattr(self, "model_"):
+            return False
+        if len(getattr(self, "classes_", [])) != n_classes:
+            raise ValueError(
+                "warm_start=True requires the same classes across calls to fit; "
+                "the label set changed, and this model cannot grow its output layer."
+            )
+        return True
 
     def _can_hold_out(self, y_enc: np.ndarray) -> bool:
         """
