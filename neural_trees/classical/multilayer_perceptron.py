@@ -24,6 +24,8 @@ Key idea:
     with 22.9. `growth_init="random"` restores the earlier behaviour.
 """
 
+import copy
+
 import numpy as np
 
 try:
@@ -40,8 +42,14 @@ from typing import List, Optional
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import (
+    _check_sample_weight,
+    check_array,
+    check_is_fitted,
+    check_X_y,
+)
 from torch.utils.data import DataLoader, TensorDataset
 
 from neural_trees._validation import check_predict_input, resolve_device
@@ -139,6 +147,10 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
     random_state : int or None, default=None
         Seed for weight initialization and for the units added during growth.
         Set it for reproducible architectures.
+    class_weight : dict, "balanced" or None, default=None
+        Weights per class, combined multiplicatively with `sample_weight`.
+        `"balanced"` uses `n_samples / (n_classes * bincount(y))`. Without it a
+        rare class contributes so little loss that the model can ignore it.
 
     References
     ----------
@@ -167,6 +179,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         device: str = "cpu",
         verbose: bool = False,
         random_state: Optional[int] = None,
+        class_weight=None,
     ):
         self.initial_hidden = initial_hidden
         self.max_hidden = max_hidden
@@ -187,6 +200,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         self.device = device
         self.verbose = verbose
         self.random_state = random_state
+        self.class_weight = class_weight
 
     def _make_optimizer(self, model: nn.Sequential) -> "torch.optim.Optimizer":
         """A fresh optimizer, needed whenever growth or pruning rebuilds the network."""
@@ -324,12 +338,32 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         return grown
 
     @staticmethod
-    def _evaluate(model: nn.Sequential, X_t: "torch.Tensor", y_t: "torch.Tensor"):
+    def _evaluate(
+        model: nn.Sequential,
+        X_t: "torch.Tensor",
+        y_t: "torch.Tensor",
+        w_t: Optional["torch.Tensor"] = None,
+    ):
+        """
+        Weighted loss and error, which is what growth and pruning have to see.
+
+        Weighting the loss but judging the architecture on unweighted accuracy
+        would let sample_weight change what the network fits while leaving what
+        it *builds* untouched, so a rare class could be worth a lot to the loss
+        and nothing to the decision about capacity.
+        """
         model.eval()
         with torch.no_grad():
             logits = model(X_t)
-            loss = F.cross_entropy(logits, y_t).item()
-            error = 1.0 - (logits.argmax(1) == y_t).float().mean().item()
+            correct = (logits.argmax(1) == y_t).float()
+            if w_t is None:
+                loss = F.cross_entropy(logits, y_t).item()
+                error = 1.0 - correct.mean().item()
+            else:
+                per_sample = F.cross_entropy(logits, y_t, reduction="none")
+                total = w_t.sum().clamp_min(1e-12)
+                loss = ((per_sample * w_t).sum() / total).item()
+                error = 1.0 - ((correct * w_t).sum() / total).item()
         return loss, error
 
     @staticmethod
@@ -344,7 +378,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         model.load_state_dict(snapshot["state"])
         return model
 
-    def fit(self, X, y) -> "GALNetwork":
+    def fit(self, X, y, sample_weight=None) -> "GALNetwork":
         """
         Fit the network, growing and pruning hidden units as it trains.
 
@@ -379,14 +413,26 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
         self.n_features_in_ = X.shape[1]
+
+        weights = _check_sample_weight(sample_weight, X, dtype=np.float64)
+        if self.class_weight is not None:
+            class_weights = compute_class_weight(
+                self.class_weight, classes=np.arange(len(self.classes_)), y=y_enc
+            )
+            weights = weights * class_weights[y_enc]
+        # Normalizing to mean 1 keeps the loss on the same scale as the
+        # unweighted fit, so learning_rate keeps its meaning.
+        weights = weights * (len(weights) / weights.sum())
+
         n_classes = len(self.classes_)
         device = self.device_ = resolve_device(self.device)
 
-        X_fit, y_fit, X_val, y_val = self._split_for_validation(X, y_enc)
+        X_fit, y_fit, w_fit, X_val, y_val = self._split_for_validation(X, y_enc, weights)
         self.growth_policy_ = "validation" if X_val is not None else "error_threshold"
 
         X_t = torch.FloatTensor(X_fit).to(device)
         y_t = torch.LongTensor(y_fit).to(device)
+        w_t = torch.FloatTensor(w_fit).to(device)
         if X_val is not None:
             X_val_t = torch.FloatTensor(X_val).to(device)
             y_val_t = torch.LongTensor(y_val).to(device)
@@ -401,7 +447,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
             generator = torch.Generator()
             generator.manual_seed(self.random_state)
         loader = DataLoader(
-            TensorDataset(X_t, y_t),
+            TensorDataset(X_t, y_t, w_t),
             batch_size=min(self.batch_size, len(X_t)),
             shuffle=True,
             generator=generator,
@@ -420,15 +466,16 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
 
         for epoch in range(self.max_epochs):
             model.train()
-            for X_batch, y_batch in loader:
+            for X_batch, y_batch, w_batch in loader:
                 optimizer.zero_grad()
-                loss = F.cross_entropy(model(X_batch), y_batch)
+                per_sample = F.cross_entropy(model(X_batch), y_batch, reduction="none")
+                loss = (per_sample * w_batch).sum() / w_batch.sum().clamp_min(1e-12)
                 loss.backward()
                 optimizer.step()
 
             # Architecture decisions look at the network as it stands at the end
             # of the epoch, not at one stale mini-batch's logits.
-            train_loss, train_error = self._evaluate(model, X_t, y_t)
+            train_loss, train_error = self._evaluate(model, X_t, y_t, w_t)
             val_loss, val_error = (
                 self._evaluate(model, X_val_t, y_val_t)
                 if X_val is not None
@@ -490,12 +537,20 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
                 )
 
         self.model_ = self._restore(best_snapshot, n_classes, device)
+        # A float64 copy on the CPU, for the same reason HMoE keeps one: rows
+        # are independent, but BLAS blocks differently for different memory
+        # layouts, so in float32 a sample scored inside a reordered batch can
+        # come out slightly different and a borderline argmax can flip. The
+        # effect grows with the network, so it reappears exactly when growth
+        # has done its job.
+        self.model_double_ = copy.deepcopy(self.model_).to("cpu").double()
+        self.model_double_.eval()
         self.n_hidden_final_ = best_snapshot["n_hidden"]
         self.best_val_loss_ = float(best_loss)
         self.n_iter_ = len(self.architecture_history_)
         return self
 
-    def _split_for_validation(self, X: np.ndarray, y_enc: np.ndarray):
+    def _split_for_validation(self, X: np.ndarray, y_enc: np.ndarray, weights: np.ndarray):
         """
         Hold out a validation split, or report that the data cannot support one.
 
@@ -504,22 +559,23 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         back rather than failing.
         """
         if self.growth_policy != "validation":
-            return X, y_enc, None, None
+            return X, y_enc, weights, None, None
 
         counts = np.bincount(y_enc)
         n_classes = len(counts)
         n_val = int(round(len(X) * self.validation_fraction))
         if counts.min() < 2 or n_val < n_classes or len(X) - n_val < n_classes:
-            return X, y_enc, None, None
+            return X, y_enc, weights, None, None
 
-        X_fit, X_val, y_fit, y_val = train_test_split(
+        X_fit, X_val, y_fit, y_val, w_fit, _ = train_test_split(
             X,
             y_enc,
+            weights,
             test_size=self.validation_fraction,
             random_state=self.random_state,
             stratify=y_enc,
         )
-        return X_fit, y_fit, X_val, y_val
+        return X_fit, y_fit, w_fit, X_val, y_val
 
     def _validation_step(
         self, model, optimizer, record, X_t, y_t, X_val_t, y_val_t, n_classes, device,
@@ -588,14 +644,21 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         return model, optimizer, record
 
     def predict_proba(self, X) -> np.ndarray:
+        """
+        Predict class probabilities, shape (n_samples, n_classes).
+
+        The forward pass runs in float64 on the CPU so that a prediction is a
+        property of the sample rather than of its position in the batch.
+        Training stays float32 on whichever device was chosen.
+        """
         check_is_fitted(self)
         X = check_predict_input(self, X)
-        device = self.device_
-        self.model_.eval()
         with torch.no_grad():
-            logits = self.model_(torch.FloatTensor(X).to(device))
+            logits = self.model_double_(
+                torch.from_numpy(np.ascontiguousarray(X, dtype=np.float64))
+            )
             probs = F.softmax(logits, dim=1)
-        return probs.cpu().numpy()
+        return probs.numpy()
 
     def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
