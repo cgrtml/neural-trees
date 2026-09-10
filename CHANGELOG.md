@@ -3,6 +3,75 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-09-10
+
+Ten open items closed. Weighting, device selection, warm starts and hard
+exports are now consistent across the library, and two models implement the
+mechanism they cite rather than an approximation of it.
+
+### Added
+
+- **`sample_weight` and `class_weight` for `GALNetwork` and
+  `HierarchicalMixtureOfExperts`**, matching `SoftDecisionTree`. On a
+  600-sample problem where one class holds 6%, `class_weight="balanced"` moves
+  recall on that class from 0.476 to 0.976 for HMoE and from **0.000** to 0.714
+  for GAL, which had been predicting the rare class not once while reporting
+  0.930 accuracy. GAL's growth and pruning criteria see the weights too:
+  weighting the loss while judging the architecture on unweighted accuracy let
+  `sample_weight` change what the network fits and not what it builds.
+- **`device="auto"`** on every torch-backed estimator, resolving to CUDA, then
+  Apple silicon MPS, then CPU. Resolved once in `fit` and recorded as
+  `device_`, so prediction runs where training did.
+- **`warm_start`** on all three torch-backed estimators. Deliberately not
+  `partial_fit`: that contract promises batch updates approach training on the
+  union and requires handling unseen classes, and neither holds for a
+  fixed-architecture mini-batch learner.
+- **`SoftDecisionTree(growth="per_leaf")`**, the growth rule of İrsoy, Yıldız &
+  Alpaydın (2012). Splits one leaf at a time, the one carrying the most
+  expected error, so the tree can end up unbalanced. It builds by far the
+  sparsest trees: on an 800x20 synthetic problem it beats a fixed depth-6 tree
+  using **3.7 splits against 63**.
+- **`HierarchicalMixtureOfExperts.to_hard_router()`**, the mixture's answer to
+  `to_hard_tree()`: 2.4x to 2.8x faster prediction at 0.981 to 1.000 agreement.
+  `route_counts()` shows how many samples reach each expert, which the mixture
+  cannot tell you because it spreads every sample over all of them. On Wine one
+  of four experts turns out to receive nothing.
+- **`WeightedKNN(n_condensed_sets=...)`**, the plural in Alpaydın (1997),
+  *Voting over Multiple Condensed Nearest Neighbors*. Voting beats a single
+  condensed subset everywhere and reaches the uncondensed classifier on Wine
+  and Breast Cancer while storing roughly a sixth of the data.
+- **`OmnivariateDecisionTree(selection="test")`**, which picks the simplest
+  split type that is not significantly worse using the 5x2cv F test this
+  library ships, instead of the ad hoc accuracy comparison its README argues
+  against. Opt-in: it buys simpler splits and costs one to two points, because
+  significance at a node does not compose into performance of the tree.
+- **`py.typed`** and annotated public signatures, so type checkers see the
+  library's hints instead of ignoring them (PEP 561). `mypy` runs in CI.
+
+### Changed
+
+- `GALNetwork(growth_policy="validation")` reconsiders the architecture when
+  validation *error* plateaus, not only when loss stops falling. A
+  capacity-starved network keeps getting more confident about the same
+  mistakes: on six separable blobs the loss fell from 1.81 to 1.17 while the
+  error sat at 0.46, and the old rule never grew past three units. Iris 0.867
+  to 0.947, six blobs 0.732 to 0.857.
+- `GALNetwork` predicts in float64 on the CPU, as HMoE already did. The float32
+  row-order sensitivity returned at larger epoch budgets, which is exactly when
+  growth has built a network big enough for it to matter.
+- The benchmark table covers every model in the library. GAL lands within noise
+  of Random Forest and SVM on all three datasets.
+- Python 3.9 to 3.13 in CI, and the estimators keep their `check_estimator`
+  standing: 62/63 for the three that accept `sample_weight`, 55/55 for the rest.
+- Test suite: 180 to 255.
+
+### Fixed
+
+- `early_stopping=True` and the growth modes fall back instead of raising on
+  datasets too small to hold out a stratified validation split.
+- The `HardDecisionTree` export understands unbalanced trees, so exported rules
+  stop where the tree stops rather than printing nodes that were never grown.
+
 ## [0.5.0] - 2026-09-10
 
 Closes the last of the open work items. The library has no known broken
