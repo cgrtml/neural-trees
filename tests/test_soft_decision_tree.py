@@ -460,3 +460,101 @@ def test_growth_attribute_reports_incremental_when_it_ran():
     ).fit(X, y)
 
     assert sdt.growth_ == "incremental"
+
+
+def test_per_leaf_growth_builds_an_unbalanced_tree():
+    """
+    Level-wise growth splits every leaf at once and stays balanced. Splitting
+    one leaf at a time is the point of growing rather than declaring a depth.
+    """
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+
+    grown = SoftDecisionTree(
+        depth=4, max_epochs=120, growth="per_leaf", random_state=0
+    ).fit(X, y)
+
+    splits = grown.get_split_weights()
+    leaves = grown.get_leaf_distributions()
+    assert 0 < len(splits) < 2 ** 4 - 1
+    assert len(leaves) == len(splits) + 1  # a binary tree, whatever its shape
+    np.testing.assert_allclose(leaves.sum(axis=1), 1.0, atol=1e-5)
+    assert grown.score(X, y) > 0.9
+
+
+def test_per_leaf_growth_is_sparser_than_a_fixed_tree():
+    from sklearn.datasets import make_classification
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = make_classification(
+        n_samples=800, n_features=20, n_informative=6, n_redundant=0,
+        flip_y=0.05, class_sep=0.9, random_state=0,
+    )
+    X = StandardScaler().fit_transform(X)
+
+    fixed = SoftDecisionTree(depth=6, max_epochs=180, random_state=0).fit(X, y)
+    grown = SoftDecisionTree(
+        depth=6, max_epochs=180, growth="per_leaf", random_state=0
+    ).fit(X, y)
+
+    assert len(grown.get_split_weights()) < len(fixed.get_split_weights()) / 4
+
+
+def test_unsplit_subtrees_carry_no_probability_mass():
+    """A node that never split keeps its mass instead of passing it down."""
+    import torch
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+    grown = SoftDecisionTree(
+        depth=4, max_epochs=120, growth="per_leaf", random_state=0
+    ).fit(X, y)
+
+    module = grown.model_
+    module.eval()
+    with torch.no_grad():
+        _, _, terminal = module._walk(torch.FloatTensor(X))
+
+    # The acting leaves' arrival probabilities must still be a distribution.
+    total = sum(float(log_mu.exp().sum()) for log_mu, _ in terminal)
+    assert abs(total / len(X) - 1.0) < 1e-4
+    assert not module.is_split.all()
+
+
+def test_per_leaf_tree_exports_to_a_hard_tree():
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_wine(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+    grown = SoftDecisionTree(
+        depth=4, max_epochs=120, growth="per_leaf", random_state=0
+    ).fit(X, y)
+
+    hard = grown.to_hard_tree()
+    assert not hard.is_split_.all()
+    assert (hard.predict(X) == grown.predict(X)).mean() > 0.85
+    # The text export must stop where the tree stops, not print phantom nodes.
+    assert hard.export_text().count("predict") == len(grown.get_leaf_distributions())
+
+
+def test_mask_defaults_reproduce_the_complete_tree():
+    """
+    Every internal node splits unless growth says otherwise, so the masked
+    walk has to be exactly the old one in the default case.
+    """
+    import torch
+
+    X, y = load_wine(return_X_y=True)
+    sdt = SoftDecisionTree(depth=3, max_epochs=20, random_state=0).fit(X, y)
+
+    assert sdt.model_.is_split.all()
+    assert len(sdt.get_split_weights()) == 2 ** 3 - 1
+    assert sdt.get_leaf_distributions().shape == (2 ** 3, 3)
+
+    with torch.no_grad():
+        log_leaf, _, terminal = sdt.model_._walk(torch.FloatTensor(X))
+    assert len(terminal) == 1  # only the bottom row acts as leaves
+    assert terminal[0][0].shape == log_leaf.shape

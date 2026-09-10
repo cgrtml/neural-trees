@@ -29,6 +29,8 @@ def test_export_has_the_shape_of_the_soft_tree(wine_fit):
     assert hard.weights_.shape == (2 ** soft.depth - 1, soft.n_features_in_)
     assert hard.biases_.shape == (2 ** soft.depth - 1,)
     assert hard.leaf_distributions_.shape == (2 ** soft.depth, 3)
+    assert hard.node_distributions_.shape == (2 ** (soft.depth + 1) - 1, 3)
+    assert hard.is_split_.all()  # a tree grown to full depth routes everywhere
     np.testing.assert_array_equal(hard.classes_, soft.classes_)
 
 
@@ -43,7 +45,7 @@ def test_routing_follows_the_sign_of_each_gate(wine_fit):
         for _ in range(hard.depth):
             score = hard.weights_[node] @ x + hard.biases_[node]
             node = 2 * node + 1 + int(score > 0)
-        expected.append(node - len(hard.weights_))
+        expected.append(node)
 
     np.testing.assert_array_equal(hard._leaf_index(X_test), np.array(expected))
 
@@ -58,8 +60,8 @@ def test_predictions_are_the_reached_leaf_distribution(wine_fit):
     np.testing.assert_array_equal(
         hard.predict(X_test), hard.classes_[proba.argmax(axis=1)]
     )
-    leaves = hard.leaf_distributions_[hard._leaf_index(X_test)]
-    np.testing.assert_allclose(proba, leaves)
+    reached = hard.node_distributions_[hard._leaf_index(X_test)]
+    np.testing.assert_allclose(proba, reached)
 
 
 def test_agrees_with_the_soft_tree_on_most_samples(wine_fit):

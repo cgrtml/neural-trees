@@ -89,15 +89,15 @@ def test_gal_keeps_the_architecture_growth_chose(wine):
     assert gal.n_hidden_final_ >= grown_units
 
 
-def test_incremental_growth_refuses_warm_start(wine):
+@pytest.mark.parametrize("growth", ["incremental", "per_leaf"])
+def test_growing_modes_refuse_warm_start(wine, growth):
     """
-    The second fit would restart the depth search from a single split and throw
-    away the depth the first one chose, so it is refused rather than silently
-    doing that.
+    The second fit would restart the search and throw away the shape the first
+    one chose, so it is refused rather than silently doing that.
     """
     X, y = wine
     sdt = SoftDecisionTree(
-        depth=3, max_epochs=30, growth="incremental", warm_start=True, random_state=0
+        depth=3, max_epochs=30, growth=growth, warm_start=True, random_state=0
     ).fit(X, y)
 
     with pytest.raises(ValueError, match="not supported with growth"):

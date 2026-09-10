@@ -36,24 +36,64 @@ class HardDecisionTree:
     weights_ : ndarray of shape (n_internal, n_features)
         One hyperplane per internal node, in breadth-first order.
     biases_ : ndarray of shape (n_internal,)
-    leaf_distributions_ : ndarray of shape (n_leaves, n_classes)
+    node_distributions_ : ndarray of shape (n_nodes, n_classes)
+        A distribution per node. `leaf_distributions_` selects the ones that
+        act as leaves.
+    is_split_ : ndarray of shape (n_internal,)
+        Whether each internal node routes onward. All True for a complete tree.
     """
 
-    def __init__(self, weights, biases, leaf_distributions, classes, n_features_in):
+    def __init__(
+        self, weights, biases, node_distributions, classes, n_features_in, is_split=None
+    ):
         self.weights_ = np.asarray(weights, dtype=np.float64)
         self.biases_ = np.asarray(biases, dtype=np.float64)
-        self.leaf_distributions_ = np.asarray(leaf_distributions, dtype=np.float64)
+        self.node_distributions_ = np.asarray(node_distributions, dtype=np.float64)
         self.classes_ = np.asarray(classes)
         self.n_features_in_ = int(n_features_in)
-        self.depth = int(np.log2(len(self.leaf_distributions_)))
+        self.n_internal_ = len(self.weights_)
+        self.depth = int(np.log2(self.n_internal_ + 1))
+        self.is_split_ = (
+            np.ones(self.n_internal_, dtype=bool)
+            if is_split is None
+            else np.asarray(is_split, dtype=bool)
+        )
+
+    @property
+    def leaf_distributions_(self) -> np.ndarray:
+        """Distributions of the nodes that actually behave as leaves."""
+        return self.node_distributions_[self._acting_leaves()]
+
+    def _acting_leaves(self) -> np.ndarray:
+        leaves = []
+        stack = [0]
+        while stack:
+            node = stack.pop()
+            if node >= self.n_internal_ or not self.is_split_[node]:
+                leaves.append(node)
+                continue
+            stack.extend([2 * node + 2, 2 * node + 1])
+        return np.array(sorted(leaves))
 
     def _leaf_index(self, X: np.ndarray) -> np.ndarray:
-        """Walk every sample down to its leaf, one level at a time."""
+        """
+        Walk every sample to the node where its path stops.
+
+        A node whose subtree was never grown keeps the sample instead of
+        routing it on, so the walk is a fixpoint rather than a fixed number of
+        levels.
+        """
         node = np.zeros(len(X), dtype=np.int64)
         for _ in range(self.depth):
-            scores = np.einsum("nf,nf->n", X, self.weights_[node]) + self.biases_[node]
-            node = 2 * node + 1 + (scores > 0).astype(np.int64)
-        return node - (len(self.weights_))
+            moving = (node < self.n_internal_) & self.is_split_[np.minimum(node, self.n_internal_ - 1)]
+            if not moving.any():
+                break
+            scores = (
+                np.einsum("nf,nf->n", X[moving], self.weights_[node[moving]])
+                + self.biases_[node[moving]]
+            )
+            node[moving] = 2 * node[moving] + 1 + (scores > 0).astype(np.int64)
+        return node
 
     def predict_proba(self, X) -> np.ndarray:
         """
@@ -65,7 +105,7 @@ class HardDecisionTree:
                 f"X has {X.shape[1]} features, but HardDecisionTree is expecting "
                 f"{self.n_features_in_} features as input."
             )
-        return self.leaf_distributions_[self._leaf_index(X)]
+        return self.node_distributions_[self._leaf_index(X)]
 
     def predict(self, X) -> np.ndarray:
         """Predicted class labels, shape (n_samples,)."""
@@ -101,7 +141,7 @@ class HardDecisionTree:
                 f"{self.n_features_in_}"
             )
 
-        n_internal = len(self.weights_)
+        n_internal = self.n_internal_
         lines = []
 
         def describe_split(node: int) -> str:
@@ -116,8 +156,8 @@ class HardDecisionTree:
             return f"{' '.join(terms)} {self.biases_[node]:+.{decimals}f}{omitted} > 0"
 
         def walk(node: int, indent: str, branch: str):
-            if node >= n_internal:
-                distribution = self.leaf_distributions_[node - n_internal]
+            if node >= n_internal or not self.is_split_[node]:
+                distribution = self.node_distributions_[node]
                 winner = self.classes_[int(np.argmax(distribution))]
                 lines.append(
                     f"{indent}{branch}predict {winner!r} "
