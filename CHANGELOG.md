@@ -3,6 +3,63 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-09-10
+
+Closes the last of the open work items. The library has no known broken
+behaviour and no open issues.
+
+### Added
+
+- **`SoftDecisionTree.to_hard_tree()`.** After training, each internal node has
+  settled on a hyperplane, and the sign of that hyperplane is a decision.
+  The export routes each sample down a single path in plain numpy, with
+  readable rules through `export_text()`. Held-out 30%, depth 4:
+
+  | | soft | hard | agreement | predict speedup |
+  |---|:---:|:---:|:---:|:---:|
+  | Iris | 0.911 | 0.867 | 0.911 | 5.9x |
+  | Wine | 0.981 | 0.981 | 1.000 | 5.9x |
+  | Breast Cancer | 0.947 | 0.942 | 0.994 | 5.5x |
+
+  It is a different model, not a re-encoding: a mixture over leaves is not a
+  single path. Measure the agreement before relying on it.
+
+- **`SoftDecisionTree(growth="incremental")`.** Starts from a single split and
+  deepens while the extra level improves validation loss, so depth is chosen by
+  the data (İrsoy, Yıldız & Alpaydın, ICPR 2012). `depth` becomes an upper
+  bound and `tree_depth_` reports what was kept. It wins where the right depth
+  is not known in advance (a synthetic 800x20 problem: 0.872 at depth 4.5
+  against 0.857 at a fixed depth 6) and costs a little on small clean sets,
+  where dividing the epoch budget across rounds outweighs adaptive depth. The
+  default stays `"none"`.
+
+### Fixed
+
+- **A deepened level could not learn anything.** Making the deeper tree compute
+  exactly the same function left both new children with identical
+  distributions, and with `Q_left = Q_right` the mixture does not depend on the
+  new gate, so its gradient is exactly zero and the children stay identical
+  forever. Growing that way reached 0.756 on Iris against 0.958 for a tree of
+  the same depth trained from scratch. A small jitter breaks the symmetry.
+- **`early_stopping=True` crashed on datasets too small to split.**
+  `train_test_split` raised `The test_size = 1 should be greater or equal to
+  the number of classes`. Both early stopping and growth now fall back to
+  training on everything, and `growth_` records what ran.
+
+### Changed
+
+- **The HMoE tree is evaluated as stacked banks, in log space.** Gates and
+  experts were `ModuleList`s evaluated one node at a time; a depth-3 tree with
+  branching factor 4 meant 170 small matmuls per forward. Fit wall time on
+  Breast Cancer, 20 epochs: depth 2 b=2 0.7s to 0.2s, depth 3 b=4 3.4s to 1.2s,
+  between 2.4x and 3.2x across shapes. Accuracy over 5 seeds is unchanged or
+  slightly better. Subtree dropout now applies in log space, so a dropped
+  subtree carries exactly zero weight rather than a clamped small number.
+- **CI enforces what it measures.** Coverage is gated at 95% (currently 96.9%),
+  and a separate job executes every notebook and fails on the first cell error,
+  so committed outputs cannot go stale unnoticed.
+- Test suite: 156 to 180.
+
 ## [0.4.0] - 2026-09-09
 
 Work on GALNetwork, plus weighting for the soft tree. Every classifier in the
