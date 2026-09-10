@@ -23,6 +23,7 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 
 - scikit-learn compatible API (`fit`, `predict`, `score`, works in `Pipeline`)
 - PyTorch backend with GPU support (`device="auto"` picks CUDA, then Apple silicon MPS, then CPU)
+- Torch imported lazily, so the numpy-only half of the library works without it
 - Soft Decision Trees, Hierarchical Mixture of Experts, Multivariate and Omnivariate Trees, GAL
 - Combined 5x2cv F test, McNemar's test, paired t-test for classifier comparison
 - Tested on standard benchmarks (Iris, Wine, Breast Cancer)
@@ -32,6 +33,15 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 ```bash
 pip install neural-trees
 ```
+
+PyTorch comes with it and backs `SoftDecisionTree`, `HierarchicalMixtureOfExperts`
+and `GALNetwork`. It is imported lazily, so in an environment where torch cannot
+be installed at all, a browser running Pyodide being the case that prompted
+this, the rest of the library still works:
+`MultivariateDecisionTree`, `OmnivariateDecisionTree`, `WeightedKNN`,
+`NaiveBayesClassifier`, the two hard exports and the comparison tests. Touching
+a torch-backed estimator there raises an error naming `pip install torch`
+rather than failing at import.
 
 ### Install from source
 
