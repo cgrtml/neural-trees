@@ -44,9 +44,30 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ -v --cov=neural_trees --cov-report=xml
+          pytest tests/ -v --cov=neural_trees --cov-report=xml --cov-fail-under=95
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
+
+  notebooks:
+    # Slower than the unit tests and independent of the Python matrix, so it
+    # runs on its own. Committed notebook outputs go stale silently when the
+    # models change; this fails the build instead.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Execute notebooks
+        run: python scripts/run_notebooks.py
