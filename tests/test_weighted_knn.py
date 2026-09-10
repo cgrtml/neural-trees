@@ -110,3 +110,80 @@ def test_k_larger_than_training_set_is_clamped():
     y = np.array([0, 1, 1])
     proba = WeightedKNN(k=50).fit(X, y).predict_proba(np.array([[1.5]]))
     np.testing.assert_allclose(proba.sum(axis=1), 1.0)
+
+
+def test_voting_over_subsets_recovers_what_condensing_gives_away():
+    """
+    Condensing is order dependent, so one pass throws away information a
+    different order would have kept. Voting over several is the point of
+    Alpaydin (1997), and the accuracy it recovers is the reason to bother.
+    """
+    from sklearn.model_selection import StratifiedKFold
+
+    X, y = load_iris(return_X_y=True)
+
+    def score(**kwargs):
+        # Averaged over seeds: on a single split the effect is inside the noise
+        # of which samples happened to become prototypes.
+        accuracies = []
+        for seed in range(3):
+            if kwargs:
+                kwargs = {**kwargs, "random_state": seed}
+            pipe = Pipeline([("s", StandardScaler()), ("k", WeightedKNN(**kwargs))])
+            cv = StratifiedKFold(5, shuffle=True, random_state=seed)
+            accuracies.append(cross_val_score(pipe, X, y, cv=cv).mean())
+        return float(np.mean(accuracies))
+
+    single = score(condense=True)
+    voted = score(condense=True, n_condensed_sets=5)
+
+    assert voted > single
+
+
+def test_each_subset_is_built_from_a_different_ordering():
+    X, y = load_iris(return_X_y=True)
+    knn = WeightedKNN(condense=True, n_condensed_sets=4, random_state=0).fit(X, y)
+
+    assert len(knn.stores_) == 4
+    for store_X, store_y in knn.stores_:
+        assert len(store_X) == len(store_y)
+        assert len(store_X) < len(X)
+
+    # Different orderings keep different prototypes, otherwise voting would be
+    # four copies of one opinion.
+    signatures = {tuple(np.sort(store_X[:, 0])) for store_X, _ in knn.stores_}
+    assert len(signatures) > 1
+
+
+def test_first_subset_reproduces_the_unvoted_classifier():
+    """One set must behave exactly as it did before voting existed."""
+    X, y = load_iris(return_X_y=True)
+
+    one = WeightedKNN(condense=True, n_condensed_sets=1, random_state=0).fit(X, y)
+    many = WeightedKNN(condense=True, n_condensed_sets=3, random_state=0).fit(X, y)
+
+    np.testing.assert_array_equal(one.X_train_, many.stores_[0][0])
+    np.testing.assert_array_equal(one.X_train_, many.X_train_)
+
+
+def test_voting_is_reproducible():
+    X, y = load_iris(return_X_y=True)
+    first = WeightedKNN(condense=True, n_condensed_sets=3, random_state=7).fit(X, y)
+    second = WeightedKNN(condense=True, n_condensed_sets=3, random_state=7).fit(X, y)
+
+    np.testing.assert_allclose(first.predict_proba(X), second.predict_proba(X))
+
+
+def test_n_condensed_sets_is_ignored_without_condensing():
+    X, y = load_iris(return_X_y=True)
+    knn = WeightedKNN(condense=False, n_condensed_sets=5).fit(X, y)
+
+    assert len(knn.stores_) == 1
+    np.testing.assert_array_equal(knn.X_train_, knn.stores_[0][0])
+
+
+@pytest.mark.parametrize("bad", [0, -1, 2.5])
+def test_n_condensed_sets_is_validated(bad):
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="n_condensed_sets"):
+        WeightedKNN(condense=True, n_condensed_sets=bad).fit(X, y)
