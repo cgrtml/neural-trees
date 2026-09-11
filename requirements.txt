@@ -1,10 +1,13 @@
-numpy>=1.21
-scipy>=1.7
-scikit-learn>=1.0
-torch>=1.10
-matplotlib>=3.4
-jupyter
-pytest>=7.0
-pytest-cov
-plotly
-streamlit>=1.30.0
+# What the Streamlit playground (app.py) needs at runtime. Streamlit Community
+# Cloud installs this file; the library's own dependencies are declared in
+# pyproject.toml and its development tooling in requirements-dev.txt.
+#
+# CPU-only torch. The default PyPI wheel bundles CUDA and runs to roughly
+# 2.5 GB, which does not fit a free tier and would never be used there anyway.
+# The +cpu wheels carry a higher local version than the plain ones, so pip
+# prefers them when this index is available.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+neural-trees==0.6.0
+streamlit>=1.30
+plotly>=5.0
