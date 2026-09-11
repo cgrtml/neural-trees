@@ -9,5 +9,5 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 neural-trees==0.6.0
-streamlit>=1.30
+streamlit>=1.40
 plotly>=5.0
