@@ -36,7 +36,7 @@ pdfLaTeX kullanır, ikisinde de temiz derlenir.
   \rightarrow 0.753$` gibi) düz metne çevirmen gerekir: "0.958 -> 0.753".
 - **License:** CC BY 4.0 öneririm — kodun MIT olduğu için tutarlı olur.
 - **ACM/MSC class:** boş bırakılabilir.
-- **Comments:** "10 pages, 4 tables. Code: https://github.com/cgrtml/neural-trees"
+- **Comments:** "7 pages, 3 tables. Code: https://github.com/cgrtml/neural-trees"
 
 Hafta içi 14:00 ET'den önce gönderilen makaleler aynı gün 20:00 ET'de duyurulur.
 Moderasyon birkaç gün sürebilir.
@@ -62,8 +62,8 @@ Hepsi mevcut kodla, 3 tohum × 5-kat çapraz doğrulama ile yeniden ölçüldü
 | 1 | jitter=0 çöküyor | Iris 0.753, Wine 0.754 |
 | 1 | jitter 0.05 / 0.2 / 0.5 | Iris 0.942 / 0.942 / 0.938; Wine 0.979 / 0.979 / 0.981 |
 | 1 | sıfırdan eğitim | Iris 0.958, Wine 0.977 |
-| 2 | GAL rastgele birim | 0.936 doğruluk, 17.2 birim |
-| 2 | GAL residual'a uydurulmuş | 0.956 doğruluk, 6.9 birim |
-| 3 (metin) | yaprak başına büyütme | 0.885 / 3.7 bölme, sabit derinlik 0.839 / 63 |
+| 2 | GAL rastgele birim | 0.938 doğruluk, 17.4 birim |
+| 2 | GAL residual'a uydurulmuş | 0.956 doğruluk, 6.6 birim |
+| 3 (metin) | yaprak başına büyütme | 0.885 / 3.7 bölme, sabit derinlik 0.832 / 63 |
 | 3 | omnivariate accuracy seçimi | 0.971 doğruluk, 4.1 düğüm, 8/0/15 bölme tipi |
 | 3 | omnivariate test seçimi | 0.960 doğruluk, 7.3 düğüm, 20/14/13 bölme tipi |

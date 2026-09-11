@@ -92,12 +92,12 @@ trained from noise. Fitting the unit to the residual error of the frozen
 network first, in the manner of cascade-correlation [@fahlman1990cascade], and
 installing it with zero outgoing weights, makes growth non-destructive. Over
 three seeds of five-fold cross-validation on Iris this moved accuracy from
-0.936 to 0.956 while reducing the network from 17.2 hidden units to 6.9.
+0.938 to 0.956 while reducing the network from 17.4 hidden units to 6.6.
 
 **Growth decided per leaf.** `SoftDecisionTree` can grow one leaf at a time,
 splitting the leaf carrying the most expected error, which is the rule of
 İrsoy, Yıldız and Alpaydın [@irsoy2012soft]. On a synthetic problem with 800
-samples and 20 features it reached 0.885 using 3.7 splits, against 0.839 for a
+samples and 20 features it reached 0.885 using 3.7 splits, against 0.832 for a
 fixed depth-6 tree using 63.
 
 **A deepening that must not preserve the function exactly.** Deepening a soft
@@ -113,9 +113,10 @@ regression test asserts the zero gradient exists without it.
 
 Trained soft models export to plain numpy. `to_hard_tree()` reads each gate as
 a hard decision and prints the resulting rules; on Wine the export agrees with
-the model it came from on every held-out sample and predicts about four times
-faster. The export reports its agreement rather than assuming it, because a
-mixture over leaves is not a single path.
+the model it came from on 99.8% of held-out samples on average, with 97.1% in
+the worst fold, and predicts about four times faster. The export reports its
+agreement rather than assuming it, because a mixture over leaves is not a
+single path.
 
 # Research impact statement
 

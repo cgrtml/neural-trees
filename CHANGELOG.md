@@ -3,6 +3,36 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.1] - 2026-09-11
+
+An archival release. No behaviour changes; the code is identical to 0.6.0 apart
+from the version string. This release exists so that the papers can cite a
+frozen, DOI-bearing version of exactly the code their numbers came from.
+
+### Added
+
+- `paper/paper.md` and `paper/paper.bib`: a Journal of Open Source Software
+  submission draft.
+- `paper/arxiv/`: a self-contained LaTeX source for an empirical paper on
+  constructive tree-structured classifiers, with a submission checklist. Its
+  central result is stated and proved: deepening a soft tree so that the
+  function is exactly preserved makes the new gate's gradient identically zero
+  and leaves both children with identical gradients, so the added level is a
+  fixed point of the optimiser rather than a slow start.
+- `.zenodo.json`: archive metadata, so the DOI record carries the ORCID,
+  licence and keywords rather than repository defaults.
+
+### Fixed
+
+- Documentation numbers that had drifted as the library gained features. The
+  benchmark table's two GAL cells moved after GAL gained `sample_weight`
+  (Iris 0.951 to 0.952, Wine 0.980 to 0.982); the test count in the README
+  still said 255; the `check_estimator` claim said "clean" without noting the
+  one check no mini-batch learner can pass; the LICENSE carried a 2024
+  copyright year for a repository first published in 2026. Every figure in the
+  README and in both papers was re-measured against this code under one
+  protocol before release.
+
 ## [0.6.0] - 2026-09-10
 
 Ten open items closed. Weighting, device selection, warm starts and hard

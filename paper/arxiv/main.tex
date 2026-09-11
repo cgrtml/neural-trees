@@ -52,7 +52,7 @@ tenths of a point of each other.
 
 We further find that fitting a new hidden unit to the residual error of the
 frozen network before installing it, in the manner of cascade-correlation,
-reaches higher accuracy with 60\% fewer units; that choosing which leaf to
+reaches higher accuracy with 62\% fewer units; that choosing which leaf to
 split by expected error reaches higher accuracy with 3.7 splits than a
 fixed-depth tree reaches with 63; and, negatively, that selecting each node's
 split type by a statistical significance test does simplify individual nodes
@@ -262,8 +262,8 @@ incoming weights are informative.
 \toprule
 New-unit initialisation & Accuracy & Hidden units \\
 \midrule
-Random & 0.936 & 17.2 \\
-Fitted to the residual & 0.956 & \phantom{0}6.9 \\
+Random & 0.938 & 17.4 \\
+Fitted to the residual & 0.956 & \phantom{0}6.6 \\
 \bottomrule
 \end{tabular}
 \caption{GAL network on Iris, three seeds of five-fold cross-validation,
@@ -273,7 +273,7 @@ more accurate and substantially smaller.}
 \end{table}
 
 Table~\ref{tab:gal} shows the effect: two points of accuracy and a network
-60\% smaller. The size difference is the more interesting half. Random units
+62\% smaller. The size difference is the more interesting half. Random units
 arrive unhelpful, the error does not fall, and the growth criterion fires
 again --- so the network grows because growth is not working.
 
@@ -293,7 +293,7 @@ splits the leaf carrying the most expected error, $\arg\max_\ell \sum_i
 
 On a synthetic problem with 800 samples and 20 features, per-leaf growth
 reached $0.885$ using $3.7$ splits on average, while a fixed depth-6 tree
-reached $0.839$ using all $63$. A seventeenfold reduction in splits alongside
+reached $0.832$ using all $63$. A seventeenfold reduction in splits alongside
 higher accuracy is not a trade-off, and the explanation is the usual one: a
 complete tree spends most of its capacity on regions that were already
 separated.
