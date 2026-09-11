@@ -3,6 +3,8 @@ ML Playground — Interactive model comparison dashboard.
 Run: streamlit run app.py
 """
 
+import json
+
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
@@ -36,36 +38,12 @@ from neural_trees.classical.naive_bayes import NaiveBayesClassifier
 # ──────────────────────────────────────────────
 st.set_page_config(page_title="ML Playground", page_icon="🧠", layout="wide")
 
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.block-container { padding-top: 1.5rem; }
-.hero-banner {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    border-radius: 16px; padding: 32px; color: white; margin-bottom: 24px;
-}
-.hero-banner h1 { font-size: 2rem; margin: 0 0 8px 0; color: white; }
-.hero-banner p  { font-size: 1rem; opacity: 0.8; margin: 0; color: white; }
-.model-card {
-    background: #f8f9fa; border-radius: 10px; padding: 16px;
-    border-left: 4px solid #1f77b4; margin-bottom: 8px;
-}
-.vs-badge {
-    font-size: 2.5rem; font-weight: 700; color: #e74c3c;
-    text-align: center; line-height: 80px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Hero banner
-st.markdown("""
-<div class="hero-banner">
-    <h1>🧠 ML Playground</h1>
-    <p>Choose algorithms, tune hyperparameters, watch decision boundaries update live.<br>
-    Powered by <a href="https://github.com/cgrtml/neural-trees" style="color:#58a6ff">neural-trees</a> — sklearn-compatible implementations of classic ML research.</p>
-</div>
-""", unsafe_allow_html=True)
+st.title("🧠 ML Playground")
+st.caption(
+    "Choose algorithms, tune hyperparameters, watch decision boundaries update live. "
+    "Powered by [neural-trees](https://github.com/cgrtml/neural-trees), "
+    "sklearn-compatible implementations of classic ML research."
+)
 
 # ──────────────────────────────────────────────
 # Datasets
@@ -136,6 +114,27 @@ MODEL_COLORS = {
     "Weighted KNN": "#17becf",
     "Naive Bayes": "#bcbd22",
 }
+
+# Streamlit's coloured-text markdown takes named colours, not hex, and its
+# themes restyle them for light and dark. Plotly keeps the hex above; anything
+# rendered as text uses these, so the page stays readable in either theme
+# instead of relying on an injected stylesheet.
+MODEL_ACCENTS = {
+    "Soft Decision Tree": "blue",
+    "Omnivariate Tree": "orange",
+    "Hierarchical MoE": "green",
+    "GAL Network": "red",
+    "CART (sklearn)": "violet",
+    "Random Forest": "gray",
+    "SVM (RBF)": "violet",
+    "Weighted KNN": "blue",
+    "Naive Bayes": "orange",
+}
+
+
+def _accent(name: str) -> str:
+    return MODEL_ACCENTS.get(name, "gray")
+
 
 # ──────────────────────────────────────────────
 # Sidebar — Configuration
@@ -212,7 +211,7 @@ for name in selected_models:
             }
 
 st.sidebar.divider()
-run_button = st.sidebar.button("🚀 Run Comparison", type="primary", use_container_width=True)
+run_button = st.sidebar.button("🚀 Run Comparison", type="primary", width="stretch")
 st.sidebar.divider()
 st.sidebar.caption("Built by [Cagri Temel](https://github.com/cgrtml)")
 
@@ -238,7 +237,10 @@ def build_model(name):
     elif name == "Random Forest":
         return RandomForestClassifier(n_estimators=p.get("n_estimators", 100), max_depth=p.get("max_depth", 5), random_state=42)
     elif name == "SVM (RBF)":
-        return SVC(kernel="rbf", C=p.get("C", 1.0), gamma=p.get("gamma", "scale"), probability=True, random_state=42)
+        # probability=True was deprecated in scikit-learn 1.9 and nothing here
+        # calls predict_proba on the SVM, so it only cost a round of internal
+        # cross-validation on every fit.
+        return SVC(kernel="rbf", C=p.get("C", 1.0), gamma=p.get("gamma", "scale"), random_state=42)
     elif name == "Weighted KNN":
         return WeightedKNN(k=p.get("k", 5), weight_power=p.get("weight_power", 2.0))
     elif name == "Naive Bayes":
@@ -248,20 +250,17 @@ def build_model(name):
 # ──────────────────────────────────────────────
 # Landing page
 # ──────────────────────────────────────────────
-if not run_button:
-    st.info("👈 Select models, tune hyperparameters, then press **Run Comparison**.")
+# A first visit runs the defaults straight away. Waiting behind a button meant
+# the page a stranger lands on shows nothing about what the app does, which is
+# the whole reason they opened it.
+first_visit = "results" not in st.session_state
 
+with st.expander("What these models are"):
     cols = st.columns(3)
     for i, name in enumerate(MODEL_NAMES):
-        with cols[i % 3]:
-            st.markdown(f"""
-            <div style="background:#f8f9fa; border-left:4px solid {MODEL_COLORS[name]};
-                        padding:12px 16px; border-radius:8px; margin-bottom:10px;">
-                <strong style="color:{MODEL_COLORS[name]}">{name}</strong><br>
-                <span style="font-size:13px; color:#555;">{MODEL_DESCRIPTIONS[name]}</span>
-            </div>
-            """, unsafe_allow_html=True)
-    st.stop()
+        with cols[i % 3], st.container(border=True):
+            st.markdown(f"**:{_accent(name)}[{name}]**")
+            st.caption(MODEL_DESCRIPTIONS[name])
 
 if not selected_models:
     st.warning("Please select at least one model.")
@@ -278,23 +277,52 @@ n_classes = len(np.unique(y))
 
 # ──────────────────────────────────────────────
 # Cross-validation
+#
+# Streamlit reruns the whole script on every interaction, so results have to
+# survive one. They are recomputed when the settings that produced them change,
+# or when Run Comparison is pressed, and read back from session state otherwise.
+# Without this, touching any widget lower down the page, the animation button
+# for instance, wiped the results off the screen.
 # ──────────────────────────────────────────────
-results = {}
-status = st.empty()
-progress = st.progress(0)
+settings = json.dumps(
+    {
+        "dataset": dataset_name,
+        "models": selected_models,
+        "cv_folds": cv_folds,
+        "hyperparameters": hp,
+    },
+    sort_keys=True,
+    default=str,
+)
 
-for i, name in enumerate(selected_models):
-    status.text(f"Training {name}...")
-    try:
-        model = build_model(name)
-        scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
-        results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
-    except Exception as e:
-        results[name] = {"mean": 0.0, "std": 0.0, "scores": np.array([0.0]), "error": str(e)}
-    progress.progress((i + 1) / len(selected_models))
+if run_button or st.session_state.get("settings") != settings:
+    results = {}
+    status = st.empty()
+    progress = st.progress(0)
 
-progress.empty()
-status.empty()
+    for i, name in enumerate(selected_models):
+        status.text(f"Training {name}...")
+        try:
+            model = build_model(name)
+            scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
+            results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
+        except Exception as e:
+            results[name] = {"mean": 0.0, "std": 0.0, "scores": np.array([0.0]), "error": str(e)}
+        progress.progress((i + 1) / len(selected_models))
+
+    progress.empty()
+    status.empty()
+    st.session_state.results = results
+    st.session_state.settings = settings
+else:
+    results = st.session_state.results
+
+if first_visit:
+    st.info(
+        f"This is a default comparison on **{dataset_name}**. Change the dataset, "
+        "the models or their hyperparameters on the left and the table below "
+        "follows."
+    )
 
 sorted_results = sorted(results.items(), key=lambda x: x[1]["mean"], reverse=True)
 valid_results = [(n, r) for n, r in sorted_results if "error" not in r]
@@ -332,39 +360,19 @@ with tab_rank:
         bg = "#fffdf5" if rank == 1 else "#f8f9fa"
         pct = int(r["mean"] / best_acc * 100) if not has_error and best_acc > 0 else 0
 
-        if has_error:
-            card_html = f"""
-            <div style="background:#fff5f5; border-left:3px solid #e74c3c; border-radius:10px;
-                        padding:16px 20px; margin-bottom:10px;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="font-size:28px">{medal}</span>
-                    <div style="flex:1">
-                        <div style="font-weight:600; font-size:16px; color:#333">{name}</div>
-                        <div style="font-size:12px; color:#888">{MODEL_DESCRIPTIONS[name]}</div>
-                    </div>
-                    <div style="color:#e74c3c; font-weight:600">❌ Error</div>
-                </div>
-            </div>"""
-        else:
-            card_html = f"""
-            <div style="background:{bg}; border-left:{border_weight} solid {color}; border-radius:10px;
-                        padding:16px 20px; margin-bottom:10px;">
-                <div style="display:flex; align-items:center; gap:16px;">
-                    <span style="font-size:32px">{medal}</span>
-                    <div style="flex:1">
-                        <div style="font-weight:600; font-size:16px; color:#333">{name}</div>
-                        <div style="font-size:12px; color:#888; margin-top:2px">{MODEL_DESCRIPTIONS[name]}</div>
-                        <div style="margin-top:8px; background:#e9ecef; border-radius:6px; height:8px; overflow:hidden;">
-                            <div style="width:{pct}%; height:100%; background:{color}; border-radius:6px;"></div>
-                        </div>
-                    </div>
-                    <div style="text-align:right; min-width:100px;">
-                        <div style="font-size:28px; font-weight:700; color:{color}">{r['mean']:.4f}</div>
-                        <div style="font-size:12px; color:#999">± {r['std']:.4f}</div>
-                    </div>
-                </div>
-            </div>"""
-        st.markdown(card_html, unsafe_allow_html=True)
+        with st.container(border=True):
+            left, right = st.columns([4, 1])
+            with left:
+                st.markdown(f"### {medal} :{_accent(name)}[{name}]")
+                st.caption(MODEL_DESCRIPTIONS[name])
+                if not has_error:
+                    st.progress(min(max(pct, 0), 100) / 100)
+            with right:
+                if has_error:
+                    st.error("Error")
+                    st.caption(str(r["error"])[:80])
+                else:
+                    st.metric("Accuracy", f"{r['mean']:.4f}", f"± {r['std']:.4f}", delta_color="off")
 
 # ── TAB 2: Charts ──
 with tab_chart:
@@ -393,7 +401,7 @@ with tab_chart:
                 height=420, margin=dict(t=20, b=80), xaxis_tickangle=-25,
                 plot_bgcolor="white", paper_bgcolor="white", yaxis=dict(gridcolor="#eee"),
             )
-            st.plotly_chart(fig_bar, use_container_width=True)
+            st.plotly_chart(fig_bar)
 
         with col_box:
             st.subheader("Per-Fold Distribution")
@@ -410,7 +418,7 @@ with tab_chart:
                 plot_bgcolor="white", paper_bgcolor="white", yaxis=dict(gridcolor="#eee"),
                 xaxis_tickangle=-25,
             )
-            st.plotly_chart(fig_box, use_container_width=True)
+            st.plotly_chart(fig_box)
 
         # Radar chart
         if len(valid_results) >= 3:
@@ -432,7 +440,7 @@ with tab_chart:
                 polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
                 height=400, showlegend=True,
             )
-            st.plotly_chart(fig_radar, use_container_width=True)
+            st.plotly_chart(fig_radar)
 
 # ── TAB 3: Head-to-Head ──
 with tab_h2h:
@@ -452,30 +460,26 @@ with tab_h2h:
         # VS display
         v1, vs, v2 = st.columns([5, 2, 5])
         with v1:
-            st.markdown(f"<h2 style='text-align:center; color:{MODEL_COLORS[model_a]}'>{model_a}</h2>", unsafe_allow_html=True)
-            st.markdown(f"<h1 style='text-align:center'>{ra['mean']:.4f}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align:center; color:#888'>σ = {ra['std']:.4f}</p>", unsafe_allow_html=True)
-            # Show hyperparams
+            st.markdown(f"#### :{_accent(model_a)}[{model_a}]")
+            st.metric("Accuracy", f"{ra['mean']:.4f}", f"σ = {ra['std']:.4f}", delta_color="off")
             if model_a in hp:
                 st.caption("Hyperparameters:")
                 for k, v in hp[model_a].items():
-                    st.markdown(f"<span style='font-size:12px'>`{k}` = **{v}**</span>", unsafe_allow_html=True)
+                    st.caption(f"`{k}` = **{v}**")
         with vs:
-            st.markdown("<div class='vs-badge'>VS</div>", unsafe_allow_html=True)
-            delta_color = MODEL_COLORS[winner]
-            st.markdown(f"<p style='text-align:center; font-size:13px'>Δ = <b style=\"color:{delta_color}\">{abs(diff):.4f}</b></p>", unsafe_allow_html=True)
+            st.markdown("#### VS")
+            st.metric("Δ", f"{abs(diff):.4f}", delta_color="off")
             if abs(diff) < 0.005:
-                st.markdown("<p style='text-align:center; font-size:11px; color:#888'>⚖️ Too close to call</p>", unsafe_allow_html=True)
+                st.caption("⚖️ Too close to call")
             else:
-                st.markdown(f"<p style='text-align:center; font-size:11px; color:{delta_color}'>👑 {winner}</p>", unsafe_allow_html=True)
+                st.caption(f"👑 :{_accent(winner)}[{winner}]")
         with v2:
-            st.markdown(f"<h2 style='text-align:center; color:{MODEL_COLORS[model_b]}'>{model_b}</h2>", unsafe_allow_html=True)
-            st.markdown(f"<h1 style='text-align:center'>{rb['mean']:.4f}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<p style='text-align:center; color:#888'>σ = {rb['std']:.4f}</p>", unsafe_allow_html=True)
+            st.markdown(f"#### :{_accent(model_b)}[{model_b}]")
+            st.metric("Accuracy", f"{rb['mean']:.4f}", f"σ = {rb['std']:.4f}", delta_color="off")
             if model_b in hp:
                 st.caption("Hyperparameters:")
                 for k, v in hp[model_b].items():
-                    st.markdown(f"<span style='font-size:12px'>`{k}` = **{v}**</span>", unsafe_allow_html=True)
+                    st.caption(f"`{k}` = **{v}**")
 
         st.divider()
 
@@ -503,7 +507,7 @@ with tab_h2h:
             plot_bgcolor="white", paper_bgcolor="white", yaxis=dict(gridcolor="#eee"),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
-        st.plotly_chart(fig_h2h, use_container_width=True)
+        st.plotly_chart(fig_h2h)
 
         # Statistical test
         st.subheader("📐 Statistical Significance")
@@ -602,7 +606,99 @@ with tab_boundary:
         )
         fig.update_xaxes(showticklabels=False, showgrid=False)
         fig.update_yaxes(showticklabels=False, showgrid=False)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
+
+    # ── Training animation ──────────────────────────────────────────────
+    st.divider()
+    st.subheader("🎬 Watch a boundary being learned")
+    st.caption(
+        "A soft decision tree is trained in stages with `warm_start=True`, and "
+        "its boundary is captured after each stage. This is the one thing a "
+        "differentiable tree can show that a hard one cannot: the split moving."
+    )
+
+    if "Soft Decision Tree" not in valid_models:
+        st.info("Select **Soft Decision Tree** to see this.")
+    else:
+        anim_col1, anim_col2 = st.columns(2)
+        with anim_col1:
+            anim_depth = st.slider("Tree depth", 1, 5, 3, key="anim_depth")
+        with anim_col2:
+            anim_steps = st.slider("Snapshots", 4, 16, 8, key="anim_steps")
+
+        if st.button("🎬 Render animation", key="anim_go"):
+            epochs_per_step = 5
+            animator = SoftDecisionTree(
+                depth=anim_depth, max_epochs=epochs_per_step,
+                warm_start=True, random_state=0,
+            )
+            frames, titles = [], []
+            anim_progress = st.progress(0.0, text="Training...")
+
+            for step in range(anim_steps):
+                animator.fit(X_2d, y)  # warm_start continues where it left off
+                Z = animator.predict(grid).reshape(xx.shape)
+                frames.append(
+                    go.Frame(
+                        data=[go.Heatmap(
+                            z=Z, x=np.arange(x_min, x_max, h), y=np.arange(y_min, y_max, h),
+                            showscale=False, opacity=0.35,
+                            colorscale=[[0, "#ffcccc"], [0.5, "#ccffcc"], [1, "#ccccff"]],
+                        )],
+                        name=str(step),
+                    )
+                )
+                titles.append(f"epoch {(step + 1) * epochs_per_step}, "
+                              f"train accuracy {animator.score(X_2d, y):.3f}")
+                anim_progress.progress((step + 1) / anim_steps, text=f"Training... {titles[-1]}")
+
+            anim_progress.empty()
+
+            anim_fig = go.Figure(
+                data=[frames[0].data[0]] + [
+                    go.Scatter(
+                        x=X_2d[y == c, 0], y=X_2d[y == c, 1], mode="markers",
+                        marker=dict(size=6, color=class_colors[c % len(class_colors)],
+                                    line=dict(width=0.5, color="white")),
+                        name=f"Class {c}",
+                    )
+                    for c in range(n_classes)
+                ],
+                frames=frames,
+            )
+            anim_fig.update_layout(
+                height=520, margin=dict(t=60, b=20, l=20, r=20),
+                plot_bgcolor="white", paper_bgcolor="white",
+                title=titles[0],
+                updatemenus=[dict(
+                    type="buttons", showactive=False, x=0.02, y=1.12, xanchor="left",
+                    buttons=[
+                        dict(label="▶ Play", method="animate",
+                             args=[None, dict(frame=dict(duration=500, redraw=True),
+                                              fromcurrent=True)]),
+                        dict(label="⏸ Pause", method="animate",
+                             args=[[None], dict(frame=dict(duration=0, redraw=False),
+                                                mode="immediate")]),
+                    ],
+                )],
+                sliders=[dict(
+                    active=0, y=-0.02, x=0.1, len=0.85,
+                    steps=[
+                        dict(method="animate", label=str((i + 1) * epochs_per_step),
+                             args=[[str(i)], dict(frame=dict(duration=0, redraw=True),
+                                                  mode="immediate")])
+                        for i in range(len(frames))
+                    ],
+                    currentvalue=dict(prefix="epoch "),
+                )],
+            )
+            anim_fig.update_xaxes(showticklabels=False, showgrid=False)
+            anim_fig.update_yaxes(showticklabels=False, showgrid=False)
+            st.plotly_chart(anim_fig)
+            st.caption(
+                f"Final: {titles[-1]}. The same run in code is "
+                "`SoftDecisionTree(warm_start=True)` called repeatedly."
+            )
 
 # ──────────────────────────────────────────────
 # Footer
