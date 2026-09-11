@@ -64,6 +64,7 @@ dev = [
 ]
 
 [project.urls]
+"Live demo" = "https://neural-trees.streamlit.app"
 Source = "https://github.com/cgrtml/neural-trees"
 "Bug Tracker" = "https://github.com/cgrtml/neural-trees/issues"
 Documentation = "https://github.com/cgrtml/neural-trees#readme"
