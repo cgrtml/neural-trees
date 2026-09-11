@@ -106,7 +106,8 @@ distribution leaves the mixture unchanged, which looks like the safe way to
 grow. It is not: with identical children the mixture does not depend on the new
 gate at all, so the gate's gradient is exactly zero and the children receive
 identical gradients forever. The level is dead weight. Growing that way reached
-0.840 on Iris against 0.973 for a tree of the same depth trained from scratch.
+0.753 on Iris and 0.754 on Wine, against 0.958 and 0.977 for trees of the same
+depth trained from scratch.
 A small perturbation of the new leaf distributions breaks the symmetry, and a
 regression test asserts the zero gradient exists without it.
 

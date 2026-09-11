@@ -1,0 +1,34 @@
+{
+  "title": "neural-trees: soft decision trees, hierarchical mixtures of experts and classifier comparison tests for Python",
+  "description": "<p>A scikit-learn compatible library of differentiable and constructive classifiers with a PyTorch backend: soft decision trees, multivariate and omnivariate trees, hierarchical mixtures of experts, a grow-and-prune network, condensed nearest neighbour with voting, and the statistical tests used to decide whether one classifier is genuinely better than another.</p><p>The implementations start from published algorithms and depart from them where measurement justified it; each deviation is documented in the module docstring with the numbers behind it.</p>",
+  "upload_type": "software",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Temel, Cagri",
+      "orcid": "0009-0003-3359-6939"
+    }
+  ],
+  "keywords": [
+    "soft decision trees",
+    "mixture of experts",
+    "constructive neural networks",
+    "interpretable machine learning",
+    "model comparison",
+    "scikit-learn",
+    "pytorch"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/cgrtml/neural-trees",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://pypi.org/project/neural-trees/",
+      "relation": "isIdenticalTo",
+      "scheme": "url"
+    }
+  ]
+}
