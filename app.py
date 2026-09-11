@@ -25,6 +25,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from neural_trees import (
     HierarchicalMixtureOfExperts,
+    MultivariateDecisionTree,
     OmnivariateDecisionTree,
     SoftDecisionTree,
     combined_5x2cv_f_test,
@@ -81,6 +82,7 @@ DATASET_INFO = {
 # ──────────────────────────────────────────────
 MODEL_NAMES = [
     "Soft Decision Tree",
+    "Multivariate Tree",
     "Omnivariate Tree",
     "Hierarchical MoE",
     "GAL Network",
@@ -93,6 +95,7 @@ MODEL_NAMES = [
 
 MODEL_DESCRIPTIONS = {
     "Soft Decision Tree": "Differentiable tree with sigmoid gates (Irsoy et al., ICPR 2012)",
+    "Multivariate Tree": "Oblique splits from a linear discriminant per node (Alpaydin & Cetin, 1995)",
     "Omnivariate Tree": "Auto-selects univariate/linear/nonlinear splits (Yildiz & Alpaydin, 2001)",
     "Hierarchical MoE": "Tree-structured mixture of experts with dropout (Irsoy & Alpaydin, 2021)",
     "GAL Network": "Grow-and-learn constructive neural network (Alpaydin, 1994)",
@@ -105,6 +108,7 @@ MODEL_DESCRIPTIONS = {
 
 MODEL_COLORS = {
     "Soft Decision Tree": "#1f77b4",
+    "Multivariate Tree": "#17a2b8",
     "Omnivariate Tree": "#ff7f0e",
     "Hierarchical MoE": "#2ca02c",
     "GAL Network": "#d62728",
@@ -121,6 +125,7 @@ MODEL_COLORS = {
 # instead of relying on an injected stylesheet.
 MODEL_ACCENTS = {
     "Soft Decision Tree": "blue",
+    "Multivariate Tree": "green",
     "Omnivariate Tree": "orange",
     "Hierarchical MoE": "green",
     "GAL Network": "red",
@@ -167,6 +172,11 @@ for name in selected_models:
                 "max_epochs": st.slider("Max epochs", 10, 100, 40, key="sdt_epochs"),
                 "lr": st.select_slider("Learning rate", [0.001, 0.005, 0.01, 0.05, 0.1], value=0.01, key="sdt_lr"),
                 "batch_size": st.select_slider("Batch size", [16, 32, 64, 128], value=64, key="sdt_bs"),
+            }
+        elif name == "Multivariate Tree":
+            hp[name] = {
+                "max_depth": st.slider("Max depth", 1, 8, 3, key="mdt_depth"),
+                "min_samples_split": st.slider("Min samples split", 2, 30, 10, key="mdt_mss"),
             }
         elif name == "Omnivariate Tree":
             hp[name] = {
@@ -228,6 +238,10 @@ def build_model(name, p=None):
     if name == "Soft Decision Tree":
         return SoftDecisionTree(depth=p.get("depth", 4), max_epochs=p.get("max_epochs", 40),
                                 learning_rate=p.get("lr", 0.01), batch_size=p.get("batch_size", 64), verbose=False)
+    elif name == "Multivariate Tree":
+        return MultivariateDecisionTree(max_depth=p.get("max_depth", 3),
+                                        min_samples_split=p.get("min_samples_split", 10),
+                                        random_state=42)
     elif name == "Omnivariate Tree":
         return OmnivariateDecisionTree(max_depth=p.get("max_depth", 5), min_samples_split=p.get("min_samples_split", 10))
     elif name == "Hierarchical MoE":
