@@ -211,7 +211,10 @@ for name in selected_models:
             }
 
 st.sidebar.divider()
-run_button = st.sidebar.button("🚀 Run Comparison", type="primary", width="stretch")
+# Results are cached on their inputs, so they refresh by themselves when a
+# setting changes. This button is for forcing a fresh fit anyway.
+if st.sidebar.button("🔄 Recompute", type="primary", width="stretch"):
+    st.cache_data.clear()
 st.sidebar.divider()
 st.sidebar.caption("Built by [Cagri Temel](https://github.com/cgrtml)")
 
@@ -219,8 +222,9 @@ st.sidebar.caption("Built by [Cagri Temel](https://github.com/cgrtml)")
 # ──────────────────────────────────────────────
 # Build model with hyperparameters
 # ──────────────────────────────────────────────
-def build_model(name):
-    p = hp.get(name, {})
+def build_model(name, p=None):
+    """Construct a model. `p` defaults to the sidebar's current hyperparameters."""
+    p = hp.get(name, {}) if p is None else p
     if name == "Soft Decision Tree":
         return SoftDecisionTree(depth=p.get("depth", 4), max_epochs=p.get("max_epochs", 40),
                                 learning_rate=p.get("lr", 0.01), batch_size=p.get("batch_size", 64), verbose=False)
@@ -267,6 +271,50 @@ if not selected_models:
     st.stop()
 
 # ──────────────────────────────────────────────
+# Cached work
+#
+# Streamlit reruns the whole script on every interaction and renders every tab,
+# open or not, so without this each click refitted every model twice: once for
+# cross-validation and once for the decision boundaries. That is what got the
+# hosted app CPU-throttled. st.cache_data is keyed on the inputs and shared
+# across sessions, so the default comparison is computed once for everyone
+# rather than once per visitor.
+# ──────────────────────────────────────────────
+@st.cache_data(show_spinner=False, max_entries=256, ttl=24 * 3600)
+def _scaled_dataset(dataset_name):
+    data = DATASETS[dataset_name]()
+    return StandardScaler().fit_transform(data.data), data.target
+
+
+@st.cache_data(show_spinner=False, max_entries=512, ttl=24 * 3600)
+def _cross_validate(dataset_name, model_name, params_json, cv_folds):
+    X_scaled, y = _scaled_dataset(dataset_name)
+    model = build_model(model_name, json.loads(params_json))
+    return cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
+
+
+@st.cache_data(show_spinner=False, max_entries=512, ttl=24 * 3600)
+def _boundary(dataset_name, model_name, params_json, grid_step):
+    """Fit on the 2D projection and label the grid. Cached because every rerun
+    renders this tab whether or not anyone is looking at it."""
+    X_scaled, y = _scaled_dataset(dataset_name)
+    X_2d = (
+        PCA(n_components=2, random_state=42).fit_transform(X_scaled)
+        if X_scaled.shape[1] > 2
+        else X_scaled.copy()
+    )
+    x_min, x_max = X_2d[:, 0].min() - 0.5, X_2d[:, 0].max() + 0.5
+    y_min, y_max = X_2d[:, 1].min() - 0.5, X_2d[:, 1].max() + 0.5
+    xx, yy = np.meshgrid(
+        np.arange(x_min, x_max, grid_step), np.arange(y_min, y_max, grid_step)
+    )
+    model = build_model(model_name, json.loads(params_json))
+    model.fit(X_2d, y)
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+    return X_2d, Z, (x_min, x_max, y_min, y_max)
+
+
+# ──────────────────────────────────────────────
 # Load data
 # ──────────────────────────────────────────────
 data = DATASETS[dataset_name]()
@@ -284,38 +332,22 @@ n_classes = len(np.unique(y))
 # Without this, touching any widget lower down the page, the animation button
 # for instance, wiped the results off the screen.
 # ──────────────────────────────────────────────
-settings = json.dumps(
-    {
-        "dataset": dataset_name,
-        "models": selected_models,
-        "cv_folds": cv_folds,
-        "hyperparameters": hp,
-    },
-    sort_keys=True,
-    default=str,
-)
+results = {}
+status = st.empty()
+progress = st.progress(0)
 
-if run_button or st.session_state.get("settings") != settings:
-    results = {}
-    status = st.empty()
-    progress = st.progress(0)
+for i, name in enumerate(selected_models):
+    status.text(f"Training {name}...")
+    params_json = json.dumps(hp.get(name, {}), sort_keys=True, default=str)
+    try:
+        scores = _cross_validate(dataset_name, name, params_json, cv_folds)
+        results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
+    except Exception as e:
+        results[name] = {"mean": 0.0, "std": 0.0, "scores": np.array([0.0]), "error": str(e)}
+    progress.progress((i + 1) / len(selected_models))
 
-    for i, name in enumerate(selected_models):
-        status.text(f"Training {name}...")
-        try:
-            model = build_model(name)
-            scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
-            results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
-        except Exception as e:
-            results[name] = {"mean": 0.0, "std": 0.0, "scores": np.array([0.0]), "error": str(e)}
-        progress.progress((i + 1) / len(selected_models))
-
-    progress.empty()
-    status.empty()
-    st.session_state.results = results
-    st.session_state.settings = settings
-else:
-    results = st.session_state.results
+progress.empty()
+status.empty()
 
 if first_visit:
     st.info(
@@ -567,9 +599,8 @@ with tab_boundary:
             col = idx % cols_per_row + 1
 
             try:
-                model = build_model(name)
-                model.fit(X_2d, y)
-                Z = model.predict(grid).reshape(xx.shape)
+                params_json = json.dumps(hp.get(name, {}), sort_keys=True, default=str)
+                _, Z, _ = _boundary(dataset_name, name, params_json, h)
 
                 # Background heatmap
                 fig.add_trace(
