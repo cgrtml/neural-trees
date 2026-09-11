@@ -93,6 +93,42 @@ MODEL_NAMES = [
     "Naive Bayes",
 ]
 
+# Which family a model belongs to, so the picker can group them.
+LIBRARY_MODELS = [
+    "Soft Decision Tree",
+    "Multivariate Tree",
+    "Omnivariate Tree",
+    "Hierarchical MoE",
+    "GAL Network",
+    "Weighted KNN",
+    "Naive Bayes",
+]
+BASELINE_MODELS = ["CART (sklearn)", "Random Forest", "SVM (RBF)"]
+DEFAULT_MODELS = ["Soft Decision Tree", "Multivariate Tree", "CART (sklearn)", "Random Forest"]
+
+# What each model is for, rather than where it came from. The citation lives in
+# MODEL_DESCRIPTIONS; this is the line that helps someone choose.
+MODEL_PURPOSE = {
+    "Soft Decision Tree": "Every sample reaches every leaf, weighted. Smooth boundaries "
+                          "instead of a staircase, and it trains by gradient descent.",
+    "Multivariate Tree": "Splits on a weighted sum of features, so one node draws a diagonal "
+                         "where CART needs a staircase of them. Best when features correlate.",
+    "Omnivariate Tree": "Picks the split type per node: one feature, a line, or a small "
+                        "network. For when you do not know the shape of the boundary.",
+    "Hierarchical MoE": "Gates route regions of the input to specialist networks. For data "
+                        "with distinct regimes rather than one global rule.",
+    "GAL Network": "Grows hidden units while it trains and prunes the ones that stop earning "
+                   "their place. For when you do not know the right network size.",
+    "Weighted KNN": "No training at all; predicts from nearby examples, closer ones counting "
+                    "more. Strong on small, clean data.",
+    "Naive Bayes": "Fast probabilistic baseline that assumes features are independent. "
+                   "Often hard to beat on high-dimensional counts.",
+    "CART (sklearn)": "The standard decision tree. The thing the trees above are trying to "
+                      "improve on.",
+    "Random Forest": "Hundreds of trees voting. The accuracy bar a single model has to clear.",
+    "SVM (RBF)": "Kernel method, not a tree. The other kind of answer to the same question.",
+}
+
 MODEL_DESCRIPTIONS = {
     "Soft Decision Tree": "Differentiable tree with sigmoid gates (Irsoy et al., ICPR 2012)",
     "Multivariate Tree": "Oblique splits from a linear discriminant per node (Alpaydin & Cetin, 1995)",
@@ -149,11 +185,28 @@ st.sidebar.header("⚙️ Configuration")
 dataset_name = st.sidebar.selectbox("📊 Dataset", list(DATASETS.keys()))
 st.sidebar.caption(DATASET_INFO[dataset_name])
 
-selected_models = st.sidebar.multiselect(
-    "🤖 Models",
-    MODEL_NAMES,
-    default=["Soft Decision Tree", "CART (sklearn)", "Random Forest", "SVM (RBF)"],
-)
+st.sidebar.markdown("**🤖 Models**")
+
+
+def _model_checkboxes(names):
+    """One checkbox per model, with what it is for on hover."""
+    chosen = []
+    for model_name in names:
+        if st.sidebar.checkbox(
+            model_name,
+            value=model_name in DEFAULT_MODELS,
+            key=f"pick_{model_name}",
+            help=MODEL_PURPOSE[model_name],
+        ):
+            chosen.append(model_name)
+    return chosen
+
+
+st.sidebar.caption("From neural-trees")
+selected_models = _model_checkboxes(LIBRARY_MODELS)
+st.sidebar.caption("Baselines to beat")
+selected_models += _model_checkboxes(BASELINE_MODELS)
+selected_models = [n for n in MODEL_NAMES if n in selected_models]
 
 cv_folds = st.sidebar.slider("🔄 CV Folds", 3, 10, 5)
 
@@ -273,12 +326,22 @@ def build_model(name, p=None):
 # the whole reason they opened it.
 first_visit = "results" not in st.session_state
 
-with st.expander("What these models are"):
-    cols = st.columns(3)
-    for i, name in enumerate(MODEL_NAMES):
-        with cols[i % 3], st.container(border=True):
-            st.markdown(f"**:{_accent(name)}[{name}]**")
-            st.caption(MODEL_DESCRIPTIONS[name])
+with st.expander("What each model is for", expanded=first_visit):
+    st.caption(
+        "Tick the ones you want in the sidebar. The first group is this "
+        "library; the second is what it is measured against."
+    )
+    for group_label, group in (
+        ("From neural-trees", LIBRARY_MODELS),
+        ("Baselines to beat", BASELINE_MODELS),
+    ):
+        st.markdown(f"**{group_label}**")
+        cols = st.columns(2)
+        for i, name in enumerate(group):
+            with cols[i % 2], st.container(border=True):
+                st.markdown(f"**:{_accent(name)}[{name}]**")
+                st.write(MODEL_PURPOSE[name])
+                st.caption(MODEL_DESCRIPTIONS[name])
 
 if not selected_models:
     st.warning("Please select at least one model.")
