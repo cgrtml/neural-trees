@@ -3,6 +3,8 @@ ML Playground — Interactive model comparison dashboard.
 Run: streamlit run app.py
 """
 
+import json
+
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
@@ -248,15 +250,17 @@ def build_model(name):
 # ──────────────────────────────────────────────
 # Landing page
 # ──────────────────────────────────────────────
-if not run_button:
-    st.info("👈 Select models, tune hyperparameters, then press **Run Comparison**.")
+# A first visit runs the defaults straight away. Waiting behind a button meant
+# the page a stranger lands on shows nothing about what the app does, which is
+# the whole reason they opened it.
+first_visit = "results" not in st.session_state
 
+with st.expander("What these models are"):
     cols = st.columns(3)
     for i, name in enumerate(MODEL_NAMES):
         with cols[i % 3], st.container(border=True):
             st.markdown(f"**:{_accent(name)}[{name}]**")
             st.caption(MODEL_DESCRIPTIONS[name])
-    st.stop()
 
 if not selected_models:
     st.warning("Please select at least one model.")
@@ -273,23 +277,52 @@ n_classes = len(np.unique(y))
 
 # ──────────────────────────────────────────────
 # Cross-validation
+#
+# Streamlit reruns the whole script on every interaction, so results have to
+# survive one. They are recomputed when the settings that produced them change,
+# or when Run Comparison is pressed, and read back from session state otherwise.
+# Without this, touching any widget lower down the page, the animation button
+# for instance, wiped the results off the screen.
 # ──────────────────────────────────────────────
-results = {}
-status = st.empty()
-progress = st.progress(0)
+settings = json.dumps(
+    {
+        "dataset": dataset_name,
+        "models": selected_models,
+        "cv_folds": cv_folds,
+        "hyperparameters": hp,
+    },
+    sort_keys=True,
+    default=str,
+)
 
-for i, name in enumerate(selected_models):
-    status.text(f"Training {name}...")
-    try:
-        model = build_model(name)
-        scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
-        results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
-    except Exception as e:
-        results[name] = {"mean": 0.0, "std": 0.0, "scores": np.array([0.0]), "error": str(e)}
-    progress.progress((i + 1) / len(selected_models))
+if run_button or st.session_state.get("settings") != settings:
+    results = {}
+    status = st.empty()
+    progress = st.progress(0)
 
-progress.empty()
-status.empty()
+    for i, name in enumerate(selected_models):
+        status.text(f"Training {name}...")
+        try:
+            model = build_model(name)
+            scores = cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
+            results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
+        except Exception as e:
+            results[name] = {"mean": 0.0, "std": 0.0, "scores": np.array([0.0]), "error": str(e)}
+        progress.progress((i + 1) / len(selected_models))
+
+    progress.empty()
+    status.empty()
+    st.session_state.results = results
+    st.session_state.settings = settings
+else:
+    results = st.session_state.results
+
+if first_visit:
+    st.info(
+        f"This is a default comparison on **{dataset_name}**. Change the dataset, "
+        "the models or their hyperparameters on the left and the table below "
+        "follows."
+    )
 
 sorted_results = sorted(results.items(), key=lambda x: x[1]["mean"], reverse=True)
 valid_results = [(n, r) for n, r in sorted_results if "error" not in r]
@@ -574,6 +607,98 @@ with tab_boundary:
         fig.update_xaxes(showticklabels=False, showgrid=False)
         fig.update_yaxes(showticklabels=False, showgrid=False)
         st.plotly_chart(fig)
+
+    # ── Training animation ──────────────────────────────────────────────
+    st.divider()
+    st.subheader("🎬 Watch a boundary being learned")
+    st.caption(
+        "A soft decision tree is trained in stages with `warm_start=True`, and "
+        "its boundary is captured after each stage. This is the one thing a "
+        "differentiable tree can show that a hard one cannot: the split moving."
+    )
+
+    if "Soft Decision Tree" not in valid_models:
+        st.info("Select **Soft Decision Tree** to see this.")
+    else:
+        anim_col1, anim_col2 = st.columns(2)
+        with anim_col1:
+            anim_depth = st.slider("Tree depth", 1, 5, 3, key="anim_depth")
+        with anim_col2:
+            anim_steps = st.slider("Snapshots", 4, 16, 8, key="anim_steps")
+
+        if st.button("🎬 Render animation", key="anim_go"):
+            epochs_per_step = 5
+            animator = SoftDecisionTree(
+                depth=anim_depth, max_epochs=epochs_per_step,
+                warm_start=True, random_state=0,
+            )
+            frames, titles = [], []
+            anim_progress = st.progress(0.0, text="Training...")
+
+            for step in range(anim_steps):
+                animator.fit(X_2d, y)  # warm_start continues where it left off
+                Z = animator.predict(grid).reshape(xx.shape)
+                frames.append(
+                    go.Frame(
+                        data=[go.Heatmap(
+                            z=Z, x=np.arange(x_min, x_max, h), y=np.arange(y_min, y_max, h),
+                            showscale=False, opacity=0.35,
+                            colorscale=[[0, "#ffcccc"], [0.5, "#ccffcc"], [1, "#ccccff"]],
+                        )],
+                        name=str(step),
+                    )
+                )
+                titles.append(f"epoch {(step + 1) * epochs_per_step}, "
+                              f"train accuracy {animator.score(X_2d, y):.3f}")
+                anim_progress.progress((step + 1) / anim_steps, text=f"Training... {titles[-1]}")
+
+            anim_progress.empty()
+
+            anim_fig = go.Figure(
+                data=[frames[0].data[0]] + [
+                    go.Scatter(
+                        x=X_2d[y == c, 0], y=X_2d[y == c, 1], mode="markers",
+                        marker=dict(size=6, color=class_colors[c % len(class_colors)],
+                                    line=dict(width=0.5, color="white")),
+                        name=f"Class {c}",
+                    )
+                    for c in range(n_classes)
+                ],
+                frames=frames,
+            )
+            anim_fig.update_layout(
+                height=520, margin=dict(t=60, b=20, l=20, r=20),
+                plot_bgcolor="white", paper_bgcolor="white",
+                title=titles[0],
+                updatemenus=[dict(
+                    type="buttons", showactive=False, x=0.02, y=1.12, xanchor="left",
+                    buttons=[
+                        dict(label="▶ Play", method="animate",
+                             args=[None, dict(frame=dict(duration=500, redraw=True),
+                                              fromcurrent=True)]),
+                        dict(label="⏸ Pause", method="animate",
+                             args=[[None], dict(frame=dict(duration=0, redraw=False),
+                                                mode="immediate")]),
+                    ],
+                )],
+                sliders=[dict(
+                    active=0, y=-0.02, x=0.1, len=0.85,
+                    steps=[
+                        dict(method="animate", label=str((i + 1) * epochs_per_step),
+                             args=[[str(i)], dict(frame=dict(duration=0, redraw=True),
+                                                  mode="immediate")])
+                        for i in range(len(frames))
+                    ],
+                    currentvalue=dict(prefix="epoch "),
+                )],
+            )
+            anim_fig.update_xaxes(showticklabels=False, showgrid=False)
+            anim_fig.update_yaxes(showticklabels=False, showgrid=False)
+            st.plotly_chart(anim_fig)
+            st.caption(
+                f"Final: {titles[-1]}. The same run in code is "
+                "`SoftDecisionTree(warm_start=True)` called repeatedly."
+            )
 
 # ──────────────────────────────────────────────
 # Footer

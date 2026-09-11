@@ -93,9 +93,19 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-The same file is what [Streamlit Community
-Cloud](https://streamlit.io/cloud) installs, so the hosted version and the
-local one run the same code.
+It runs a default comparison as soon as it opens, then follows whatever you
+change in the sidebar. Four tabs: a ranking of every selected model with the
+winner called out, side-by-side charts, a head-to-head panel that settles the
+gap with the combined 5x2cv F test rather than an eyeballed accuracy
+difference, and decision boundaries.
+
+The boundary tab can also **animate training**: a soft tree is fitted in stages
+with `warm_start=True` and its boundary captured after each one, which is the
+thing a differentiable tree can show and a hard one cannot.
+
+Hosted at **https://neural-trees.streamlit.app**. The same
+`requirements.txt` installs it there and locally, so the two run the same
+code.
 
 ## Benchmark
 
