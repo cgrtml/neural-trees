@@ -89,9 +89,13 @@ side on standard and synthetic datasets, with live decision boundaries and
 hyperparameter controls:
 
 ```bash
-pip install streamlit plotly
+pip install -r requirements.txt
 streamlit run app.py
 ```
+
+The same file is what [Streamlit Community
+Cloud](https://streamlit.io/cloud) installs, so the hosted version and the
+local one run the same code.
 
 ## Benchmark
 
