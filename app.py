@@ -18,7 +18,7 @@ from sklearn.datasets import (
 )
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -274,10 +274,16 @@ for name in selected_models:
             }
 
 st.sidebar.divider()
-# Results are cached on their inputs, so they refresh by themselves when a
-# setting changes. This button is for forcing a fresh fit anyway.
-if st.sidebar.button("🔄 Recompute", type="primary", width="stretch"):
-    st.cache_data.clear()
+# Every model here is seeded, so "recompute" produced identical numbers and
+# looked broken. What is worth recomputing is the *split*: this library exists
+# partly to argue that an accuracy difference means little until you know how
+# much it moves when only the fold assignment changes.
+st.session_state.setdefault("split_seed", 0)
+if st.sidebar.button("🎲 Reshuffle the splits", type="primary", width="stretch"):
+    st.session_state.previous = st.session_state.get("current")
+    st.session_state.split_seed += 1
+split_seed = st.session_state.split_seed
+st.sidebar.caption("Same data, different fold assignment. Watch the numbers move.")
 st.sidebar.divider()
 st.sidebar.caption("Built by [Cagri Temel](https://github.com/cgrtml)")
 
@@ -364,10 +370,11 @@ def _scaled_dataset(dataset_name):
 
 
 @st.cache_data(show_spinner=False, max_entries=512, ttl=24 * 3600)
-def _cross_validate(dataset_name, model_name, params_json, cv_folds):
+def _cross_validate(dataset_name, model_name, params_json, cv_folds, split_seed):
     X_scaled, y = _scaled_dataset(dataset_name)
     model = build_model(model_name, json.loads(params_json))
-    return cross_val_score(model, X_scaled, y, cv=cv_folds, scoring="accuracy")
+    splitter = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=split_seed)
+    return cross_val_score(model, X_scaled, y, cv=splitter, scoring="accuracy")
 
 
 @st.cache_data(show_spinner=False, max_entries=512, ttl=24 * 3600)
@@ -417,7 +424,7 @@ for i, name in enumerate(selected_models):
     status.text(f"Training {name}...")
     params_json = json.dumps(hp.get(name, {}), sort_keys=True, default=str)
     try:
-        scores = _cross_validate(dataset_name, name, params_json, cv_folds)
+        scores = _cross_validate(dataset_name, name, params_json, cv_folds, split_seed)
         results[name] = {"mean": scores.mean(), "std": scores.std(), "scores": scores}
     except Exception as e:
         results[name] = {"mean": 0.0, "std": 0.0, "scores": np.array([0.0]), "error": str(e)}
@@ -425,6 +432,33 @@ for i, name in enumerate(selected_models):
 
 progress.empty()
 status.empty()
+
+# Remember this round so a reshuffle can show what moved.
+st.session_state.current = {n: r["mean"] for n, r in results.items()}
+previous = st.session_state.get("previous")
+if previous:
+    shared = [n for n in results if n in previous and "error" not in results[n]]
+    if shared:
+        moves = {n: results[n]["mean"] - previous[n] for n in shared}
+        biggest = max(moves, key=lambda n: abs(moves[n]))
+        ranking_before = sorted(shared, key=lambda n: -previous[n])
+        ranking_now = sorted(shared, key=lambda n: -results[n]["mean"])
+        message = (
+            f"Same data, new fold assignment. Largest move: **{biggest}** "
+            f"{previous[biggest]:.4f} → {results[biggest]['mean']:.4f} "
+            f"({moves[biggest]:+.4f})."
+        )
+        if ranking_before[0] != ranking_now[0]:
+            st.warning(
+                message + f" The winner changed too: **{ranking_before[0]}** → "
+                f"**{ranking_now[0]}**. This is why a single accuracy number "
+                "settles nothing; the Head-to-Head tab runs the test that does."
+            )
+        else:
+            st.info(
+                message + " The ranking held. Differences smaller than this "
+                "are not evidence of anything on their own."
+            )
 
 if first_visit:
     st.info(
