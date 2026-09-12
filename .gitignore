@@ -18,3 +18,7 @@ examples/output/
 
 # local, untracked working notes
 .private/
+paper/arxiv/*.pdf
+paper/arxiv/*.aux
+paper/arxiv/*.log
+paper/arxiv/*.out

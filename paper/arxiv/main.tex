@@ -1,0 +1,476 @@
+% arXiv submission source. Compiles with pdflatex.
+% See README-arxiv.md in this folder for the submission checklist.
+\pdfoutput=1
+
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{proposition}{Proposition}
+
+\title{Function-Preserving Growth Cannot Learn:\\
+Four Measurements on Constructive Tree-Structured Classifiers}
+
+\author{Cagri Temel\\
+  \small Independent researcher\\
+  \small \texttt{cagritemelusa@gmail.com}\\
+  \small ORCID: 0009-0003-3359-6939}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Constructive learners change their own architecture while training: they add
+hidden units, split leaves, or deepen a tree. Which of these operations
+actually helps is usually argued rather than measured. We report four
+measurements on tree-structured and constructive classifiers, two positive and
+two negative, obtained while building and testing an open-source
+implementation of soft decision trees, hierarchical mixtures of experts and
+grow-and-prune networks.
+
+The central result is negative and exact. Deepening a soft decision tree so
+that the function it computes is exactly preserved --- every leaf becomes a
+gate with two children inheriting the parent's class distribution --- makes the
+gradient of the new gate identically zero and leaves the two children with
+identical gradients, so the new level can never differentiate. This is not a
+slow start but a fixed point. Under five-fold cross-validation repeated over
+three seeds it costs $0.958 \rightarrow 0.753$ on Iris and $0.977 \rightarrow
+0.754$ on Wine. Breaking the symmetry with a small perturbation of the child
+distributions recovers the loss completely, and the size of the perturbation
+barely matters: values spanning an order of magnitude all land within four
+tenths of a point of each other.
+
+We further find that fitting a new hidden unit to the residual error of the
+frozen network before installing it, in the manner of cascade-correlation,
+reaches higher accuracy with 62\% fewer units; that choosing which leaf to
+split by expected error reaches higher accuracy with 3.7 splits than a
+fixed-depth tree reaches with 63; and, negatively, that selecting each node's
+split type by a statistical significance test does simplify individual nodes
+but produces a larger tree with lower accuracy. Node-level parsimony does not
+compose into tree-level parsimony.
+
+All code, data preparation and measurement scripts are public.
+\end{abstract}
+
+\section{Introduction}
+
+A constructive learner decides its own architecture during training. The idea
+is old --- cascade-correlation \cite{fahlman1990cascade} and the grow-and-learn
+network \cite{alpaydin1994gal} both date from the early 1990s --- and it has
+returned in the tree literature, where soft decision trees
+\cite{irsoy2012soft, frosst2017distilling} replace the hard threshold at each
+internal node with a sigmoid gate and so make the whole tree trainable by
+gradient descent. Once a tree is differentiable, growing it during training
+becomes a design choice rather than a separate algorithm.
+
+Which growth operations help is mostly treated as a matter of judgement. The
+operations have an appealing symmetry to them: grow smoothly, preserve what you
+have learned, decide each local question with a principled criterion. This
+paper reports what happened when four such operations were implemented and
+measured against their non-growing baselines under a fixed protocol. Two of the
+four paid off. Two did not, and one of them fails for a reason that can be
+stated exactly rather than observed statistically.
+
+The measurements were produced while building \texttt{neural-trees}, an
+open-source, scikit-learn compatible \cite{pedregosa2011scikit} library of
+these models with a PyTorch \cite{paszke2019pytorch} backend. That origin is
+worth stating plainly: these are not results from a study designed in advance
+to test four hypotheses. They are the measurements that decided four
+implementation questions, reported with the protocol held fixed and the
+negative outcomes included. We consider the negative ones the more useful half.
+
+\section{Setup}
+
+\subsection{Models}
+
+A \emph{soft decision tree} of depth $d$ is a complete binary tree. Each
+internal node $n$ carries a gate
+\begin{equation}
+  g_n(x) = \sigma(w_n^\top x + b_n), \qquad \sigma(z) = (1 + e^{-z})^{-1},
+\end{equation}
+which sends a fraction $g_n(x)$ of the probability mass arriving at $n$ to its
+right child and $1 - g_n(x)$ to its left. Each leaf $\ell$ carries a class
+distribution $Q_\ell \in \Delta^{K-1}$. Writing $\mu_\ell(x)$ for the product
+of gate factors along the path from the root to $\ell$, the tree outputs
+\begin{equation}
+  \label{eq:mixture}
+  p(y \mid x) = \sum_{\ell} \mu_\ell(x)\, Q_\ell ,
+\end{equation}
+and every parameter is trained by gradient descent on the cross-entropy of
+\eqref{eq:mixture}. Path products are accumulated in log space throughout, so
+that depth does not cost precision.
+
+A \emph{grow-and-learn (GAL) network} \cite{alpaydin1994gal} is a single
+hidden-layer network that adds a hidden unit when the training error stops
+improving and removes units whose contribution is negligible.
+
+An \emph{omnivariate decision tree} \cite{yildiz2001omnivariate} chooses, at
+each node independently, between a univariate threshold, a linear split and a
+nonlinear split, selecting whichever performs best on that node's data.
+
+\subsection{Protocol}
+
+Unless stated otherwise: features are standardised to zero mean and unit
+variance using statistics from the training fold only; every number is the mean
+over stratified five-fold cross-validation repeated with three seeds
+($15$ fits); the same seeds and folds are used for every arm of a comparison.
+Datasets are Iris ($n=150$, $p=4$, $K=3$), Wine ($n=178$, $p=13$, $K=3$) and
+Breast Cancer Wisconsin ($n=569$, $p=30$, $K=2$) from the UCI repository as
+distributed with scikit-learn, plus one synthetic problem described where it is
+used. No per-arm hyperparameter search was performed; both arms of each
+comparison use the same settings apart from the operation under test.
+
+\section{Function-preserving deepening has zero gradient}
+
+\subsection{The operation}
+
+A natural way to deepen a trained soft tree is to preserve its function
+exactly. Turn every leaf $\ell$ into an internal node whose gate has all-zero
+parameters, so that $g(x) = \sigma(0) = 1/2$ everywhere, and give its two new
+children the parent's distribution, $Q_L = Q_R = Q_\ell$. The mass reaching the
+old leaf now splits evenly between two identical children:
+\begin{equation}
+  \tfrac{1}{2} Q_L + \tfrac{1}{2} Q_R = Q_\ell ,
+\end{equation}
+so \eqref{eq:mixture} is unchanged. The deeper tree computes exactly the
+function the shallower one computed, and training continues from there. Nothing
+is lost, and the extra capacity is available. This is the construction one
+would write down first.
+
+\subsection{Why it cannot learn}
+
+\begin{proposition}
+\label{prop:zero}
+Let a leaf $\ell$ of a soft decision tree be replaced by an internal node with
+gate value $g$ and children carrying distributions $Q_L$ and $Q_R$, and let
+$\mathcal{L}$ be any loss depending on the parameters only through the tree
+output \eqref{eq:mixture}. If $Q_L = Q_R$, then the gradient of $\mathcal{L}$
+with respect to every parameter of the new gate is exactly zero. If in addition
+$g = 1/2$, then $Q_L$ and $Q_R$ receive identical gradients. Consequently, a
+subtree initialised with $Q_L = Q_R$ and a zero gate remains in that state for
+every subsequent step of any gradient-based optimiser, and the added level
+never differentiates.
+\end{proposition}
+
+\begin{proof}
+Write $o$ for the contribution of the subtree at $\ell$ to the output, so that
+$o = \mu_\ell \left( g\, Q_R + (1-g)\, Q_L \right)$ where $\mu_\ell$ does not
+depend on the new parameters. Then
+\begin{equation}
+  \frac{\partial o}{\partial g} = \mu_\ell \left( Q_R - Q_L \right) = 0
+  \quad \text{when } Q_L = Q_R ,
+\end{equation}
+and since the gate parameters $(w, b)$ influence $\mathcal{L}$ only through
+$g$, the chain rule gives $\partial \mathcal{L} / \partial w = 0$ and
+$\partial \mathcal{L} / \partial b = 0$. For the children,
+\begin{equation}
+  \frac{\partial \mathcal{L}}{\partial Q_L}
+    = (1-g)\, \mu_\ell \frac{\partial \mathcal{L}}{\partial o},
+  \qquad
+  \frac{\partial \mathcal{L}}{\partial Q_R}
+    = g\, \mu_\ell \frac{\partial \mathcal{L}}{\partial o},
+\end{equation}
+which are equal when $g = 1/2$. After one step the gate is unchanged, so
+$g = 1/2$ still, and the children have received the same update, so
+$Q_L = Q_R$ still. The hypotheses of the proposition are restored exactly, and
+the argument repeats by induction on the step count.
+\end{proof}
+
+The construction is therefore not a good initialisation that trains slowly. It
+is a fixed point of the optimiser. Every leaf of the original tree becomes a
+gate that will never open, and the entire added level is dead weight: the
+deeper tree is functionally the shallower tree, permanently, while paying the
+full parameter and computation cost of the extra level.
+
+Two remarks. First, the result does not depend on the loss, only on the output
+being the mixture \eqref{eq:mixture}. Second, it does not depend on the gate
+being exactly zero: the first half of the proposition needs only
+$Q_L = Q_R$, so the gate gradient vanishes for any initial $g$, and it is the
+second half --- children moving together --- that uses $g = 1/2$. Momentum,
+adaptive step sizes and weight decay do not rescue it, because the gradient is
+zero rather than small.
+
+\subsection{The fix, and how little it matters}
+
+Perturbing the child distributions at insertion time,
+\begin{equation}
+  Q_{L}, Q_{R} \leftarrow \mathrm{normalise}\!\left( Q_\ell \pm \varepsilon u \right),
+  \qquad u \sim \mathcal{U}[0,1]^K ,
+\end{equation}
+breaks $Q_L = Q_R$ and with it both halves of Proposition~\ref{prop:zero}. The
+function is then preserved only approximately. Table~\ref{tab:jitter} shows
+what that buys.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Growth & Iris & Wine \\
+\midrule
+Exactly function-preserving ($\varepsilon = 0$) & 0.753 & 0.754 \\
+Perturbed, $\varepsilon = 0.05$ & 0.942 & 0.979 \\
+Perturbed, $\varepsilon = 0.2$  & 0.942 & 0.979 \\
+Perturbed, $\varepsilon = 0.5$  & 0.938 & 0.981 \\
+\midrule
+Same depth, trained from scratch & 0.958 & 0.977 \\
+\bottomrule
+\end{tabular}
+\caption{Accuracy of a depth-4 soft decision tree grown level by level, as a
+function of the perturbation applied to new child distributions. Mean over
+three seeds of stratified five-fold cross-validation. Exact function
+preservation costs roughly twenty points; any nonzero perturbation recovers
+them, and the specific value is close to irrelevant.}
+\label{tab:jitter}
+\end{table}
+
+The gap between $\varepsilon = 0$ and $\varepsilon = 0.05$ is about twenty
+points on both datasets. The gap between $\varepsilon = 0.05$ and
+$\varepsilon = 0.5$, a tenfold change, is four tenths of a point on Iris and
+two tenths on Wine. The parameter needs to be nonzero and otherwise does not
+need tuning, which is what Proposition~\ref{prop:zero} predicts: zero is not a
+small value of $\varepsilon$, it is a qualitatively different case.
+
+\section{Fitting new units to the residual}
+
+The GAL network installs a new hidden unit with random incoming and outgoing
+weights. The unit therefore perturbs every output logit the moment it arrives,
+damaging a network that was, by construction, just judged to have stopped
+improving; and it must then be trained from noise while the rest of the network
+repairs the damage.
+
+The alternative follows cascade-correlation \cite{fahlman1990cascade}: freeze
+the network, compute its residual error on the training set, train the
+candidate unit's incoming weights to correlate with that residual, and install
+the unit with \emph{zero} outgoing weights, so that at the moment of insertion
+the network's function is unchanged --- which is safe here, unlike in
+Section~3, because the outgoing weights have a nonzero gradient as soon as the
+incoming weights are informative.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lcc}
+\toprule
+New-unit initialisation & Accuracy & Hidden units \\
+\midrule
+Random & 0.938 & 17.4 \\
+Fitted to the residual & 0.956 & \phantom{0}6.6 \\
+\bottomrule
+\end{tabular}
+\caption{GAL network on Iris, three seeds of five-fold cross-validation,
+150 epochs. Fitting the candidate to the residual before installing it is both
+more accurate and substantially smaller.}
+\label{tab:gal}
+\end{table}
+
+Table~\ref{tab:gal} shows the effect: two points of accuracy and a network
+62\% smaller. The size difference is the more interesting half. Random units
+arrive unhelpful, the error does not fall, and the growth criterion fires
+again --- so the network grows because growth is not working.
+
+One implementation detail is worth recording because it cost time to find. The
+candidate objective involves a normalisation of the form $s / \sqrt{v}$ where
+$v$ is a variance that can be zero on a degenerate batch. At $v = 0$ the
+gradient of the square root is infinite and the whole network becomes
+\texttt{NaN} in one step. Clamping $v$ away from zero before the root, rather
+than clamping the result afterwards, is the fix.
+
+\section{Choosing which leaf to split}
+
+A soft tree can be grown level by level, as in Section~3, or one leaf at a
+time. The per-leaf rule of İrsoy, Yıldız and Alpaydın \cite{irsoy2012soft}
+splits the leaf carrying the most expected error, $\arg\max_\ell \sum_i
+\mu_\ell(x_i)\,e_i$, where $e_i$ is the error on sample $i$.
+
+On a synthetic problem with 800 samples and 20 features, per-leaf growth
+reached $0.885$ using $3.7$ splits on average, while a fixed depth-6 tree
+reached $0.832$ using all $63$. A seventeenfold reduction in splits alongside
+higher accuracy is not a trade-off, and the explanation is the usual one: a
+complete tree spends most of its capacity on regions that were already
+separated.
+
+\section{Node-level significance does not compose}
+
+The omnivariate tree \cite{yildiz2001omnivariate} picks each node's split type
+by cross-validated accuracy on that node's data, which will prefer a nonlinear
+split over a univariate one for any improvement at all, however small. A
+principled alternative is to demand that the improvement be statistically
+significant, using the combined $5\times2$cv $F$ test
+\cite{alpaydin1999combined}, and otherwise to keep the simpler split type. The
+expected outcome is a tree of simpler nodes at little or no cost in accuracy.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{2}{c}{Tree} & \multicolumn{3}{c}{Split types chosen} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-6}
+Selection rule & Accuracy & Nodes & Univariate & Linear & Nonlinear \\
+\midrule
+Highest accuracy        & 0.971 & 4.1 &  8 &  0 & 15 \\
+Significance test       & 0.960 & 7.3 & 20 & 14 & 13 \\
+\bottomrule
+\end{tabular}
+\caption{Omnivariate tree of maximum depth 3 on Breast Cancer, three seeds of
+five-fold cross-validation. Split-type counts are totals over all 15 fits. The
+significance test does what it was asked to do at each node, and the tree is
+worse on both axes.}
+\label{tab:omni}
+\end{table}
+
+Table~\ref{tab:omni} shows that the rule works locally and fails globally. Per
+node it is doing exactly what was intended: nonlinear splits fall from 15 to
+13 and univariate splits rise from 8 to 20, so nodes are simpler. But the tree
+grows from 4.1 nodes to 7.3 and loses a point of accuracy. A simpler split
+separates its node's data less cleanly, so its children inherit harder
+problems and must themselves be split. Parsimony enforced locally is paid for
+globally, with interest.
+
+On Iris and Wine the rule changed nothing at all, because the test requires a
+minimum sample count per node and almost every node below the root falls under
+it. This is its own finding: a significance criterion is unavailable exactly
+where a tree does most of its work, since nodes get smaller with depth by
+construction. A test of significance is a poor fit for a recursive partitioning
+method, not because the test is wrong, but because the thing being tested
+shrinks as the algorithm proceeds.
+
+\section{Limitations}
+
+The datasets are small and standard, chosen because they are the ones these
+model families are normally demonstrated on; conclusions about accuracy should
+not be read as generalising to large-scale problems. Each finding compares two
+arms of a single implementation with settings held fixed, which isolates the
+operation under test but does not establish that the winning arm is the best
+available method. Proposition~\ref{prop:zero} is exact and
+implementation-independent; the four empirical results are not, and they should
+be read as measurements of these operations in this setting rather than as
+general laws. The comparisons in Sections 4--6 report means over 15 fits
+without significance tests, since the differences in Tables~\ref{tab:jitter}
+and \ref{tab:gal} are large relative to fold-to-fold variation and the
+difference in Table~\ref{tab:omni} is deliberately reported as small.
+
+\section{Related work}
+
+Soft decision trees were introduced by İrsoy, Yıldız and Alpaydın
+\cite{irsoy2012soft} and revisited by Frosst and Hinton
+\cite{frosst2017distilling} as a way of distilling a neural network into an
+interpretable model; the hierarchical mixture of experts with subtree dropout
+\cite{irsoy2021dropout} is the closely related architecture in which leaves are
+themselves models. Omnivariate trees are due to Yıldız and Alpaydın
+\cite{yildiz2001omnivariate}. Constructive learning of the kind studied in
+Sections 4 and 5 goes back to cascade-correlation \cite{fahlman1990cascade} and
+GAL \cite{alpaydin1994gal}. The idea of growing a network while preserving the
+function it computes is the basis of Net2Net \cite{chen2016net2net}, which
+notes that exact preservation makes units symmetric and adds noise for that
+reason; Proposition~\ref{prop:zero} is the corresponding statement for
+tree-structured gates, where the symmetry is not merely undesirable but a fixed
+point of the optimiser, and where the measured cost is large. The statistical
+machinery in Section~6 is the combined $5\times2$cv $F$ test
+\cite{alpaydin1999combined}.
+
+\section{Conclusion}
+
+Growth operations that look safest are not. Preserving a soft tree's function
+exactly while deepening it produces a gate whose gradient is identically zero
+and children that move together forever; the new level is dead, and the cost is
+around twenty points of accuracy on two standard datasets. Requiring statistical
+significance before choosing a more expressive split makes each node simpler
+and the tree as a whole larger and less accurate. The two operations that did
+work share a property: they change what the model can represent without
+changing what it currently computes in a way the optimiser can still act on ---
+a unit fitted to the residual and installed with zero outgoing weights has a
+nonzero gradient immediately, and splitting the leaf with the most error puts
+capacity where the error is.
+
+The practical rule we draw from this is narrow but concrete: when adding
+capacity to a differentiable model, check that the gradient with respect to the
+new parameters is nonzero at the moment of insertion. It is a one-line
+assertion in a test, and in our case it was the difference between a growth
+mechanism that worked and one that silently did nothing.
+
+\section*{Code and data availability}
+
+The implementation, the measurement scripts and the regression test asserting
+the zero gradient of Proposition~\ref{prop:zero} are available at
+\url{https://github.com/cgrtml/neural-trees}. The version used for every number
+in this paper is archived at \textsc{[Zenodo DOI to be inserted]}. All datasets
+are the standard UCI versions distributed with scikit-learn.
+
+\section*{Disclosure of AI assistance}
+
+Parts of the software development and the drafting of this manuscript were
+carried out with the assistance of a large language model used as a programming
+and writing aid. Every empirical number reported here was produced by executing
+the code and recording its output; no result was reported without being
+measured. The author designed the experiments, verified the results and takes
+full responsibility for the content.
+
+\begin{thebibliography}{9}
+
+\bibitem{alpaydin1994gal}
+E.~Alpaydın.
+\newblock GAL: Networks that grow when they learn and shrink when they forget.
+\newblock \emph{International Journal of Pattern Recognition and Artificial
+  Intelligence}, 8(1):391--414, 1994.
+
+\bibitem{alpaydin1999combined}
+E.~Alpaydın.
+\newblock Combined $5\times2$cv $F$ test for comparing supervised
+  classification learning algorithms.
+\newblock \emph{Neural Computation}, 11(8):1885--1892, 1999.
+
+\bibitem{chen2016net2net}
+T.~Chen, I.~Goodfellow, and J.~Shlens.
+\newblock Net2Net: Accelerating learning via knowledge transfer.
+\newblock In \emph{International Conference on Learning Representations}, 2016.
+
+\bibitem{fahlman1990cascade}
+S.~E. Fahlman and C.~Lebiere.
+\newblock The cascade-correlation learning architecture.
+\newblock In \emph{Advances in Neural Information Processing Systems 2}, pages
+  524--532, 1990.
+
+\bibitem{frosst2017distilling}
+N.~Frosst and G.~Hinton.
+\newblock Distilling a neural network into a soft decision tree.
+\newblock \emph{arXiv preprint arXiv:1711.09784}, 2017.
+
+\bibitem{irsoy2012soft}
+O.~İrsoy, O.~T. Yıldız, and E.~Alpaydın.
+\newblock Soft decision trees.
+\newblock In \emph{Proceedings of the 21st International Conference on Pattern
+  Recognition}, pages 1819--1822, 2012.
+
+\bibitem{irsoy2021dropout}
+O.~İrsoy and E.~Alpaydın.
+\newblock Dropout regularization in hierarchical mixture of experts.
+\newblock \emph{Neurocomputing}, 419:148--156, 2021.
+
+\bibitem{paszke2019pytorch}
+A.~Paszke et~al.
+\newblock PyTorch: An imperative style, high-performance deep learning library.
+\newblock In \emph{Advances in Neural Information Processing Systems 32}, pages
+  8024--8035, 2019.
+
+\bibitem{pedregosa2011scikit}
+F.~Pedregosa et~al.
+\newblock Scikit-learn: Machine learning in Python.
+\newblock \emph{Journal of Machine Learning Research}, 12:2825--2830, 2011.
+
+\bibitem{yildiz2001omnivariate}
+O.~T. Yıldız and E.~Alpaydın.
+\newblock Omnivariate decision trees.
+\newblock \emph{IEEE Transactions on Neural Networks}, 12(6):1539--1546, 2001.
+
+\end{thebibliography}
+
+\end{document}

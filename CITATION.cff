@@ -8,8 +8,8 @@ authors:
     orcid: "https://orcid.org/0009-0003-3359-6939"
 repository-code: "https://github.com/cgrtml/neural-trees"
 abstract: "A scikit-learn compatible library of soft decision trees, hierarchical mixtures of experts, constructive networks and classifier comparison tests, with a PyTorch backend. The implementations start from published algorithms and depart from them where the library makes its own design choices; the original papers are listed in the repository's Citation section and should be cited alongside this software when the underlying methods are used."
-version: "0.6.0"
-date-released: 2026-09-10
+version: "0.6.1"
+date-released: 2026-09-11
 license: MIT
 keywords:
   - soft decision trees
