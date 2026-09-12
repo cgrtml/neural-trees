@@ -126,6 +126,8 @@ differentiable tree against CART on a new dataset becomes a `Pipeline` and a
 becomes a call to `combined_5x2cv_f_test` [@alpaydin1999combined] rather than a
 judgement about two numbers. The benchmark table in the repository is generated
 by a script in the repository, so its claims can be re-run rather than trusted.
+The version measured for every figure quoted here is archived at
+[10.5281/zenodo.22718898](https://doi.org/10.5281/zenodo.22718898).
 
 A secondary contribution is negative and measured. Several design choices that
 sound obviously correct are shown not to be: exactly function-preserving

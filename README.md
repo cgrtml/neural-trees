@@ -11,6 +11,7 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 </p>
 
 [![Live demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://neural-trees.streamlit.app)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22718897.svg)](https://doi.org/10.5281/zenodo.22718897)
 [![PyPI](https://img.shields.io/pypi/v/neural-trees)](https://pypi.org/project/neural-trees/)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/neural-trees?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/neural-trees)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -253,13 +254,19 @@ docstring says so and gives the numbers.
 
 ```bibtex
 @software{temel_neural_trees,
-  author = {Temel, Cagri},
-  title  = {neural-trees: scikit-learn compatible soft decision trees,
-            mixtures of experts and classifier comparison tests},
-  year   = {2026},
-  url    = {https://github.com/cgrtml/neural-trees}
+  author    = {Temel, Cagri},
+  title     = {neural-trees: scikit-learn compatible soft decision trees,
+               mixtures of experts and classifier comparison tests},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.22718897},
+  url       = {https://doi.org/10.5281/zenodo.22718897}
 }
 ```
+
+That DOI always resolves to the most recent release. To cite the exact version
+you ran, use the DOI of that release instead; v0.6.1 is
+[10.5281/zenodo.22718898](https://doi.org/10.5281/zenodo.22718898).
 
 GitHub's "Cite this repository" button reads
 [`CITATION.cff`](CITATION.cff), which carries the same information.
