@@ -47,7 +47,7 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         (1997) builds several subsets from different orderings and combines
         their votes, which is where some of the accuracy a single subset gives
         away comes back. 5-fold accuracy averaged over 5 seeds, by number of
-        subsets, against keeping every sample:
+        subsets, against keeping every sample::
 
                             1       3       5       9     all
             Iris          0.917   0.939   0.937   0.937   0.956

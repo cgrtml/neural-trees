@@ -22,3 +22,9 @@ paper/arxiv/*.pdf
 paper/arxiv/*.aux
 paper/arxiv/*.log
 paper/arxiv/*.out
+
+# Sphinx build artefacts
+docs/_build/
+docs/auto_examples/
+docs/generated/
+docs/sg_execution_times.rst
