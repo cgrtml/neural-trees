@@ -12,6 +12,7 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 
 [![Live demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://neural-trees.streamlit.app)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22718897.svg)](https://doi.org/10.5281/zenodo.22718897)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://cagritemel.com/neural-trees/)
 [![PyPI](https://img.shields.io/pypi/v/neural-trees)](https://pypi.org/project/neural-trees/)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/neural-trees?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/neural-trees)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)

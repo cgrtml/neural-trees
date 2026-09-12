@@ -1,4 +1,7 @@
 """
+Inside a scikit-learn pipeline
+==============================
+
 Use SoftDecisionTree inside a scikit-learn Pipeline with StandardScaler,
 and report 5-fold cross-validated accuracy on the Wine dataset.
 

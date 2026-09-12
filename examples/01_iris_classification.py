@@ -1,4 +1,7 @@
 """
+Training a soft decision tree
+=============================
+
 Minimal end-to-end example: train a Soft Decision Tree on Iris.
 
 Run with:

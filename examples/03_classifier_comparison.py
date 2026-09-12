@@ -1,4 +1,7 @@
 """
+Is the difference significant?
+==============================
+
 Compare a Soft Decision Tree against CART with Alpaydin's combined 5x2cv F test.
 
 The test asks whether the accuracy gap between the two models is larger than
