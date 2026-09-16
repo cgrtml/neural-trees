@@ -48,10 +48,10 @@ the two children identical gradients, so the added level can never learn.
 Unlike the symmetry that Net2Net breaks with noise or the saddle point that
 splitting steepest descent escapes with second-order information, first-order
 information here is not weak but absent. Over three seeds of five-fold
-cross-validation the exact construction loses @@JITTER_IRIS_DROP@@ accuracy
+cross-validation the construction loses @@JITTER_IRIS_DROP@@ accuracy
 points on Iris, @@JITTER_WINE_DROP@@ on Wine and @@JITTER_DIGITS_DROP@@ on
 Digits against the same depth trained from scratch. The fix is a small random
-perturbation of the children; its size barely matters. The practical rule is
+perturbation of the children, whose size barely matters. The practical rule is
 one line in a test: after adding parameters, assert that their gradient is
 nonzero.
 
@@ -64,7 +64,7 @@ uses 63, but loses @@PL_S2_DROP@@ points on a harder problem. Requiring
 statistical significance before a node receives a more expressive split buys
 nothing: the tree gets larger and less accurate.
 
-Every number in the paper is inserted from the measurement script's output.
+Every number in the paper is inserted from the measurement script.
 \end{abstract}
 
 \section{Introduction}
