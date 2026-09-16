@@ -266,8 +266,8 @@ docstring says so and gives the numbers.
 ```
 
 That DOI always resolves to the most recent release. To cite the exact version
-you ran, use the DOI of that release instead; v0.6.1 is
-[10.5281/zenodo.22718898](https://doi.org/10.5281/zenodo.22718898).
+you ran, use the DOI of that release instead; v0.6.2 is
+[10.5281/zenodo.22802182](https://doi.org/10.5281/zenodo.22802182).
 
 GitHub's "Cite this repository" button reads
 [`CITATION.cff`](CITATION.cff), which carries the same information.
