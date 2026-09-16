@@ -35,12 +35,12 @@
 
 \begin{abstract}
 A classifier that builds itself has to decide where to put new capacity while it
-trains. We measured four such decisions in tree structured and constructive
+trains. I measured four such decisions in tree structured and constructive
 models: how to deepen a soft decision tree, how to initialise a new hidden unit,
 which leaf to split next, and how to choose the model class at each node. Each is
 usually presented as a free improvement. None of them is.
 
-One cannot work at all, and we prove why. Deepen a soft decision tree so that its
+One cannot work at all, and I prove why. Deepen a soft decision tree so that its
 function is unchanged, by turning every leaf into a gate whose two children
 inherit the parent's class distribution, and the gradient with respect to the new
 gate is identically zero. With the gate at one half the children receive
@@ -76,30 +76,30 @@ during training is a design choice rather than a separate algorithm.
 
 Most of those choices are settled by judgement. The candidate operations all
 sound sensible: grow smoothly, keep what you have already learned, decide each
-local question with a principled criterion. We implemented four of them, each
+local question with a principled criterion. I implemented four of them, each
 against the non growing baseline it is supposed to improve on, under one fixed
 protocol.
 
-The result we did not expect is how little the sensible sounding arguments
+The result I did not expect is how little the sensible sounding arguments
 predict. Three of the four operations trade one quantity for another, and for
 two of them the sign of the trade changes when the dataset changes. The fourth
 does not trade anything, because it cannot learn at all. That one has a cause
 that can be stated and proved rather than inferred from a table, and it is the
 main contribution here.
 
-We use \emph{grow} for any decision that adds structure while the model trains.
+I use \emph{grow} for any decision that adds structure while the model trains.
 Three of the four operations add capacity: a level of the tree, a hidden unit, a
 split at one leaf. The fourth chooses the model class at a node as the tree is
-built. It is a construction decision rather than a capacity decision, and we
+built. It is a construction decision rather than a capacity decision, and I
 include it because it fails for a related reason.
 
 The measurements came out of building \texttt{neural-trees}
 \cite{temel2026neuraltrees}, a scikit-learn compatible \cite{pedregosa2011scikit}
-library of these models with a PyTorch \cite{paszke2019pytorch} backend. We
+library of these models with a PyTorch \cite{paszke2019pytorch} backend. I
 should say plainly where they came from. Nothing here was designed in advance as
 a four hypothesis study. These are the measurements that settled four
 implementation questions, reported with the protocol held fixed and with the
-negative outcomes left in. The negative ones have been more useful to us than
+negative outcomes left in. The negative ones have been more useful to me than
 the positive ones, which is the reason for writing them up.
 
 \section{Setup}
@@ -136,11 +136,11 @@ nonlinear split.
 Features are standardised to zero mean and unit variance using statistics from
 the training fold only. Every number is computed over stratified five fold cross
 validation repeated with three seeds, which is fifteen fits, and the same seeds
-and folds are used for every arm of a comparison. We report the mean and, after
+and folds are used for every arm of a comparison. I report the mean and, after
 it, the standard deviation across those fifteen fits. That deviation describes
 how much the quantity moves from fold to fold. It is not a confidence interval,
 because the fifteen fits share training data and are not independent. Where a
-difference needs a decision rather than a description we use the combined
+difference needs a decision rather than a description I use the combined
 $5\times2$cv $F$ test \cite{alpaydin1999combined}, which was designed for exactly
 this situation.
 
@@ -248,11 +248,11 @@ both children see the same batch and therefore the same gradient.
 \label{rem:asimetri}
 What does break it is any mechanism that makes the two children's updates differ.
 Perturbing the child distributions at insertion is the direct route and the one
-we measure below. Asymmetric noise during training is another: the subtree
+I measure below. Asymmetric noise during training is another: the subtree
 dropout of \.Irsoy and Alpayd\i{}n \cite{irsoy2021dropout} drops branches
 independently, which is exactly the condition the proposition rules out.
 
-Floating point arithmetic does not supply such a perturbation here, and we
+Floating point arithmetic does not supply such a perturbation here, and I
 checked rather than assumed it. On a depth two tree trained on Iris and then
 deepened, the gradient of every new gate is exactly zero in single precision,
 the sum of absolute values over both weights and biases being $0$ and not
@@ -272,7 +272,7 @@ follow. In all three the first order information is degenerate but recoverable.
 In the tree gate case there is no direction to find at first order at all: the
 derivative is not small, it is zero, and it reproduces itself. A second order
 criterion in the style of \cite{liu2019splitting} would be the natural way to
-repair the operation without noise, and we have not tried it.
+repair the operation without noise, and I have not tried it.
 \end{remark}
 
 \subsection{What it costs}
@@ -324,12 +324,12 @@ $\varepsilon = 0.5$, a factor of ten, the means move by at most
 of $\varepsilon$. It is a different case, which is what
 Proposition~\ref{prop:zero} says it should be.
 
-Because this is the paper's central claim we test it rather than only describing
+Because this is the paper's central claim I test it rather than only describing
 it. The combined $5\times2$cv $F$ test comparing $\varepsilon = 0$ against
 $\varepsilon = 0.2$ gives @@FTEST_JITTER_IRIS@@ on Iris,
 @@FTEST_JITTER_WINE@@ on Wine and @@FTEST_JITTER_DIGITS@@ on Digits.
 
-The Iris result sits just above the conventional threshold and we are not going
+The Iris result sits just above the conventional threshold and I am not going
 to describe it as significant. It is the smallest dataset here, at 150 samples,
 and the $5\times2$cv test is deliberately conservative. The other two reject
 equality, and on Digits the margin is not close.
@@ -377,7 +377,7 @@ The $F$ column tests the two accuracies against each other.}
 \label{tab:gal}
 \end{table}
 
-The size effect is consistent and the accuracy effect is not, and we want to be
+The size effect is consistent and the accuracy effect is not, and I want to be
 exact about which is which.
 
 Every dataset gives a smaller network. Iris falls from @@T_G_IRIS_RND_H@@ hidden
@@ -404,7 +404,7 @@ criterion cannot tell the two apart.
 An earlier draft of this work reported the Iris accuracy gain on its own. That is
 the kind of claim that survives exactly until somebody runs a fourth dataset.
 
-One implementation detail cost us a day. The candidate objective involves a
+One implementation detail cost me a day. The candidate objective involves a
 normalisation of the form $s / \sqrt{v}$ where $v$ is a variance that can be zero
 on a degenerate batch. At $v = 0$ the derivative of the square root is infinite
 and the whole network becomes \texttt{NaN} in one step. Clamping $v$ away from
@@ -448,7 +448,7 @@ the complete tree. Note also that both arms are poor there in absolute terms, so
 what the second row shows is two ways of underfitting the same problem rather
 than a good model beating a bad one.
 
-We take the honest reading to be that the rule buys sparsity reliably and buys
+I take the honest reading to be that the rule buys sparsity reliably and buys
 accuracy only when the problem has enough structure for a handful of oblique
 splits to capture it. Reported on the first problem alone it looks like a free
 win. It is not one.
@@ -488,7 +488,7 @@ locally is paid for globally.
 The absolute accuracies on Digits are low for a reason that has nothing to do
 with the selection rule. A tree of maximum depth three has at most eight leaves
 and Digits has ten classes, so the model cannot reach a high accuracy whatever it
-does at each node. We kept the depth fixed across datasets rather than tuning it,
+does at each node. I kept the depth fixed across datasets rather than tuning it,
 so the row is a valid comparison between the two rules and not a claim about how
 well omnivariate trees classify digits.
 
@@ -511,17 +511,17 @@ its benefit is parsimony. A split placed at the leaf with the most error changes
 the function and puts capacity where the error already is. A level of gates
 inserted with identical children leaves the function unchanged and has no
 gradient at all, now or later, and it is the only one of the four that fails on
-every dataset we tried.
+every dataset I tried.
 
 The axis predicts which operations can work. It does not predict how much they
 help, and Sections 4 and 5 show that the amount is dataset dependent enough to
-change sign. Those are two different questions and we can only answer the first
+change sign. Those are two different questions and I can only answer the first
 one.
 
 The practical rule is narrow and easy to check. When you add parameters to a
 differentiable model during training, compute the gradient with respect to those
 parameters on the first batch after insertion and assert that it is not zero. It
-is one line in a test. In our case it was the difference between a growth
+is one line in a test. In my case it was the difference between a growth
 mechanism that worked and one that silently did nothing while consuming
 parameters and compute.
 
@@ -541,15 +541,15 @@ Proposition~\ref{prop:zero} is exact and implementation independent. The
 empirical results are neither. They are measurements of these operations in this
 setting.
 
-The standard deviations we report describe fold to fold spread over fifteen
+The standard deviations I report describe fold to fold spread over fifteen
 non independent fits. They are not confidence intervals and should not be read as
-such. Where we needed to decide rather than describe we used the combined
+such. Where I needed to decide rather than describe I used the combined
 $5\times2$cv $F$ test, which is reported alongside.
 
-We did not try the obvious repair suggested by Remark~\ref{rem:asimetri}, which
+I did not try the obvious repair suggested by Remark~\ref{rem:asimetri}, which
 is to choose the split direction of a new gate from second order information in
 the manner of splitting steepest descent \cite{liu2019splitting} instead of
-perturbing the children at random. That is the experiment we would run next.
+perturbing the children at random. That is the experiment I would run next.
 
 \section{Related work}
 
@@ -596,7 +596,7 @@ the tree larger and less accurate.
 
 The two operations that worked share the property the failure lacks. Each adds
 capacity that the optimiser can move on the next step. That is a cheap thing to
-check and we now check it in a test.
+check, and it is now checked in a test.
 
 \section*{Code and data availability}
 
