@@ -34,40 +34,41 @@
 \maketitle
 
 \begin{abstract}
-A classifier that builds itself has to decide where to put new capacity while it
-trains. I measured four such decisions in tree structured and constructive
-models: how to deepen a soft decision tree, how to initialise a new hidden unit,
-which leaf to split next, and how to choose the model class at each node. Each is
-usually presented as a free improvement. None of them is.
+Constructive classifiers add structure while they train: a level to a tree, a
+unit to a hidden layer, a split at a leaf. I measured four such growth
+decisions in tree-structured and constructive models under one fixed protocol.
+None of them is the free improvement it is usually taken to be.
 
-One cannot work at all, and I prove why. Deepen a soft decision tree so that its
-function is unchanged, by turning every leaf into a gate whose two children
-inherit the parent's class distribution, and the gradient with respect to the new
-gate is identically zero. With the gate at one half the children receive
-identical gradients, so they stay identical and the gradient stays zero. The
-state reproduces itself at every step. This is a stronger degeneracy than the
-symmetry Net2Net breaks with noise, or the saddle point that splitting steepest
-descent escapes with second order information. Exact preservation costs
-@@JITTER_IRIS_DROP@@ accuracy points on Iris, @@JITTER_WINE_DROP@@ on Wine and
-@@JITTER_DIGITS_DROP@@ on Digits against the same depth trained from scratch, and
-inflates the fold to fold standard deviation. Any perturbation of the child
-distributions removes the problem and its size barely matters.
+The main result is a failure with an exact cause. The natural way to deepen a
+soft decision tree without disturbing it is to turn every leaf into a gate
+whose two children inherit the parent's class distribution. I prove that this
+leaves the gradient of every new gate identically zero, and that with the gate
+at $1/2$ the two children receive identical gradients. The added level
+therefore never learns: the state reproduces itself at every step of gradient
+descent. This is a stronger degeneracy than the symmetry that Net2Net breaks
+with noise, or the saddle point that splitting steepest descent escapes with
+second-order information. Over three seeds of five-fold cross-validation, the
+exact construction loses @@JITTER_IRIS_DROP@@ accuracy points on Iris,
+@@JITTER_WINE_DROP@@ on Wine and @@JITTER_DIGITS_DROP@@ on Digits against a
+tree of the same depth trained from scratch. A small random perturbation of the
+children removes the problem, and its size barely matters.
 
-The other three are trades. Fitting a new hidden unit to the residual before
-installing it gives a smaller network on all three datasets but not a better one,
-and on Digits it is significantly worse. Splitting the leaf with the most
-expected error reached @@PL_S1_GROW_ACC@@ with @@PL_S1_GROW_N@@ splits where a
-complete depth six tree needed 63, and lost @@PL_S2_DROP@@ points on a harder
-problem. Requiring statistical significance before a node gets a more expressive
-split made the tree larger and less accurate.
+The other three decisions are trade-offs, not gains. Fitting a new hidden unit
+to the residual error before installing it gives a smaller network on every
+dataset but not a more accurate one, and on Digits it is significantly worse.
+Splitting the leaf with the largest expected error reaches
+@@PL_S1_GROW_ACC@@ accuracy with @@PL_S1_GROW_N@@ splits where a complete
+depth-six tree uses 63, but loses @@PL_S2_DROP@@ points on a harder problem.
+Requiring statistical significance before a node receives a more expressive
+split makes the tree larger and less accurate.
 
-Every number in this paper is written into it by the script that produced it.
+Every number in the paper is inserted from the measurement script's output.
 \end{abstract}
 
 \section{Introduction}
 
 A constructive learner decides its own architecture while it trains. The idea is
-old. Cascade correlation \cite{fahlman1990cascade} and the grow and learn
+old. Cascade correlation \cite{fahlman1990cascade} and the grow-and-learn
 network \cite{alpaydin1994gal} both date from the early 1990s. It came back with
 soft decision trees \cite{irsoy2012soft, frosst2017distilling}, which replace the
 hard threshold at each internal node with a sigmoid gate and so make the whole
@@ -77,10 +78,10 @@ during training is a design choice rather than a separate algorithm.
 Most of those choices are settled by judgement. The candidate operations all
 sound sensible: grow smoothly, keep what you have already learned, decide each
 local question with a principled criterion. I implemented four of them, each
-against the non growing baseline it is supposed to improve on, under one fixed
+against the non-growing baseline it is supposed to improve on, under one fixed
 protocol.
 
-The result I did not expect is how little the sensible sounding arguments
+The result I did not expect is how little the sensible-sounding arguments
 predict. Three of the four operations trade one quantity for another, and for
 two of them the sign of the trade changes when the dataset changes. The fourth
 does not trade anything, because it cannot learn at all. That one has a cause
@@ -97,7 +98,7 @@ The measurements came out of building \texttt{neural-trees}
 \cite{temel2026neuraltrees}, a scikit-learn compatible \cite{pedregosa2011scikit}
 library of these models with a PyTorch \cite{paszke2019pytorch} backend. I
 should say plainly where they came from. Nothing here was designed in advance as
-a four hypothesis study. These are the measurements that settled four
+a four-hypothesis study. These are the measurements that settled four
 implementation questions, reported with the protocol held fixed and with the
 negative outcomes left in. The negative ones have been more useful to me than
 the positive ones, which is the reason for writing them up.
@@ -119,11 +120,11 @@ gate factors along the path from the root to $\ell$, the tree outputs
   \label{eq:mixture}
   p(y \mid x) = \sum_{\ell} \mu_\ell(x)\, Q_\ell ,
 \end{equation}
-and every parameter is trained by gradient descent on the cross entropy of
+and every parameter is trained by gradient descent on the cross-entropy of
 \eqref{eq:mixture}. Path products are accumulated in log space, so depth does not
 cost precision.
 
-A \emph{grow and learn (GAL) network} \cite{alpaydin1994gal} is a single hidden
+A \emph{grow-and-learn (GAL) network} \cite{alpaydin1994gal} is a single hidden
 layer network that adds a hidden unit when the training error stops improving and
 removes units whose contribution has become negligible.
 
@@ -134,11 +135,11 @@ nonlinear split.
 \subsection{Protocol}
 
 Features are standardised to zero mean and unit variance using statistics from
-the training fold only. Every number is computed over stratified five fold cross
+the training fold only. Every number is computed over stratified five-fold cross
 validation repeated with three seeds, which is fifteen fits, and the same seeds
 and folds are used for every arm of a comparison. I report the mean and, after
 it, the standard deviation across those fifteen fits. That deviation describes
-how much the quantity moves from fold to fold. It is not a confidence interval,
+how much the quantity moves from fold-to-fold. It is not a confidence interval,
 because the fifteen fits share training data and are not independent. Where a
 difference needs a decision rather than a description I use the combined
 $5\times2$cv $F$ test \cite{alpaydin1999combined}, which was designed for exactly
@@ -148,7 +149,7 @@ Datasets are Iris ($n=150$, $p=4$, $K=3$), Wine ($n=178$, $p=13$, $K=3$), Breast
 Cancer Wisconsin ($n=569$, $p=30$, $K=2$) and Digits ($n=1797$, $p=64$, $K=10$),
 all as distributed with scikit-learn, plus two synthetic problems described where
 they are used. Digits is included because the first three are small and
-low dimensional, and a growth operation that only ever sees four features has not
+low-dimensional, and a growth operation that only ever sees four features has not
 been tested very hard.
 
 No per arm hyperparameter search was performed. Both arms of each comparison use
@@ -159,8 +160,7 @@ best.
 \subsection{Reproducing this}
 
 Every number in this paper is produced by one script,
-\texttt{paper/arxiv/olcum/olc.py} in the repository, which writes a machine
-readable results file. The manuscript is a template with named placeholders and
+\texttt{paper/arxiv/olcum/olc.py} in the repository, which writes a machine-readable results file. The manuscript is a template with named placeholders and
 a second script substitutes the measured values into it. No number here was
 typed by hand, which removes the failure mode where a table drifts away from the
 code that produced it while nobody notices. The archived version is
@@ -181,7 +181,7 @@ stop at $\ell$ now splits evenly between two identical children:
 so \eqref{eq:mixture} is unchanged. The deeper tree computes exactly the function
 the shallower one computed, training continues from there, and the extra capacity
 is available. This is the construction anyone would write down first, and it is
-the tree analogue of the function preserving transformations of Net2Net
+the tree analogue of the function-preserving transformations of Net2Net
 \cite{chen2016net2net} and network morphism \cite{wei2016network}.
 
 \subsection{Why it cannot learn}
@@ -253,7 +253,7 @@ dropout of \.Irsoy and Alpayd\i{}n \cite{irsoy2021dropout} drops branches
 independently, which is exactly the condition the proposition rules out.
 
 Floating point arithmetic does not supply such a perturbation here, and I
-checked rather than assumed it. On a depth two tree trained on Iris and then
+checked rather than assumed it. On a depth-two tree trained on Iris and then
 deepened, the gradient of every new gate is exactly zero in single precision,
 the sum of absolute values over both weights and biases being $0$ and not
 merely small, and the gradients of every pair of sibling leaves are bitwise
@@ -265,12 +265,12 @@ The check is in the repository and runs in continuous integration.
 The contrast with the neuron case is the point. Net2Net \cite{chen2016net2net}
 duplicates a unit, notes that the copies are symmetric, and adds noise. Splitting
 steepest descent \cite{liu2019splitting} shows that a duplicated neuron sits at a
-saddle in the enlarged parameter space and computes the second order direction
+saddle in the enlarged parameter space and computes the second-order direction
 that escapes it. GradMax \cite{evci2022gradmax} sets the new weights to zero but
 gives the unit a bias, precisely so that the outgoing weights have a gradient to
-follow. In all three the first order information is degenerate but recoverable.
-In the tree gate case there is no direction to find at first order at all: the
-derivative is not small, it is zero, and it reproduces itself. A second order
+follow. In all three the first-order information is degenerate but recoverable.
+In the tree gate case there is no direction to find at first-order at all: the
+derivative is not small, it is zero, and it reproduces itself. A second-order
 criterion in the style of \cite{liu2019splitting} would be the natural way to
 repair the operation without noise, and I have not tried it.
 \end{remark}
@@ -292,7 +292,7 @@ that approximation buys.
 \toprule
 Growth & Iris & Wine & Digits \\
 \midrule
-Exactly function preserving ($\varepsilon = 0$) & @@T_J_IRIS_0@@ & @@T_J_WINE_0@@ & @@T_J_DIGITS_0@@ \\
+Exactly function-preserving ($\varepsilon = 0$) & @@T_J_IRIS_0@@ & @@T_J_WINE_0@@ & @@T_J_DIGITS_0@@ \\
 Perturbed, $\varepsilon = 0.05$ & @@T_J_IRIS_005@@ & @@T_J_WINE_005@@ & @@T_J_DIGITS_005@@ \\
 Perturbed, $\varepsilon = 0.2$ (the default) & @@T_J_IRIS_02@@ & @@T_J_WINE_02@@ & @@T_J_DIGITS_02@@ \\
 Perturbed, $\varepsilon = 0.5$ & @@T_J_IRIS_05@@ & @@T_J_WINE_05@@ & @@T_J_DIGITS_05@@ \\
@@ -302,7 +302,7 @@ Same depth, trained from scratch & @@T_J_IRIS_S@@ & @@T_J_WINE_S@@ & @@T_J_DIGIT
 \end{tabular}
 \caption{Depth four soft decision tree grown one level at a time, as a function
 of the perturbation applied to new child distributions. Mean and standard
-deviation over three seeds of stratified five fold cross validation.}
+deviation over three seeds of stratified five-fold cross validation.}
 \label{tab:jitter}
 \end{table}
 
@@ -346,7 +346,7 @@ damages a network that has just been judged to have stopped improving, and it
 then has to be trained from noise while the rest of the network repairs the
 damage.
 
-The alternative follows cascade correlation \cite{fahlman1990cascade}. Freeze
+The alternative follows cascade-correlation \cite{fahlman1990cascade}. Freeze
 the network, compute its residual error on the training set, train the candidate
 unit's incoming weights to correlate with that residual, and install the unit
 with \emph{zero} outgoing weights. The network's function is unchanged at the
@@ -372,7 +372,7 @@ Digits & random   & @@T_G_DIGITS_RND@@ & @@T_G_DIGITS_RND_H@@ & \\
        & residual & @@T_G_DIGITS_RES@@ & @@T_G_DIGITS_RES_H@@ & \raisebox{1.4ex}[0pt]{@@FTEST_GAL_DIGITS@@} \\
 \bottomrule
 \end{tabular}
-\caption{GAL network, 150 epochs, three seeds of five fold cross validation.
+\caption{GAL network, 150 epochs, three seeds of five-fold cross validation.
 The $F$ column tests the two accuracies against each other.}
 \label{tab:gal}
 \end{table}
@@ -397,7 +397,7 @@ So the operation is a parsimony intervention that costs accuracy on the one
 dataset here with enough classes and features to strain it. The likely reason is
 visible in the same table: the residual variant stops at @@T_G_DIGITS_RES_H@@
 hidden units where the random variant keeps going to @@T_G_DIGITS_RND_H@@, and on
-a ten class problem those extra units are doing work. Growth that stops early is
+a ten-class problem those extra units are doing work. Growth that stops early is
 parsimony on an easy problem and underfitting on a harder one, and the growth
 criterion cannot tell the two apart.
 
@@ -414,7 +414,7 @@ by then the gradient has already been formed.
 \section{Which leaf to split}
 
 A soft tree can be grown a level at a time, as in Section~3, or a leaf at a time.
-The per leaf rule of \.Irsoy, Y\i{}ld\i{}z and Alpayd\i{}n \cite{irsoy2012soft}
+The per-leaf rule of \.Irsoy, Y\i{}ld\i{}z and Alpayd\i{}n \cite{irsoy2012soft}
 splits the leaf carrying the most expected error,
 $\arg\max_\ell \sum_i \mu_\ell(x_i)\,e_i$, where $e_i$ is the error on sample
 $i$.
@@ -433,13 +433,13 @@ Problem & Growth & Accuracy & Splits \\
 \bottomrule
 \end{tabular}
 \caption{Growing one leaf at a time against a complete tree of the same maximum
-depth, on two synthetic problems. Three seeds of five fold cross validation.}
+depth, on two synthetic problems. Three seeds of five-fold cross validation.}
 \label{tab:perleaf}
 \end{table}
 
 On the first problem this is the result the rule is supposed to give. A complete
 tree spends most of its capacity on regions that were already separated, and the
-per leaf rule puts a split where the error is. It reached a higher accuracy with
+per-leaf rule puts a split where the error is. It reached a higher accuracy with
 roughly one seventeenth of the splits.
 
 On the second problem the sparsity survives and the accuracy does not. The rule
@@ -475,7 +475,7 @@ Digits        & highest accuracy & @@T_O_DIGITS_ACC@@  & @@T_O_DIGITS_ACC_N@@ \\
               & significance     & @@T_O_DIGITS_TEST@@ & @@T_O_DIGITS_TEST_N@@ \\
 \bottomrule
 \end{tabular}
-\caption{Omnivariate tree of maximum depth three. Three seeds of five fold cross
+\caption{Omnivariate tree of maximum depth three. Three seeds of five-fold cross
 validation.}
 \label{tab:omni}
 \end{table}
@@ -541,13 +541,13 @@ Proposition~\ref{prop:zero} is exact and implementation independent. The
 empirical results are neither. They are measurements of these operations in this
 setting.
 
-The standard deviations I report describe fold to fold spread over fifteen
+The standard deviations I report describe fold-to-fold spread over fifteen
 non independent fits. They are not confidence intervals and should not be read as
 such. Where I needed to decide rather than describe I used the combined
 $5\times2$cv $F$ test, which is reported alongside.
 
 I did not try the obvious repair suggested by Remark~\ref{rem:asimetri}, which
-is to choose the split direction of a new gate from second order information in
+is to choose the split direction of a new gate from second-order information in
 the manner of splitting steepest descent \cite{liu2019splitting} instead of
 perturbing the children at random. That is the experiment I would run next.
 
@@ -560,7 +560,7 @@ whose decisions can be read. The hierarchical mixture of experts with subtree
 dropout \cite{irsoy2021dropout} is the closely related architecture in which
 leaves are themselves models. Omnivariate trees are due to Y\i{}ld\i{}z and
 Alpayd\i{}n \cite{yildiz2001omnivariate}. Constructive learning of the kind
-studied in Sections 4 and 5 goes back to cascade correlation
+studied in Sections 4 and 5 goes back to cascade-correlation
 \cite{fahlman1990cascade} and GAL \cite{alpaydin1994gal}.
 
 The idea of enlarging a network while preserving the function it computes is the
@@ -569,18 +569,18 @@ subject of Net2Net \cite{chen2016net2net} and network morphism
 creates symmetric parameters, and Net2Net adds noise for that reason. Splitting
 steepest descent \cite{liu2019splitting} treats the same situation as an
 optimisation problem: a duplicated neuron sits at a saddle in the enlarged space,
-and the paper derives the second order direction that leaves it, with a signed
+and the paper derives the second-order direction that leaves it, with a signed
 refinement in later work. GradMax \cite{evci2022gradmax} keeps the function
 unchanged by zeroing the new weights and then chooses the remaining freedom to
 maximise the gradient norm, so that the new unit starts with the strongest
 available learning signal.
 
 Proposition~\ref{prop:zero} is the corresponding statement for tree gates, and it
-is a stronger degeneracy than any of those. In the neuron case the first order
-information is uninformative and second order information recovers a direction.
+is a stronger degeneracy than any of those. In the neuron case the first-order
+information is uninformative and second-order information recovers a direction.
 In the gate case, with identical children, the first derivative with respect to
 the gate is exactly zero and the update rule reproduces the condition that made
-it zero, so no amount of further first order training escapes it. The statistical
+it zero, so no amount of further first-order training escapes it. The statistical
 machinery in Section~6 is the combined $5\times2$cv $F$ test
 \cite{alpaydin1999combined}.
 
@@ -590,7 +590,7 @@ Growth operations that look safest are not. Preserving a soft tree's function
 exactly while deepening it produces a gate whose gradient is identically zero and
 children that move together forever, and it costs around
 @@JITTER_IRIS_DROP@@ points on Iris and @@JITTER_WINE_DROP@@ on Wine while
-multiplying the fold to fold standard deviation by @@JITTER_SD_RATIO@@. Requiring statistical
+multiplying the fold-to-fold standard deviation by @@JITTER_SD_RATIO@@. Requiring statistical
 significance before choosing a more expressive split makes each node simpler and
 the tree larger and less accurate.
 
