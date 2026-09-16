@@ -250,10 +250,15 @@ What does break it is any mechanism that makes the two children's updates differ
 Perturbing the child distributions at insertion is the direct route and the one
 we measure below. Asymmetric noise during training is another: the subtree
 dropout of \.Irsoy and Alpayd\i{}n \cite{irsoy2021dropout} drops branches
-independently, which is exactly the condition the proposition rules out. In
-floating point arithmetic, non associativity can also perturb the two children
-apart, and the measurements below show that whatever perturbation this supplies
-is not enough to recover the loss.
+independently, which is exactly the condition the proposition rules out.
+
+Floating point arithmetic does not supply such a perturbation here, and we
+checked rather than assumed it. On a depth two tree trained on Iris and then
+deepened, the gradient of every new gate is exactly zero in single precision,
+the sum of absolute values over both weights and biases being $0$ and not
+merely small, and the gradients of every pair of sibling leaves are bitwise
+identical. Breaking the symmetry at insertion makes both quantities nonzero.
+The check is in the repository and runs in continuous integration.
 \end{remark}
 
 \begin{remark}

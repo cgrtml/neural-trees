@@ -342,10 +342,19 @@ def test_deepening_nearly_preserves_the_function():
 
 def test_deepening_breaks_the_symmetry_between_new_children():
     """
-    Regression test for a dead level. With identical children the mixture does
-    not depend on the new gate, so its gradient is exactly zero and the children
-    receive identical gradients forever. Growing that way reached 0.756 on Iris
-    against 0.958 for a tree of the same depth trained from scratch.
+    Regression test for a dead level.
+
+    With identical children the mixture does not depend on the new gate, so the
+    gate's gradient is exactly zero and the two children receive exactly the
+    same gradient, which keeps them identical and keeps the gate's gradient
+    zero. The level can never learn anything.
+
+    The assertions below are exact rather than approximate on purpose. In
+    single precision the quantities are 0.0 and not merely small, and the paper
+    accompanying this library says so, so a tolerance here would let the claim
+    and the code drift apart. Measured cost of growing this way, three seeds of
+    five-fold cross-validation: 0.762 on Iris against 0.958 for a tree of the
+    same depth trained from scratch.
     """
     import torch
 
@@ -360,14 +369,25 @@ def test_deepening_breaks_the_symmetry_between_new_children():
     siblings = jittered.leaf_logits.detach()
     assert not torch.allclose(siblings[0::2], siblings[1::2])
 
-    # With identical children the new gates get no gradient at all.
-    X_t = torch.FloatTensor(X)
-    loss = torch.nn.functional.nll_loss(
-        identical.log_forward(X_t), torch.LongTensor(y)
-    )
-    loss.backward()
-    new_gate_grads = identical.gates.weight.grad[identical.n_internal // 2:]
-    assert torch.allclose(new_gate_grads, torch.zeros_like(new_gate_grads), atol=1e-7)
+    # With identical children the new gates get no gradient at all: weights and
+    # biases alike, and exactly zero rather than nearly zero.
+    X_t, y_t = torch.FloatTensor(X), torch.LongTensor(y)
+    torch.nn.functional.nll_loss(identical.log_forward(X_t), y_t).backward()
+    yeni = identical.n_internal // 2
+    assert (identical.gates.weight.grad[yeni:] == 0).all()
+    assert (identical.gates.bias.grad[yeni:] == 0).all()
+
+    # ...and the two children of each new gate receive the same gradient, which
+    # is what keeps the state reproducing itself.
+    kardes = identical.node_logits.grad[identical.n_internal:]
+    assert (kardes[0::2] == kardes[1::2]).all()
+
+    # Breaking the symmetry makes all three quantities nonzero.
+    torch.nn.functional.nll_loss(jittered.log_forward(X_t), y_t).backward()
+    assert (jittered.gates.weight.grad[yeni:] != 0).any()
+    assert (jittered.gates.bias.grad[yeni:] != 0).any()
+    kardes_j = jittered.node_logits.grad[jittered.n_internal:]
+    assert (kardes_j[0::2] != kardes_j[1::2]).any()
 
 
 def test_incremental_growth_chooses_its_own_depth():
