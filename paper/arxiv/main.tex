@@ -16,8 +16,7 @@
 
 \newtheorem{proposition}{Proposition}
 
-\title{Function-Preserving Growth Cannot Learn:\\
-Four Measurements on Constructive Tree-Structured Classifiers}
+\title{When Preserving the Function Prevents Learning in Growing Classifiers}
 
 \author{Cagri Temel\\
   \small Independent researcher\\
@@ -38,12 +37,12 @@ two negative, obtained while building and testing an open-source
 implementation of soft decision trees, hierarchical mixtures of experts and
 grow-and-prune networks.
 
-The central result is negative and exact. Deepening a soft decision tree so
-that the function it computes is exactly preserved --- every leaf becomes a
-gate with two children inheriting the parent's class distribution --- makes the
-gradient of the new gate identically zero and leaves the two children with
-identical gradients, so the new level can never differentiate. This is not a
-slow start but a fixed point. Under five-fold cross-validation repeated over
+The central result is negative and exact. Take a soft decision tree and deepen
+it so that the function it computes stays exactly the same: every leaf becomes
+a gate whose two children inherit the parent's class distribution. The gradient
+of the new gate is then identically zero, the two children receive identical
+gradients, and the added level never differentiates. Gradient descent cannot
+leave that state. Under five-fold cross-validation repeated over
 three seeds it costs $0.958 \rightarrow 0.753$ on Iris and $0.977 \rightarrow
 0.754$ on Wine. Breaking the symmetry with a small perturbation of the child
 distributions recovers the loss completely, and the size of the perturbation
@@ -65,8 +64,8 @@ All code, data preparation and measurement scripts are public.
 \section{Introduction}
 
 A constructive learner decides its own architecture during training. The idea
-is old --- cascade-correlation \cite{fahlman1990cascade} and the grow-and-learn
-network \cite{alpaydin1994gal} both date from the early 1990s --- and it has
+is old. Cascade-correlation \cite{fahlman1990cascade} and the grow-and-learn
+network \cite{alpaydin1994gal} both date from the early 1990s. It has
 returned in the tree literature, where soft decision trees
 \cite{irsoy2012soft, frosst2017distilling} replace the hard threshold at each
 internal node with a sigmoid gate and so make the whole tree trainable by
@@ -78,16 +77,16 @@ operations have an appealing symmetry to them: grow smoothly, preserve what you
 have learned, decide each local question with a principled criterion. This
 paper reports what happened when four such operations were implemented and
 measured against their non-growing baselines under a fixed protocol. Two of the
-four paid off. Two did not, and one of them fails for a reason that can be
-stated exactly rather than observed statistically.
+four paid off. Two did not. One of the failures has an exact cause, which we
+state and prove instead of leaving it to the statistics.
 
 The measurements were produced while building \texttt{neural-trees}, an
 open-source, scikit-learn compatible \cite{pedregosa2011scikit} library of
-these models with a PyTorch \cite{paszke2019pytorch} backend. That origin is
-worth stating plainly: these are not results from a study designed in advance
-to test four hypotheses. They are the measurements that decided four
-implementation questions, reported with the protocol held fixed and the
-negative outcomes included. We consider the negative ones the more useful half.
+these models with a PyTorch \cite{paszke2019pytorch} backend. We should say
+plainly where they came from. No study was designed in advance to test four
+hypotheses. These are the measurements that settled four implementation
+questions, reported with the protocol held fixed and the negative outcomes
+included. The negative ones have been the more useful half for us.
 
 \section{Setup}
 
@@ -195,10 +194,11 @@ full parameter and computation cost of the extra level.
 Two remarks. First, the result does not depend on the loss, only on the output
 being the mixture \eqref{eq:mixture}. Second, it does not depend on the gate
 being exactly zero: the first half of the proposition needs only
-$Q_L = Q_R$, so the gate gradient vanishes for any initial $g$, and it is the
-second half --- children moving together --- that uses $g = 1/2$. Momentum,
-adaptive step sizes and weight decay do not rescue it, because the gradient is
-zero rather than small.
+$Q_L = Q_R$, so the gate gradient vanishes for any initial $g$. Only the
+second half, where the children move together, uses $g = 1/2$. Momentum,
+adaptive step sizes and weight decay do not rescue it. The gradient is not
+small, it is zero, and every one of those methods scales something that has no
+direction to begin with.
 
 \subsection{The fix, and how little it matters}
 
@@ -252,7 +252,7 @@ The alternative follows cascade-correlation \cite{fahlman1990cascade}: freeze
 the network, compute its residual error on the training set, train the
 candidate unit's incoming weights to correlate with that residual, and install
 the unit with \emph{zero} outgoing weights, so that at the moment of insertion
-the network's function is unchanged --- which is safe here, unlike in
+the network's function is unchanged. That is safe here, unlike in
 Section~3, because the outgoing weights have a nonzero gradient as soon as the
 incoming weights are informative.
 
@@ -273,11 +273,11 @@ more accurate and substantially smaller.}
 \end{table}
 
 Table~\ref{tab:gal} shows the effect: two points of accuracy and a network
-62\% smaller. The size difference is the more interesting half. Random units
+62\% smaller. The size difference matters more than the accuracy. Random units
 arrive unhelpful, the error does not fall, and the growth criterion fires
-again --- so the network grows because growth is not working.
+again, so the network grows because growth is not working.
 
-One implementation detail is worth recording because it cost time to find. The
+One implementation detail cost us a day to find. The
 candidate objective involves a normalisation of the form $s / \sqrt{v}$ where
 $v$ is a variance that can be zero on a degenerate batch. At $v = 0$ the
 gradient of the square root is infinite and the whole network becomes
@@ -351,9 +351,8 @@ not be read as generalising to large-scale problems. Each finding compares two
 arms of a single implementation with settings held fixed, which isolates the
 operation under test but does not establish that the winning arm is the best
 available method. Proposition~\ref{prop:zero} is exact and
-implementation-independent; the four empirical results are not, and they should
-be read as measurements of these operations in this setting rather than as
-general laws. The comparisons in Sections 4--6 report means over 15 fits
+implementation-independent. The four empirical results are not. They should be
+read as measurements of these operations in this setting, not as general laws. The comparisons in Sections 4--6 report means over 15 fits
 without significance tests, since the differences in Tables~\ref{tab:jitter}
 and \ref{tab:gal} are large relative to fold-to-fold variation and the
 difference in Table~\ref{tab:omni} is deliberately reported as small.
@@ -371,9 +370,9 @@ Sections 4 and 5 goes back to cascade-correlation \cite{fahlman1990cascade} and
 GAL \cite{alpaydin1994gal}. The idea of growing a network while preserving the
 function it computes is the basis of Net2Net \cite{chen2016net2net}, which
 notes that exact preservation makes units symmetric and adds noise for that
-reason; Proposition~\ref{prop:zero} is the corresponding statement for
-tree-structured gates, where the symmetry is not merely undesirable but a fixed
-point of the optimiser, and where the measured cost is large. The statistical
+reason. Proposition~\ref{prop:zero} is the corresponding statement for
+tree-structured gates. There the symmetry is a fixed point of the optimiser
+rather than an inconvenience, and the measured cost is large. The statistical
 machinery in Section~6 is the combined $5\times2$cv $F$ test
 \cite{alpaydin1999combined}.
 
@@ -385,11 +384,11 @@ and children that move together forever; the new level is dead, and the cost is
 around twenty points of accuracy on two standard datasets. Requiring statistical
 significance before choosing a more expressive split makes each node simpler
 and the tree as a whole larger and less accurate. The two operations that did
-work share a property: they change what the model can represent without
-changing what it currently computes in a way the optimiser can still act on ---
-a unit fitted to the residual and installed with zero outgoing weights has a
-nonzero gradient immediately, and splitting the leaf with the most error puts
-capacity where the error is.
+work share a property. Each one changes what the model can represent without
+changing what it currently computes, and each does so in a way the optimiser
+can still act on. A unit fitted to the residual and installed with zero
+outgoing weights has a nonzero gradient immediately. Splitting the leaf with
+the most error puts capacity where the error already is.
 
 The practical rule we draw from this is narrow but concrete: when adding
 capacity to a differentiable model, check that the gradient with respect to the
