@@ -1,7 +1,6 @@
 % arXiv source. Compiles with pdflatex.
 %
-% GENERATED FILE, DO NOT EDIT. Source: paper/arxiv/main.tex.tmpl
-% The placeholders are substituted from the measurement
+% THIS IS A TEMPLATE. The placeholders are substituted from the measurement
 % output by paper/arxiv/olcum/doldur.py, so that no number in the paper is
 % typed by hand. Run paper/arxiv/olcum/olc.py first to produce the results
 % file, then the substitution script to produce main.tex.
@@ -49,16 +48,16 @@ identical gradients, so they stay identical and the gradient stays zero. The
 state reproduces itself at every step. This is a stronger degeneracy than the
 symmetry Net2Net breaks with noise, or the saddle point that splitting steepest
 descent escapes with second order information. Exact preservation costs
-19.6 accuracy points on Iris, 19.1 on Wine and
-55.6 on Digits against the same depth trained from scratch, and
+@@JITTER_IRIS_DROP@@ accuracy points on Iris, @@JITTER_WINE_DROP@@ on Wine and
+@@JITTER_DIGITS_DROP@@ on Digits against the same depth trained from scratch, and
 inflates the fold to fold standard deviation. Any perturbation of the child
 distributions removes the problem and its size barely matters.
 
 The other three are trades. Fitting a new hidden unit to the residual before
 installing it gives a smaller network on all three datasets but not a better one,
 and on Digits it is significantly worse. Splitting the leaf with the most
-expected error reached 0.885 with 3.7 splits where a
-complete depth six tree needed 63, and lost 4.3 points on a harder
+expected error reached @@PL_S1_GROW_ACC@@ with @@PL_S1_GROW_N@@ splits where a
+complete depth six tree needed 63, and lost @@PL_S2_DROP@@ points on a harder
 problem. Requiring statistical significance before a node gets a more expressive
 split made the tree larger and less accurate.
 
@@ -288,12 +287,12 @@ that approximation buys.
 \toprule
 Growth & Iris & Wine & Digits \\
 \midrule
-Exactly function preserving ($\varepsilon = 0$) & 0.762 $\pm$ 0.103 & 0.786 $\pm$ 0.145 & 0.369 $\pm$ 0.035 \\
-Perturbed, $\varepsilon = 0.05$ & 0.942 $\pm$ 0.041 & 0.979 $\pm$ 0.020 & 0.917 $\pm$ 0.034 \\
-Perturbed, $\varepsilon = 0.2$ (the default) & 0.942 $\pm$ 0.044 & 0.979 $\pm$ 0.020 & 0.921 $\pm$ 0.027 \\
-Perturbed, $\varepsilon = 0.5$ & 0.938 $\pm$ 0.050 & 0.983 $\pm$ 0.018 & 0.916 $\pm$ 0.026 \\
+Exactly function preserving ($\varepsilon = 0$) & @@T_J_IRIS_0@@ & @@T_J_WINE_0@@ & @@T_J_DIGITS_0@@ \\
+Perturbed, $\varepsilon = 0.05$ & @@T_J_IRIS_005@@ & @@T_J_WINE_005@@ & @@T_J_DIGITS_005@@ \\
+Perturbed, $\varepsilon = 0.2$ (the default) & @@T_J_IRIS_02@@ & @@T_J_WINE_02@@ & @@T_J_DIGITS_02@@ \\
+Perturbed, $\varepsilon = 0.5$ & @@T_J_IRIS_05@@ & @@T_J_WINE_05@@ & @@T_J_DIGITS_05@@ \\
 \midrule
-Same depth, trained from scratch & 0.958 $\pm$ 0.032 & 0.978 $\pm$ 0.016 & 0.925 $\pm$ 0.029 \\
+Same depth, trained from scratch & @@T_J_IRIS_S@@ & @@T_J_WINE_S@@ & @@T_J_DIGITS_S@@ \\
 \bottomrule
 \end{tabular}
 \caption{Depth four soft decision tree grown one level at a time, as a function
@@ -304,26 +303,26 @@ deviation over three seeds of stratified five fold cross validation.}
 
 Three things in that table are worth separating.
 
-The cost of exact preservation is large. It is 19.6 points on
-Iris and 19.1 on Wine against the same depth trained from
-scratch, and 55.6 on Digits.
+The cost of exact preservation is large. It is @@JITTER_IRIS_DROP@@ points on
+Iris and @@JITTER_WINE_DROP@@ on Wine against the same depth trained from
+scratch, and @@JITTER_DIGITS_DROP@@ on Digits.
 
 The variance is worse than the mean suggests. At $\varepsilon = 0$ the fold to
-fold standard deviation is 0.103 on Iris against
-0.044 at the default perturbation. A model that is merely worse is
+fold standard deviation is @@T_J_IRIS_0_SD@@ on Iris against
+@@T_J_IRIS_02_SD@@ at the default perturbation. A model that is merely worse is
 easier to live with than a model whose behaviour depends on which fold it landed
 in, and the failure produces both.
 
 The perturbation itself barely matters. Between $\varepsilon = 0.05$ and
 $\varepsilon = 0.5$, a factor of ten, the means move by at most
-0.4 points on any of the three datasets. Zero is not a small value
+@@JITTER_SPREAD@@ points on any of the three datasets. Zero is not a small value
 of $\varepsilon$. It is a different case, which is what
 Proposition~\ref{prop:zero} says it should be.
 
 Because this is the paper's central claim we test it rather than only describing
 it. The combined $5\times2$cv $F$ test comparing $\varepsilon = 0$ against
-$\varepsilon = 0.2$ gives $F = 4.33$, $p = 0.0596$ on Iris,
-$F = 10.20$, $p = 0.0097$ on Wine and $F = 222.98$, $p < 0.0001$ on Digits.
+$\varepsilon = 0.2$ gives @@FTEST_JITTER_IRIS@@ on Iris,
+@@FTEST_JITTER_WINE@@ on Wine and @@FTEST_JITTER_DIGITS@@ on Digits.
 
 The Iris result sits just above the conventional threshold and we are not going
 to describe it as significant. It is the smallest dataset here, at 150 samples,
@@ -358,14 +357,14 @@ with the residual.
 \toprule
 Dataset & New unit & Accuracy & Hidden units & $5\times2$cv $F$ \\
 \midrule
-Iris   & random   & 0.936 $\pm$ 0.046   & 17.2 $\pm$ 2.4   & \\
-       & residual & 0.956 $\pm$ 0.037   & 6.9 $\pm$ 1.5   & \raisebox{1.4ex}[0pt]{$F = 2.33$, $p = 0.1811$} \\
+Iris   & random   & @@T_G_IRIS_RND@@   & @@T_G_IRIS_RND_H@@   & \\
+       & residual & @@T_G_IRIS_RES@@   & @@T_G_IRIS_RES_H@@   & \raisebox{1.4ex}[0pt]{@@FTEST_GAL_IRIS@@} \\
 \midrule
-Wine   & random   & 0.985 $\pm$ 0.015   & 6.3 $\pm$ 2.2   & \\
-       & residual & 0.985 $\pm$ 0.015   & 4.3 $\pm$ 0.5   & \raisebox{1.4ex}[0pt]{$F = 0.82$, $p = 0.6332$} \\
+Wine   & random   & @@T_G_WINE_RND@@   & @@T_G_WINE_RND_H@@   & \\
+       & residual & @@T_G_WINE_RES@@   & @@T_G_WINE_RES_H@@   & \raisebox{1.4ex}[0pt]{@@FTEST_GAL_WINE@@} \\
 \midrule
-Digits & random   & 0.949 $\pm$ 0.013 & 7.5 $\pm$ 0.6 & \\
-       & residual & 0.928 $\pm$ 0.015 & 5.7 $\pm$ 0.5 & \raisebox{1.4ex}[0pt]{$F = 25.18$, $p = 0.0012$} \\
+Digits & random   & @@T_G_DIGITS_RND@@ & @@T_G_DIGITS_RND_H@@ & \\
+       & residual & @@T_G_DIGITS_RES@@ & @@T_G_DIGITS_RES_H@@ & \raisebox{1.4ex}[0pt]{@@FTEST_GAL_DIGITS@@} \\
 \bottomrule
 \end{tabular}
 \caption{GAL network, 150 epochs, three seeds of five fold cross validation.
@@ -376,9 +375,9 @@ The $F$ column tests the two accuracies against each other.}
 The size effect is consistent and the accuracy effect is not, and we want to be
 exact about which is which.
 
-Every dataset gives a smaller network. Iris falls from 17.2 $\pm$ 2.4 hidden
-units to 6.9 $\pm$ 1.5, Wine from 6.3 $\pm$ 2.2 to 4.3 $\pm$ 0.5,
-Digits from 7.5 $\pm$ 0.6 to 5.7 $\pm$ 0.5. The mechanism is
+Every dataset gives a smaller network. Iris falls from @@T_G_IRIS_RND_H@@ hidden
+units to @@T_G_IRIS_RES_H@@, Wine from @@T_G_WINE_RND_H@@ to @@T_G_WINE_RES_H@@,
+Digits from @@T_G_DIGITS_RND_H@@ to @@T_G_DIGITS_RES_H@@. The mechanism is
 visible in the growth trace. A random unit arrives unhelpful, the error does not
 fall, and the growth criterion fires again, so the network grows because growth
 is not working. Fitting the unit to the residual first removes that loop.
@@ -386,13 +385,13 @@ is not working. Fitting the unit to the residual first removes that loop.
 Accuracy goes the other way, and on the largest dataset it goes there
 significantly. It rose on Iris and was identical on Wine to three decimals, and
 the $F$ test rejects equality on neither. On Digits it fell by
-2.1 points and the $F$ test does reject equality, in favour of
+@@GAL_DIGITS_DROP@@ points and the $F$ test does reject equality, in favour of
 random initialisation.
 
 So the operation is a parsimony intervention that costs accuracy on the one
 dataset here with enough classes and features to strain it. The likely reason is
-visible in the same table: the residual variant stops at 5.7 $\pm$ 0.5
-hidden units where the random variant keeps going to 7.5 $\pm$ 0.6, and on
+visible in the same table: the residual variant stops at @@T_G_DIGITS_RES_H@@
+hidden units where the random variant keeps going to @@T_G_DIGITS_RND_H@@, and on
 a ten class problem those extra units are doing work. Growth that stops early is
 parsimony on an easy problem and underfitting on a harder one, and the growth
 criterion cannot tell the two apart.
@@ -421,11 +420,11 @@ $i$.
 \toprule
 Problem & Growth & Accuracy & Splits \\
 \midrule
-800 samples, 20 features  & complete depth 6 & 0.839 $\pm$ 0.021 & 63.0 $\pm$ 0.0 \\
-                          & per leaf         & 0.885 $\pm$ 0.030   & 3.7 $\pm$ 1.4 \\
+800 samples, 20 features  & complete depth 6 & @@T_P_S1_NONE@@ & @@T_P_S1_NONE_N@@ \\
+                          & per leaf         & @@T_P_S1_PL@@   & @@T_P_S1_PL_N@@ \\
 \midrule
-2000 samples, 50 features & complete depth 6 & 0.579 $\pm$ 0.027 & 63.0 $\pm$ 0.0 \\
-                          & per leaf         & 0.536 $\pm$ 0.040   & 4.8 $\pm$ 1.1 \\
+2000 samples, 50 features & complete depth 6 & @@T_P_S2_NONE@@ & @@T_P_S2_NONE_N@@ \\
+                          & per leaf         & @@T_P_S2_PL@@   & @@T_P_S2_PL_N@@ \\
 \bottomrule
 \end{tabular}
 \caption{Growing one leaf at a time against a complete tree of the same maximum
@@ -439,7 +438,7 @@ per leaf rule puts a split where the error is. It reached a higher accuracy with
 roughly one seventeenth of the splits.
 
 On the second problem the sparsity survives and the accuracy does not. The rule
-still stops at 4.8 $\pm$ 1.1 splits, but it now loses 4.3 points to
+still stops at @@T_P_S2_PL_N@@ splits, but it now loses @@PL_S2_DROP@@ points to
 the complete tree. Note also that both arms are poor there in absolute terms, so
 what the second row shows is two ways of underfitting the same problem rather
 than a good model beating a bad one.
@@ -464,11 +463,11 @@ simpler nodes at little or no cost.
 \toprule
 Dataset & Selection rule & Accuracy & Nodes \\
 \midrule
-Breast Cancer & highest accuracy & 0.971 $\pm$ 0.018  & 3.8 $\pm$ 1.0 \\
-              & significance     & 0.959 $\pm$ 0.020 & 8.1 $\pm$ 2.5 \\
+Breast Cancer & highest accuracy & @@T_O_CANCER_ACC@@  & @@T_O_CANCER_ACC_N@@ \\
+              & significance     & @@T_O_CANCER_TEST@@ & @@T_O_CANCER_TEST_N@@ \\
 \midrule
-Digits        & highest accuracy & 0.510 $\pm$ 0.083  & 10.1 $\pm$ 1.7 \\
-              & significance     & 0.492 $\pm$ 0.076 & 11.5 $\pm$ 2.3 \\
+Digits        & highest accuracy & @@T_O_DIGITS_ACC@@  & @@T_O_DIGITS_ACC_N@@ \\
+              & significance     & @@T_O_DIGITS_TEST@@ & @@T_O_DIGITS_TEST_N@@ \\
 \bottomrule
 \end{tabular}
 \caption{Omnivariate tree of maximum depth three. Three seeds of five fold cross
@@ -585,8 +584,8 @@ machinery in Section~6 is the combined $5\times2$cv $F$ test
 Growth operations that look safest are not. Preserving a soft tree's function
 exactly while deepening it produces a gate whose gradient is identically zero and
 children that move together forever, and it costs around
-19.6 points on Iris and 19.1 on Wine while
-multiplying the fold to fold standard deviation by 1.3 to 7.3. Requiring statistical
+@@JITTER_IRIS_DROP@@ points on Iris and @@JITTER_WINE_DROP@@ on Wine while
+multiplying the fold to fold standard deviation by @@JITTER_SD_RATIO@@. Requiring statistical
 significance before choosing a more expressive split makes each node simpler and
 the tree larger and less accurate.
 

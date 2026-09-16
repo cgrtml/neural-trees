@@ -1,0 +1,63 @@
+
+### JITTER · Iris
+  jitter=0.0   0.762 ± 0.103   (7s)
+  jitter=0.05  0.942 ± 0.041   (6s)
+  jitter=0.2   0.942 ± 0.044   (6s)
+  jitter=0.5   0.938 ± 0.050   (6s)
+  sıfırdan     0.958 ± 0.032   (8s)
+
+### JITTER · Wine
+  jitter=0.0   0.786 ± 0.145   (6s)
+  jitter=0.05  0.979 ± 0.020   (6s)
+  jitter=0.2   0.979 ± 0.020   (6s)
+  jitter=0.5   0.983 ± 0.018   (6s)
+  sıfırdan     0.977 ± 0.016   (11s)
+
+### JITTER · Digits
+  jitter=0.0   0.369 ± 0.035   (65s)
+  jitter=0.05  0.917 ± 0.034   (65s)
+  jitter=0.2   0.921 ± 0.027   (66s)
+  jitter=0.5   0.917 ± 0.027   (66s)
+  sıfırdan     0.925 ± 0.029   (101s)
+
+### 5x2cv F · jitter 0 vs 0.2 · Iris
+  F=4.332  p=0.05964
+
+### 5x2cv F · jitter 0 vs 0.2 · Wine
+  F=10.198  p=0.00968
+
+### GAL · Iris
+  random    acc 0.936 ± 0.046   birim 17.2 ± 2.4
+  residual  acc 0.956 ± 0.037   birim 6.9 ± 1.5
+
+### GAL · Wine
+  random    acc 0.985 ± 0.015   birim 6.3 ± 2.2
+  residual  acc 0.985 ± 0.015   birim 4.3 ± 0.5
+
+### GAL · Digits
+  random    acc 0.949 ± 0.013   birim 7.5 ± 0.6
+  residual  acc 0.928 ± 0.015   birim 5.7 ± 0.5
+
+### 5x2cv F · GAL random vs residual · Iris
+  F=2.333  p=0.18108
+
+### 5x2cv F · GAL random vs residual · Wine
+  F=0.818  p=0.63319
+
+### PER-LEAF · Sentetik-800x20
+  none      acc 0.839 ± 0.021   bölme 63.0 ± 0.0
+  per_leaf  acc 0.885 ± 0.030   bölme 3.7 ± 1.4
+
+### PER-LEAF · Sentetik-2000x50
+  none      acc 0.579 ± 0.027   bölme 63.0 ± 0.0
+  per_leaf  acc 0.536 ± 0.040   bölme 4.8 ± 1.1
+
+### OMNIVARIATE · Cancer
+  accuracy  acc 0.971 ± 0.018   düğüm 3.8 ± 1.0
+  test      acc 0.959 ± 0.020   düğüm 8.1 ± 2.5
+
+### OMNIVARIATE · Digits
+  accuracy  acc 0.510 ± 0.083   düğüm 10.1 ± 1.7
+  test      acc 0.492 ± 0.076   düğüm 11.5 ± 2.3
+
+→ paper/arxiv/olcum/sonuc.json yazıldı
