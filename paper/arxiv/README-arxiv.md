@@ -28,8 +28,10 @@ pdfLaTeX kullanır, ikisinde de temiz derlenir.
 
 ## Web formunda doldurulacaklar
 
-- **Primary category:** `cs.LG` (Machine Learning)
-- **Cross-list:** `stat.ML`, istersen `cs.NE` (Neural and Evolutionary Computing)
+- **Primary category:** `cs.AI` (Artificial Intelligence) — alınan endorsement bu
+  kategori için; `cs.LG` seçilemiyor
+- **Cross-list:** `cs.LG` ve `stat.ML` eklemeyi dene; endorsement isterse boş bırak.
+  Duyurulduktan sonra kategori ekletme talebi gönderilebilir
 - **Title / Authors:** `main.tex` ile birebir aynı olmalı
 - **Abstract:** düz metin olarak yapıştırılır, **1920 karakter sınırı** var.
   Makaledeki özet bu sınırın altında ama LaTeX komutlarını (`$0.958

@@ -3,6 +3,36 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.2] - 2026-09-16
+
+An archival release with no library behaviour changes. It exists because the
+arXiv paper cites "the exact version used", and the version it used has to
+contain the script that produced its numbers.
+
+### Added
+
+- `paper/arxiv/olcum/olc.py` measures every number in the paper under one
+  protocol (features scaled on the training fold only, three seeds of
+  stratified five-fold cross-validation, mean and standard deviation, the
+  combined 5x2cv F test where a decision is needed) and writes `sonuc.json`.
+  `doldur.py` substitutes those values into `main.tex.tmpl`; no number in the
+  paper is typed by hand.
+- Digits (1797 x 64, ten classes) and a 2000 x 50 synthetic problem, added
+  because the original three datasets were small and low dimensional.
+
+### Changed
+
+- The zero-gradient regression test now asserts exact equality for gate
+  weights, gate biases and sibling leaf gradients, matching what the paper
+  claims and what single precision actually produces.
+- Documentation, the JOSS draft and the `deepen` docstring were brought in line
+  with the corrected measurements. The earlier numbers had been measured with
+  features scaled on the whole dataset before splitting, which leaks test-fold
+  statistics into training. Two claims did not survive the correction and the
+  fourth dataset: residual-fitted units give a smaller GAL network but not a
+  more accurate one, and per-leaf growth buys sparsity but loses accuracy on
+  the harder synthetic problem. Both are now documented as trades.
+
 ## [0.6.1] - 2026-09-11
 
 An archival release. No behaviour changes; the code is identical to 0.6.0 apart

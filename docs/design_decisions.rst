@@ -25,9 +25,11 @@ This does not work, and the reason is exact rather than statistical. With
 
 and the gate's gradient is identically zero. With the gate at :math:`g = 1/2`
 the two children receive identical gradients, so they stay identical, so the
-gate's gradient stays zero. The state reproduces itself at every step: it is a
-fixed point of the optimiser, not a slow start. The added level is dead weight
-while costing full parameters and compute.
+gate's gradient stays zero. The state reproduces itself at every step. It is a fixed point of the
+optimiser. The added level is dead weight while costing full parameters and
+compute. We checked this numerically rather than assuming it: in single
+precision the new gates' gradients are exactly zero and sibling leaves receive
+bitwise identical gradients, and the regression test asserts exact equality.
 
 Perturbing the child distributions slightly at insertion breaks the symmetry.
 The function is then preserved only approximately, which is the price of the
@@ -35,31 +37,39 @@ level being able to learn anything.
 
 .. list-table::
    :header-rows: 1
-   :widths: 40 30 30
+   :widths: 34 22 22 22
 
    * - Growth
      - Iris
      - Wine
+     - Digits
    * - Exactly function-preserving
-     - 0.753
-     - 0.754
+     - 0.762 ± 0.103
+     - 0.786 ± 0.145
+     - 0.369 ± 0.035
    * - Perturbed by 0.05
-     - 0.942
-     - 0.979
+     - 0.942 ± 0.041
+     - 0.979 ± 0.020
+     - 0.917 ± 0.034
    * - Perturbed by 0.2 (the default)
-     - 0.942
-     - 0.979
+     - 0.942 ± 0.044
+     - 0.979 ± 0.020
+     - 0.921 ± 0.027
    * - Perturbed by 0.5
-     - 0.938
-     - 0.981
+     - 0.938 ± 0.050
+     - 0.983 ± 0.018
+     - 0.917 ± 0.027
    * - Same depth, trained from scratch
-     - 0.958
-     - 0.977
+     - 0.958 ± 0.032
+     - 0.978 ± 0.016
+     - 0.925 ± 0.029
 
-The perturbation needs to be nonzero and otherwise needs no tuning: a tenfold
-change in it moves accuracy by four tenths of a point on Iris and two tenths on
-Wine, while setting it to zero costs about twenty. A regression test asserts
-that the zero gradient exists when the symmetry is not broken.
+Exact preservation costs about twenty points on Iris and Wine and fifty-six on
+Digits, and it inflates the fold-to-fold standard deviation as well. The
+perturbation needs to be nonzero and otherwise needs no tuning: a tenfold change
+in it moves the mean by at most four tenths of a point on any of the three. The
+combined 5x2cv F test against the default perturbation gives p = 0.0596 on Iris,
+which we do not call significant, p = 0.0097 on Wine and p < 0.0001 on Digits.
 
 New units should be fitted to the residual
 ------------------------------------------
@@ -70,26 +80,59 @@ just judged to have stopped improving, and then has to be trained from noise.
 
 ``growth_init="residual"`` freezes the network, trains the candidate unit to
 correlate with the residual error, and installs it with zero outgoing weights.
-That is safe here — unlike the tree case above — because the outgoing weights
+That is safe here, unlike the tree case above, because the outgoing weights
 have a nonzero gradient as soon as the incoming weights are informative.
 
 .. list-table::
    :header-rows: 1
-   :widths: 40 30 30
+   :widths: 16 20 22 22 20
 
-   * - New-unit initialisation
+   * - Dataset
+     - New unit
      - Accuracy
      - Hidden units
-   * - ``"random"``
-     - 0.938
-     - 17.4
-   * - ``"residual"``
-     - 0.956
-     - 6.6
+     - 5x2cv F
+   * - Iris
+     - ``"random"``
+     - 0.936 ± 0.046
+     - 17.2 ± 2.4
+     - p = 0.181
+   * -
+     - ``"residual"``
+     - 0.956 ± 0.037
+     - 6.9 ± 1.5
+     -
+   * - Wine
+     - ``"random"``
+     - 0.985 ± 0.015
+     - 6.3 ± 2.2
+     - p = 0.633
+   * -
+     - ``"residual"``
+     - 0.985 ± 0.015
+     - 4.3 ± 0.5
+     -
+   * - Digits
+     - ``"random"``
+     - 0.949 ± 0.013
+     - 7.5 ± 0.6
+     - p = 0.0012
+   * -
+     - ``"residual"``
+     - 0.928 ± 0.015
+     - 5.7 ± 0.5
+     -
 
-The size difference is the more interesting half. Random units arrive unhelpful,
-the error does not fall, and the growth criterion fires again, so the network
-grows *because* growth is not working.
+The size effect is consistent and the accuracy effect is not. Every dataset
+gives a smaller network: random units arrive unhelpful, the error does not
+fall, and the growth criterion fires again, so the network grows *because*
+growth is not working. Accuracy rose on Iris and was identical on Wine, and the
+F test rejects equality on neither; on Digits it fell by 2.1 points and the test
+does reject equality, in favour of random initialisation. Read this as a
+parsimony intervention, not an accuracy intervention. It is still the default
+because a smaller network is what the growth mechanism is for, but if the
+problem has enough classes and features to need the extra units, ``"random"``
+is the setting to try.
 
 Node-level significance does not compose
 ----------------------------------------
@@ -99,36 +142,41 @@ which prefers a nonlinear split for any improvement at all, however small.
 Demanding statistical significance instead sounds strictly better: simpler nodes
 at little cost.
 
-Measured on Breast Cancer at maximum depth 3, it is worse on both axes.
+Measured at maximum depth 3, it is worse on both axes on both datasets.
 
 .. list-table::
    :header-rows: 1
-   :widths: 26 16 14 14 14 16
+   :widths: 24 24 26 26
 
-   * - ``selection``
+   * - Dataset
+     - ``selection``
      - Accuracy
      - Nodes
-     - Univariate
-     - Linear
-     - Nonlinear
-   * - ``"accuracy"``
-     - 0.971
-     - 4.1
-     - 8
-     - 0
-     - 15
-   * - ``"test"``
-     - 0.960
-     - 7.3
-     - 20
-     - 14
-     - 13
+   * - Breast Cancer
+     - ``"accuracy"``
+     - 0.971 ± 0.018
+     - 3.8 ± 1.0
+   * -
+     - ``"test"``
+     - 0.959 ± 0.020
+     - 8.1 ± 2.5
+   * - Digits
+     - ``"accuracy"``
+     - 0.510 ± 0.083
+     - 10.1 ± 1.7
+   * -
+     - ``"test"``
+     - 0.492 ± 0.076
+     - 11.5 ± 2.3
 
-Per node the rule does exactly what it was asked to do: nonlinear splits fall
-from 15 to 13 and univariate splits rise from 8 to 20. But a simpler split
-separates its node's data less cleanly, so its children inherit harder problems
-and must themselves be split, and the tree grows from 4.1 nodes to 7.3 while
-losing a point of accuracy. Parsimony enforced locally is paid for globally.
+The rule does what it was asked to do at each node and the tree is worse for
+it. A simpler split separates its node's data less cleanly, so its children
+inherit harder problems and must themselves be split, and the tree roughly
+doubles on Breast Cancer while losing a point of accuracy. Parsimony enforced
+locally is paid for globally. The Digits accuracies are low for a reason
+unrelated to the rule: a depth-3 tree has at most eight leaves and Digits has
+ten classes, so the row is a comparison between the rules, not a claim about
+how well omnivariate trees classify digits.
 
 On Iris and Wine the rule never fires, because the test needs a minimum sample
 count per node and almost every node below the root falls under it. A

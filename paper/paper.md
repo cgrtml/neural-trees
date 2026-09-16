@@ -91,14 +91,18 @@ weights, so a new unit perturbed every logit on arrival and then had to be
 trained from noise. Fitting the unit to the residual error of the frozen
 network first, in the manner of cascade-correlation [@fahlman1990cascade], and
 installing it with zero outgoing weights, makes growth non-destructive. Over
-three seeds of five-fold cross-validation on Iris this moved accuracy from
-0.938 to 0.956 while reducing the network from 17.4 hidden units to 6.6.
+three seeds of five-fold cross-validation it gave a smaller network on every
+dataset tried (Iris: 17.2 hidden units to 6.9) without a reliable accuracy gain;
+on Digits it was significantly less accurate than random initialisation. It is
+documented as a parsimony choice, not an accuracy one.
 
 **Growth decided per leaf.** `SoftDecisionTree` can grow one leaf at a time,
 splitting the leaf carrying the most expected error, which is the rule of
 İrsoy, Yıldız and Alpaydın [@irsoy2012soft]. On a synthetic problem with 800
-samples and 20 features it reached 0.885 using 3.7 splits, against 0.832 for a
-fixed depth-6 tree using 63.
+samples and 20 features it reached 0.885 using 3.7 splits, against 0.839 for a
+fixed depth-6 tree using 63; on a harder 2000-by-50 problem it kept the sparsity
+and lost 4.3 points, so the option is documented as buying sparsity rather than
+accuracy.
 
 **A deepening that must not preserve the function exactly.** Deepening a soft
 tree by splitting every leaf into two children that inherit the parent's class
@@ -106,8 +110,9 @@ distribution leaves the mixture unchanged, which looks like the safe way to
 grow. It is not: with identical children the mixture does not depend on the new
 gate at all, so the gate's gradient is exactly zero and the children receive
 identical gradients forever. The level is dead weight. Growing that way reached
-0.753 on Iris and 0.754 on Wine, against 0.958 and 0.977 for trees of the same
-depth trained from scratch.
+0.762 on Iris, 0.786 on Wine and 0.369 on Digits, against 0.958, 0.978 and
+0.925 for trees of the same depth trained from scratch. The mechanism and the
+measurements are the subject of a separate paper.
 A small perturbation of the new leaf distributions breaks the symmetry, and a
 regression test asserts the zero gradient exists without it.
 

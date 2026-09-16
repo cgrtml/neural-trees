@@ -50,10 +50,12 @@ instead:
   which is the rule of İrsoy, Yıldız and Alpaydın. ``depth`` becomes an upper
   bound rather than a target, and the resulting tree is unbalanced.
 
-Per-leaf growth is usually the one to reach for when the tree should stay small
-and readable. On a synthetic problem with 800 samples and 20 features it reached
-0.885 with 3.7 splits on average, against 0.832 for a complete depth-6 tree
-using all 63.
+Per-leaf growth is the one to reach for when the tree should stay small and
+readable. It buys sparsity reliably and accuracy only sometimes. On a synthetic
+problem with 800 samples and 20 features it reached 0.885 with 3.7 splits on
+average, against 0.839 for a complete depth-6 tree using all 63; on a harder
+problem with 2000 samples and 50 features it kept the sparsity (4.8 splits) and
+lost 4.3 points to the complete tree. See :doc:`design_decisions`.
 
 Reading the tree back out
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -141,9 +143,10 @@ units when the error stops improving and pruning units that stop contributing.
 ``growth_init`` decides how a new unit arrives. ``"random"`` is the original
 scheme. ``"residual"`` fits the candidate unit to the residual error of the
 frozen network first and installs it with zero outgoing weights, in the manner
-of cascade-correlation. On Iris over three seeds of five-fold cross-validation
-the residual variant reached 0.956 with 6.6 hidden units against 0.938 with
-17.4.
+of cascade-correlation. It reliably produces a smaller network (Iris: 6.9
+hidden units against 17.2) but does not reliably produce a more accurate one;
+on Digits it is significantly less accurate than ``"random"``. The measurements
+are in :doc:`design_decisions`.
 
 *Reference:* Alpaydın, E. (1994). GAL: Networks that grow when they learn and
 shrink when they forget. *IJPRAI*, 8(1), 391–414.

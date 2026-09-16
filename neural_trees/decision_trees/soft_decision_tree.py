@@ -123,14 +123,17 @@ class _SoftTreeModule(nn.Module):
         The children cannot start *identical*, though. With Q_left = Q_right the
         mixture does not depend on the new gate at all, so the gate's gradient
         is exactly zero, and the children receive identical gradients and stay
-        identical forever. The new level would be dead weight: measured on Iris,
-        growing that way reached 0.756 against 0.958 for a tree of the same
-        depth trained from scratch.
+        identical forever. The new level would be dead weight. Measured over
+        three seeds of five-fold cross-validation, features scaled on the
+        training fold only, growing that way reached 0.762 on Iris, 0.786 on
+        Wine and 0.369 on Digits against 0.958, 0.978 and 0.925 for a tree of
+        the same depth trained from scratch.
 
         `jitter` breaks that symmetry. The function is preserved only
         approximately, which is the price of the level being able to learn
         anything at all. The default is not sensitive: 0.05, 0.2 and 0.5 give
-        0.840, 0.844 and 0.796 on Iris and 0.962, 0.968 and 0.972 on Wine.
+        0.942, 0.942 and 0.938 on Iris and 0.979, 0.979 and 0.983 on Wine. The
+        value has to be nonzero; beyond that it barely matters.
         """
         n_features = self.gates.weight.shape[1]
         deeper = _SoftTreeModule(
