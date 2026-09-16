@@ -16,7 +16,7 @@
 
 \newtheorem{proposition}{Proposition}
 
-\title{When Preserving the Function Prevents Learning in Growing Classifiers}
+\title{Four Ways to Grow a Classifier and Why One of Them Cannot Learn}
 
 \author{Cagri Temel\\
   \small Independent researcher\\
@@ -80,9 +80,10 @@ measured against their non-growing baselines under a fixed protocol. Two of the
 four paid off. Two did not. One of the failures has an exact cause, which we
 state and prove instead of leaving it to the statistics.
 
-The measurements were produced while building \texttt{neural-trees}, an
-open-source, scikit-learn compatible \cite{pedregosa2011scikit} library of
-these models with a PyTorch \cite{paszke2019pytorch} backend. We should say
+The measurements were produced while building \texttt{neural-trees}
+\cite{temel2026neuraltrees}, an open-source, scikit-learn compatible
+\cite{pedregosa2011scikit} library of these models with a PyTorch
+\cite{paszke2019pytorch} backend. We should say
 plainly where they came from. No study was designed in advance to test four
 hypotheses. These are the measurements that settled four implementation
 questions, reported with the protocol held fixed and the negative outcomes
@@ -287,7 +288,7 @@ than clamping the result afterwards, is the fix.
 \section{Choosing which leaf to split}
 
 A soft tree can be grown level by level, as in Section~3, or one leaf at a
-time. The per-leaf rule of İrsoy, Yıldız and Alpaydın \cite{irsoy2012soft}
+time. The per-leaf rule of \.Irsoy, Y\i{}ld\i{}z and Alpayd\i{}n \cite{irsoy2012soft}
 splits the leaf carrying the most expected error, $\arg\max_\ell \sum_i
 \mu_\ell(x_i)\,e_i$, where $e_i$ is the error on sample $i$.
 
@@ -359,12 +360,12 @@ difference in Table~\ref{tab:omni} is deliberately reported as small.
 
 \section{Related work}
 
-Soft decision trees were introduced by İrsoy, Yıldız and Alpaydın
+Soft decision trees were introduced by \.Irsoy, Y\i{}ld\i{}z and Alpayd\i{}n
 \cite{irsoy2012soft} and revisited by Frosst and Hinton
 \cite{frosst2017distilling} as a way of distilling a neural network into an
 interpretable model; the hierarchical mixture of experts with subtree dropout
 \cite{irsoy2021dropout} is the closely related architecture in which leaves are
-themselves models. Omnivariate trees are due to Yıldız and Alpaydın
+themselves models. Omnivariate trees are due to Y\i{}ld\i{}z and Alpayd\i{}n
 \cite{yildiz2001omnivariate}. Constructive learning of the kind studied in
 Sections 4 and 5 goes back to cascade-correlation \cite{fahlman1990cascade} and
 GAL \cite{alpaydin1994gal}. The idea of growing a network while preserving the
@@ -417,13 +418,13 @@ full responsibility for the content.
 \begin{thebibliography}{9}
 
 \bibitem{alpaydin1994gal}
-E.~Alpaydın.
+E.~Alpayd\i{}n.
 \newblock GAL: Networks that grow when they learn and shrink when they forget.
 \newblock \emph{International Journal of Pattern Recognition and Artificial
   Intelligence}, 8(1):391--414, 1994.
 
 \bibitem{alpaydin1999combined}
-E.~Alpaydın.
+E.~Alpayd\i{}n.
 \newblock Combined $5\times2$cv $F$ test for comparing supervised
   classification learning algorithms.
 \newblock \emph{Neural Computation}, 11(8):1885--1892, 1999.
@@ -445,13 +446,13 @@ N.~Frosst and G.~Hinton.
 \newblock \emph{arXiv preprint arXiv:1711.09784}, 2017.
 
 \bibitem{irsoy2012soft}
-O.~İrsoy, O.~T. Yıldız, and E.~Alpaydın.
+O.~\.Irsoy, O.~T. Y\i{}ld\i{}z, and E.~Alpayd\i{}n.
 \newblock Soft decision trees.
 \newblock In \emph{Proceedings of the 21st International Conference on Pattern
   Recognition}, pages 1819--1822, 2012.
 
 \bibitem{irsoy2021dropout}
-O.~İrsoy and E.~Alpaydın.
+O.~\.Irsoy and E.~Alpayd\i{}n.
 \newblock Dropout regularization in hierarchical mixture of experts.
 \newblock \emph{Neurocomputing}, 419:148--156, 2021.
 
@@ -466,8 +467,14 @@ F.~Pedregosa et~al.
 \newblock Scikit-learn: Machine learning in Python.
 \newblock \emph{Journal of Machine Learning Research}, 12:2825--2830, 2011.
 
+\bibitem{temel2026neuraltrees}
+C.~Temel.
+\newblock neural-trees: soft decision trees, hierarchical mixtures of experts
+  and classifier comparison tests for Python, version 0.6.1.
+\newblock Zenodo, 2026. \url{https://doi.org/10.5281/zenodo.22718898}
+
 \bibitem{yildiz2001omnivariate}
-O.~T. Yıldız and E.~Alpaydın.
+O.~T. Y\i{}ld\i{}z and E.~Alpayd\i{}n.
 \newblock Omnivariate decision trees.
 \newblock \emph{IEEE Transactions on Neural Networks}, 12(6):1539--1546, 2001.
 
