@@ -3,7 +3,7 @@
 Soft decision trees, mixture of experts, and statistical model comparison tests for Python. A scikit-learn compatible library implementing classic machine learning algorithms from research papers, with a PyTorch backend.
 
 <p align="center">
-  <img src="assets/demo.gif" width="600">
+  <img src="https://raw.githubusercontent.com/cgrtml/neural-trees/main/assets/demo.gif" width="600">
 </p>
 
 <p align="center">
@@ -278,14 +278,14 @@ are the lineage of the ideas, not co-authorship of this implementation:
 ```bibtex
 @inproceedings{irsoy2012soft,
   title     = {Soft Decision Trees},
-  author    = {\.{I}rsoy, O{\u{g}}uzhan and Y{\i}ld{\i}z, Olcay Taner and Alpayd{\i}n, Ethem},
+  author    = {İrsoy, Oğuzhan and Yıldız, Olcay Taner and Alpaydın, Ethem},
   booktitle = {ICPR},
   year      = {2012}
 }
 
 @article{irsoy2021dropout,
   title   = {Dropout Regularization in Hierarchical Mixture of Experts},
-  author  = {\.{I}rsoy, O{\u{g}}uzhan and Alpayd{\i}n, Ethem},
+  author  = {İrsoy, Oğuzhan and Alpaydın, Ethem},
   journal = {Neurocomputing},
   volume  = {419},
   pages   = {148--156},
@@ -294,7 +294,7 @@ are the lineage of the ideas, not co-authorship of this implementation:
 
 @article{yildiz2001omnivariate,
   title   = {Omnivariate Decision Trees},
-  author  = {Y{\i}ld{\i}z, Olcay Taner and Alpayd{\i}n, Ethem},
+  author  = {Yıldız, Olcay Taner and Alpaydın, Ethem},
   journal = {IEEE Transactions on Neural Networks},
   volume  = {12},
   number  = {6},
@@ -304,7 +304,7 @@ are the lineage of the ideas, not co-authorship of this implementation:
 
 @article{alpaydin1994gal,
   title   = {GAL: Networks that Grow when they Learn and Shrink when they Forget},
-  author  = {Alpayd{\i}n, Ethem},
+  author  = {Alpaydın, Ethem},
   journal = {International Journal of Pattern Recognition and Artificial Intelligence},
   volume  = {8},
   pages   = {391--414},
@@ -313,7 +313,7 @@ are the lineage of the ideas, not co-authorship of this implementation:
 
 @article{alpaydin1997voting,
   title   = {Voting over Multiple Condensed Nearest Neighbors},
-  author  = {Alpayd{\i}n, Ethem},
+  author  = {Alpaydın, Ethem},
   journal = {Artificial Intelligence Review},
   volume  = {11},
   pages   = {115--132},
@@ -322,7 +322,7 @@ are the lineage of the ideas, not co-authorship of this implementation:
 
 @article{alpaydin1999combined,
   title   = {Combined 5x2cv {F} Test for Comparing Supervised Classification Learning Algorithms},
-  author  = {Alpayd{\i}n, Ethem},
+  author  = {Alpaydın, Ethem},
   journal = {Neural Computation},
   volume  = {11},
   number  = {8},
