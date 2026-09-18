@@ -13,13 +13,18 @@ düğümde MLP çapraz doğrulaması 20 veri kümesinde günler alır.
 Sonuç her veri kümesinden sonra openml-sonuc.json'a yazılır; yarım kalan koşu
 kaldığı yerden devam eder.
 """
-import json, pathlib, sys, time
+import json
+import pathlib
+import sys
+import time
+
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+
 import neural_trees.decision_trees.soft_decision_tree as sdt_mod
 from neural_trees import GALNetwork, SoftDecisionTree, combined_5x2cv_f_test
 
