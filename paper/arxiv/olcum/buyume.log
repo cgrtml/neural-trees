@@ -93,3 +93,78 @@
 ### spambase  n=4601 p=57 K=2
   random         0.931 ± 0.006
   residual       0.932 ± 0.007
+  residual_gate  0.932 ± 0.007
+  sıfırdan       0.929 ± 0.008
+  F test          F=0.643  p=0.74218
+
+### steel-plates-fault  n=1941 p=33 K=2
+  random         1.000 ± 0.001
+  residual       1.000 ± 0.001
+  residual_gate  1.000 ± 0.001
+  sıfırdan       1.000 ± 0.001
+  F test          F=0.0  p=1.0
+
+### ilpd  n=583 p=10 K=2
+  random         0.704 ± 0.030
+  residual       0.711 ± 0.025
+  residual_gate  0.711 ± 0.023
+  sıfırdan       0.699 ± 0.042
+  F test          F=5.024  p=0.044382
+
+### climate-model-simulation-crashes  n=540 p=18 K=2
+  random         0.952 ± 0.018
+  residual       0.954 ± 0.015
+  residual_gate  0.953 ± 0.016
+  sıfırdan       0.932 ± 0.018
+  F test          F=1.667  p=0.298248
+
+### texture  n=5000 p=40 K=11
+  random         0.952 ± 0.045
+  residual       0.978 ± 0.030
+  residual_gate  0.984 ± 0.023
+  sıfırdan       0.938 ± 0.057
+  F test          F=1.558  p=0.326121
+
+### wall-robot-navigation  n=5000 p=24 K=4
+  random         0.867 ± 0.011
+  residual       0.870 ± 0.008
+  residual_gate  0.870 ± 0.010
+  sıfırdan       0.875 ± 0.015
+  F test          F=0.596  p=0.773064
+
+### qsar-biodeg  n=1055 p=41 K=2
+  random         0.870 ± 0.018
+  residual       0.867 ± 0.020
+  residual_gate  0.867 ± 0.019
+  sıfırdan       0.855 ± 0.024
+  F test          F=0.839  p=0.621062
+
+### ozone-level-8hr  n=2534 p=72 K=2
+  random         0.936 ± 0.006
+  residual       0.935 ± 0.006
+  residual_gate  0.936 ± 0.005
+  sıfırdan       0.929 ± 0.009
+  F test          F=1.0  p=0.534881
+
+### kc1  n=2109 p=21 K=2
+  random         0.857 ± 0.011
+  residual       0.856 ± 0.011
+  residual_gate  0.857 ± 0.011
+  sıfırdan       0.854 ± 0.012
+  F test          F=1.309  p=0.403989
+
+### pc1  n=1109 p=21 K=2
+  random         0.933 ± 0.008
+  residual       0.932 ± 0.008
+  residual_gate  0.933 ± 0.009
+  sıfırdan       0.922 ± 0.011
+  F test          F=1.0  p=0.534881
+
+### pc3  n=1563 p=37 K=2
+  random         0.893 ± 0.010
+  residual       0.894 ± 0.011
+  residual_gate  0.896 ± 0.010
+  sıfırdan       0.874 ± 0.013
+  F test          F=1.08  p=0.496767
+
+BİTTİ: 24 veri kümesi
