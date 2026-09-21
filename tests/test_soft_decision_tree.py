@@ -578,3 +578,71 @@ def test_mask_defaults_reproduce_the_complete_tree():
         log_leaf, _, terminal = sdt.model_._walk(torch.FloatTensor(X))
     assert len(terminal) == 1  # only the bottom row acts as leaves
     assert terminal[0][0].shape == log_leaf.shape
+
+
+def test_residual_deepening_gives_the_new_level_a_gradient():
+    """
+    Breaking the symmetry along the residual must do what random jitter does,
+    give every new gate a nonzero gradient and make sibling leaves differ, and
+    with `gate` it must also start the gates pointed somewhere.
+    """
+    import torch
+
+    X, y = load_wine(return_X_y=True)
+    X = (X - X.mean(0)) / X.std(0)
+    sdt = SoftDecisionTree(depth=2, max_epochs=10, random_state=0).fit(X, y)
+    X_t, y_t = torch.FloatTensor(X), torch.LongTensor(y)
+
+    direction, gate = sdt.model_.split_directions(X_t, y_t)
+    assert direction.shape == (4, 3) and gate.shape == (4, X.shape[1])
+    assert torch.allclose(direction.norm(dim=1), torch.ones(4), atol=1e-5)
+
+    deeper = sdt.model_.deepen(3, direction=direction, gate=gate)
+    siblings = deeper.leaf_logits.detach()
+    assert not torch.allclose(siblings[0::2], siblings[1::2])
+    # right child moved with the residual, left against it
+    assert torch.allclose(siblings[1::2] - siblings[0::2], 2 * 0.2 * (3 ** 0.5) * direction, atol=1e-5)
+
+    torch.nn.functional.nll_loss(deeper.log_forward(X_t), y_t).backward()
+    yeni = deeper.n_internal // 2
+    assert (deeper.gates.weight.grad[yeni:] != 0).any()
+    assert (deeper.gates.weight[yeni:].detach() != 0).any()  # gate initialised, not zero
+
+
+def test_residual_deepening_nearly_preserves_the_function():
+    """
+    The point of deepening in place is to keep what was learned. A directed
+    perturbation of the same size as the random one must not move the output
+    more than the random one does, in expectation.
+    """
+    import torch
+
+    X, y = load_wine(return_X_y=True)
+    X = (X - X.mean(0)) / X.std(0)
+    sdt = SoftDecisionTree(depth=2, max_epochs=10, random_state=0).fit(X, y)
+    X_t, y_t = torch.FloatTensor(X), torch.LongTensor(y)
+    with torch.no_grad():
+        before = sdt.model_.log_forward(X_t).exp()
+        direction, gate = sdt.model_.split_directions(X_t, y_t)
+        directed = sdt.model_.deepen(3, direction=direction, gate=gate).log_forward(X_t).exp()
+        torch.manual_seed(0)
+        random = sdt.model_.deepen(3).log_forward(X_t).exp()
+    assert (directed - before).abs().max() < 0.25
+    assert (directed - before).abs().mean() <= (random - before).abs().mean() * 1.5
+
+
+def test_growth_init_and_jitter_are_validated():
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="growth_init"):
+        SoftDecisionTree(growth="incremental", growth_init="magic").fit(X, y)
+    with pytest.raises(ValueError, match="growth_jitter"):
+        SoftDecisionTree(growth="incremental", growth_jitter=-0.1).fit(X, y)
+
+
+@pytest.mark.parametrize("init", ["residual", "residual_gate"])
+def test_directed_incremental_growth_fits(init):
+    X, y = load_iris(return_X_y=True)
+    X = (X - X.mean(0)) / X.std(0)
+    model = SoftDecisionTree(depth=4, max_epochs=80, growth="incremental",
+                             growth_init=init, random_state=0).fit(X, y)
+    assert model.score(X, y) > 0.85

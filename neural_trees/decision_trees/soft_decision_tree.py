@@ -22,6 +22,8 @@ Key idea:
     Each leaf holds a distribution over classes (softmax).
 """
 
+import math
+
 import numpy as np
 
 try:
@@ -110,7 +112,60 @@ class _SoftTreeModule(nn.Module):
         """The bottom row of node distributions, kept for backwards use."""
         return self.node_logits[self.n_internal:]
 
-    def deepen(self, n_classes: int, jitter: float = 0.2) -> "_SoftTreeModule":
+    def split_directions(self, x: torch.Tensor, y: torch.Tensor, sample_weight=None):
+        """
+        For every bottom leaf, the direction its distribution should move in,
+        and a gate direction that separates the samples pulling it that way.
+
+        The residual at leaf l is r_l = sum_i w_i mu_l(x_i) (onehot(y_i) - p(y|x_i)),
+        the gradient of the log-likelihood with respect to the leaf's
+        distribution: which classes the leaf under-predicts, weighted by how
+        much of each sample reaches it. A single leaf cannot satisfy samples
+        that pull it in opposite directions; two children can. So the children
+        are placed at Q_l -+ d_l with d_l the unit residual direction, and the
+        new gate is pointed along the features of the samples whose own
+        residual aligns with +d_l, so that it starts sending them to the child
+        that moved their way. Compare GradMax (Evci et al., 2022), which picks
+        a new unit's weights to maximise the initial gradient: the aim here is
+        the same, that the new level has something to learn from at step one,
+        chosen from the data rather than drawn at random.
+
+        Returns
+        -------
+        direction : (n_leaves, n_classes), unit rows. A leaf whose residual is
+            numerically zero gets a random unit direction, since with no
+            residual there is nothing to point at and the symmetry still has
+            to be broken.
+        gate : (n_leaves, n_features), unit rows.
+        """
+        with torch.no_grad():
+            log_mu, _, _ = self._walk(x)
+            mu = log_mu.exp()                                  # (n, n_leaves)
+            p = self.log_forward(x).exp()                      # (n, K)
+            n_classes = p.shape[1]
+            r = F.one_hot(y, n_classes).to(p.dtype) - p        # (n, K)
+            w = torch.ones(x.size(0), device=x.device) if sample_weight is None else sample_weight
+            wm = mu * w.unsqueeze(1)                           # (n, n_leaves)
+            resid = wm.t() @ r                                 # (n_leaves, K)
+            norms = resid.norm(dim=1, keepdim=True)
+            direction = resid / norms.clamp_min(1e-12)
+            weak = norms.squeeze(1) < 1e-8
+            if bool(weak.any()):
+                rnd = torch.randn(int(weak.sum()), n_classes, device=x.device)
+                direction[weak] = rnd / rnd.norm(dim=1, keepdim=True)
+            align = (r @ direction.t()) * wm                   # (n, n_leaves)
+            gate = align.t() @ x                               # (n_leaves, n_features)
+            gate = gate / gate.norm(dim=1, keepdim=True).clamp_min(1e-12)
+        return direction, gate
+
+    def deepen(
+        self,
+        n_classes: int,
+        jitter: float = 0.2,
+        direction: Optional[torch.Tensor] = None,
+        gate: Optional[torch.Tensor] = None,
+        gate_scale: float = 0.1,
+    ) -> "_SoftTreeModule":
         """
         Return a tree one level deeper, computing very nearly the same function.
 
@@ -134,6 +189,13 @@ class _SoftTreeModule(nn.Module):
         anything at all. The default is not sensitive: 0.05, 0.2 and 0.5 give
         0.942, 0.942 and 0.938 on Iris and 0.979, 0.979 and 0.983 on Wine. The
         value has to be nonzero; beyond that it barely matters.
+
+        With `direction` (from `split_directions`) the symmetry is broken along
+        the residual instead of at random: the left child moves against it and
+        the right child with it, by the same total amount `jitter` would have
+        used on average. With `gate` the new gates start pointed at the samples
+        that pull towards the right child, scaled by `gate_scale` so they still
+        send close to half the mass each way.
         """
         n_features = self.gates.weight.shape[1]
         deeper = _SoftTreeModule(
@@ -153,7 +215,16 @@ class _SoftTreeModule(nn.Module):
             deeper.gates.bias[self.n_internal:] = 0.0
             deeper.log_beta[self.n_internal:] = 0.0
             children = self.leaf_logits.repeat_interleave(2, dim=0)
-            deeper.leaf_logits[:] = children + jitter * torch.randn_like(children)
+            if direction is None:
+                deeper.leaf_logits[:] = children + jitter * torch.randn_like(children)
+            else:
+                # Random jitter has expected norm jitter * sqrt(K) per leaf;
+                # match it so the two initialisations differ in direction only.
+                step = jitter * math.sqrt(n_classes) * direction.to(children.device)
+                signed = torch.stack([-step, step], dim=1).reshape(-1, n_classes)
+                deeper.leaf_logits[:] = children + signed
+            if gate is not None:
+                deeper.gates.weight[self.n_internal:] = gate_scale * gate.to(children.device)
 
         return deeper
 
@@ -312,6 +383,28 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         `"balanced"` uses `n_samples / (n_classes * bincount(y))`, which is what
         an imbalanced target usually needs: without it a rare class contributes
         so little to the loss that the tree can ignore it entirely.
+    growth_init : {"random", "residual", "residual_gate"}, default="random"
+        How a new level is initialised under ``growth="incremental"``. Every
+        leaf becomes a gate with two children; if the children started
+        identical the new gate's gradient would be exactly zero and the level
+        could never learn, so the symmetry has to be broken.
+
+        - ``"random"`` perturbs the two children with Gaussian noise of scale
+          `growth_jitter`.
+        - ``"residual"`` moves the two children apart along the leaf's residual
+          error direction (which classes it under-predicts), by the same
+          amount on average, so the split is placed where the leaf is wrong
+          rather than in a random direction.
+        - ``"residual_gate"`` additionally points the new gate at the samples
+          that pull towards the right child, so routing starts informative.
+
+        Ignored for ``growth="none"`` and ``growth="per_leaf"``.
+    growth_jitter : float, default=0.2
+        Size of the perturbation applied to new children when the tree is
+        deepened. Must be positive for the new level to learn; ``0.0`` is
+        allowed only because it reproduces the failure exactly, which is
+        useful for demonstration. Beyond being nonzero the value barely
+        matters (0.05, 0.2 and 0.5 are within half a point of each other).
     warm_start : bool, default=False
         When True, a second call to `fit` continues from the parameters the
         first one left, instead of reinitializing. Useful for training in
@@ -422,6 +515,8 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         random_state: Optional[int] = None,
         class_weight=None,
         growth: str = "none",
+        growth_init: str = "random",
+        growth_jitter: float = 0.2,
         warm_start: bool = False,
         learn_temperature: bool = False,
         early_stopping: bool = False,
@@ -438,6 +533,8 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.random_state = random_state
         self.class_weight = class_weight
         self.growth = growth
+        self.growth_init = growth_init
+        self.growth_jitter = growth_jitter
         self.warm_start = warm_start
         self.learn_temperature = learn_temperature
         self.early_stopping = early_stopping
@@ -472,6 +569,13 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         """
         if isinstance(self.depth, bool) or not isinstance(self.depth, int) or self.depth < 1:
             raise ValueError(f"depth must be a positive integer, got {self.depth!r}")
+        if self.growth_init not in ("random", "residual", "residual_gate"):
+            raise ValueError(
+                "growth_init must be 'random', 'residual' or 'residual_gate', got "
+                f"{self.growth_init!r}"
+            )
+        if self.growth_jitter < 0:
+            raise ValueError(f"growth_jitter must be non-negative, got {self.growth_jitter!r}")
         if self.growth not in ("none", "incremental", "per_leaf"):
             raise ValueError(
                 "growth must be 'none', 'incremental' or 'per_leaf', got "
@@ -824,7 +928,15 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
 
             if model.depth >= self.depth:
                 break
-            model = model.deepen(n_classes)
+            if self.growth_init == "random":
+                model = model.deepen(n_classes, jitter=self.growth_jitter)
+            else:
+                X_all, y_all, w_all = loader.dataset.tensors
+                direction, gate = model.split_directions(X_all, y_all, w_all)
+                model = model.deepen(
+                    n_classes, jitter=self.growth_jitter, direction=direction,
+                    gate=gate if self.growth_init == "residual_gate" else None,
+                )
 
         self.model_ = _SoftTreeModule(
             n_features=self.n_features_in_,
