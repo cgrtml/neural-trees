@@ -646,3 +646,50 @@ def test_directed_incremental_growth_fits(init):
     model = SoftDecisionTree(depth=4, max_epochs=80, growth="incremental",
                              growth_init=init, random_state=0).fit(X, y)
     assert model.score(X, y) > 0.85
+
+
+def test_per_leaf_split_inherits_the_parent_and_breaks_the_symmetry():
+    """
+    Splitting a leaf must not throw away what the leaf had learned, and the
+    two children must not start identical. Both were true before 0.7.
+    """
+    import torch
+
+    X, y = load_wine(return_X_y=True)
+    X = (X - X.mean(0)) / X.std(0)
+    X_t, y_t = torch.FloatTensor(X), torch.LongTensor(y)
+    for init in ("random", "residual", "residual_gate"):
+        sdt = SoftDecisionTree(depth=3, max_epochs=6, growth="per_leaf",
+                               growth_init=init, random_state=0).fit(X, y)
+        m = sdt.model_
+        # find a split node whose children act as leaves
+        victims = [i for i in range(m.n_internal) if bool(m.is_split[i])
+                   and not (2 * i + 1 < m.n_internal and bool(m.is_split[2 * i + 1]))]
+        assert victims, "no split happened"
+        v = victims[0]
+        left, right = m.node_logits[2 * v + 1].detach(), m.node_logits[2 * v + 2].detach()
+        assert not torch.allclose(left, right)          # symmetry broken
+        assert not torch.allclose(left, torch.zeros_like(left))  # not the untrained zeros
+
+    # and the function is preserved up to the perturbation at the moment of the split
+    sdt = SoftDecisionTree(depth=2, max_epochs=6, random_state=0).fit(X, y)
+    m = sdt.model_
+    with torch.no_grad():
+        m.is_split.fill_(False)
+        before = m.log_forward(X_t).exp()
+    sdt.growth_init = "residual"
+    sdt._initialise_split(m, 0, X_t, y_t, torch.ones(len(y)), 3)
+    with torch.no_grad():
+        after = m.log_forward(X_t).exp()
+    assert (after - before).abs().max() < 0.3
+    assert bool(m.is_split[0]) and float(m.gates.weight[0].abs().sum()) == 0.0
+
+
+def test_growth_budget_is_validated_and_full_runs():
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match="growth_budget"):
+        SoftDecisionTree(growth="incremental", growth_budget="all").fit(X, y)
+    X = (X - X.mean(0)) / X.std(0)
+    m = SoftDecisionTree(depth=3, max_epochs=30, growth="incremental",
+                         growth_budget="full", random_state=0).fit(X, y)
+    assert m.score(X, y) > 0.85

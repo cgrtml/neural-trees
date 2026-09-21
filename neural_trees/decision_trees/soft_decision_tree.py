@@ -158,6 +158,40 @@ class _SoftTreeModule(nn.Module):
             gate = gate / gate.norm(dim=1, keepdim=True).clamp_min(1e-12)
         return direction, gate
 
+    def split_direction_for(self, x: torch.Tensor, y: torch.Tensor, node: int,
+                            sample_weight=None):
+        """
+        `split_directions` for one node that currently acts as a leaf, wherever
+        it sits in the tree. Used when a single leaf is split (per-leaf growth);
+        the bottom-row version cannot see internal nodes acting as leaves.
+
+        Returns (direction, gate) as unit vectors of shape (n_classes,) and
+        (n_features,), or (None, None) if the node is not currently acting as
+        a leaf.
+        """
+        with torch.no_grad():
+            _, _, terminal = self._walk(x)
+            mu = None
+            for log_mu, indices in terminal:
+                hit = (indices == node).nonzero()
+                if hit.numel():
+                    mu = log_mu[:, int(hit[0])].exp()
+                    break
+            if mu is None:
+                return None, None
+            p = self.log_forward(x).exp()
+            n_classes = p.shape[1]
+            r = F.one_hot(y, n_classes).to(p.dtype) - p
+            w = torch.ones(x.size(0), device=x.device) if sample_weight is None else sample_weight
+            wm = mu * w
+            resid = wm @ r
+            if float(resid.norm()) < 1e-8:
+                resid = torch.randn(n_classes, device=x.device)
+            direction = resid / resid.norm()
+            gate = ((r @ direction) * wm) @ x
+            gate = gate / gate.norm().clamp_min(1e-12)
+        return direction, gate
+
     def deepen(
         self,
         n_classes: int,
@@ -398,7 +432,18 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         - ``"residual_gate"`` additionally points the new gate at the samples
           that pull towards the right child, so routing starts informative.
 
-        Ignored for ``growth="none"`` and ``growth="per_leaf"``.
+        Under ``growth="per_leaf"`` the same choice applies to the two children
+        of the leaf being split, which additionally inherit the parent's
+        distribution so that the split preserves the function up to the
+        perturbation. ``"uniform"`` is the pre-0.7 per-leaf behaviour (children
+        start as untrained uniform distributions, identical to each other),
+        kept only for reproducing the comparison. Ignored for ``growth="none"``.
+    growth_budget : {"split", "full"}, default="split"
+        ``"split"`` divides `max_epochs` across the growth rounds, so a grown
+        tree costs about what a fixed-depth one does; measured, that leaves it
+        under-trained relative to a tree of its final shape trained from
+        scratch. ``"full"`` gives every round the whole budget, at up to
+        `depth` (incremental) or `2 * depth` (per-leaf) times the cost.
     growth_jitter : float, default=0.2
         Size of the perturbation applied to new children when the tree is
         deepened. Must be positive for the new level to learn; ``0.0`` is
@@ -517,6 +562,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         growth: str = "none",
         growth_init: str = "random",
         growth_jitter: float = 0.2,
+        growth_budget: str = "split",
         warm_start: bool = False,
         learn_temperature: bool = False,
         early_stopping: bool = False,
@@ -535,6 +581,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.growth = growth
         self.growth_init = growth_init
         self.growth_jitter = growth_jitter
+        self.growth_budget = growth_budget
         self.warm_start = warm_start
         self.learn_temperature = learn_temperature
         self.early_stopping = early_stopping
@@ -569,10 +616,14 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         """
         if isinstance(self.depth, bool) or not isinstance(self.depth, int) or self.depth < 1:
             raise ValueError(f"depth must be a positive integer, got {self.depth!r}")
-        if self.growth_init not in ("random", "residual", "residual_gate"):
+        if self.growth_init not in ("random", "residual", "residual_gate", "uniform"):
             raise ValueError(
-                "growth_init must be 'random', 'residual' or 'residual_gate', got "
-                f"{self.growth_init!r}"
+                "growth_init must be 'random', 'residual', 'residual_gate' or "
+                f"'uniform', got {self.growth_init!r}"
+            )
+        if self.growth_budget not in ("split", "full"):
+            raise ValueError(
+                f"growth_budget must be 'split' or 'full', got {self.growth_budget!r}"
             )
         if self.growth_jitter < 0:
             raise ValueError(f"growth_jitter must be non-negative, got {self.growth_jitter!r}")
@@ -809,7 +860,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         loss; the first one that does not ends the growth.
         """
         max_splits = 2 ** self.depth - 1
-        epochs_per_round = max(1, self.max_epochs // max(1, self.depth * 2))
+        epochs_per_round = self._epochs_per_round(self.depth * 2)
 
         model = _SoftTreeModule(
             n_features=self.n_features_in_,
@@ -845,13 +896,62 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             victim = self._neediest_leaf(model, X_t, y_t)
             if victim is None:
                 break
-            with torch.no_grad():
-                model.is_split[victim] = True
+            self._initialise_split(model, victim, X_t, y_t, loader.dataset.tensors[2], n_classes)
             if self.verbose:
                 print(f"Split node {victim}; {int(model.is_split.sum())} splits now")
 
         model.load_state_dict(best_state)
         self.model_ = model
+
+    def _epochs_per_round(self, rounds: int) -> int:
+        """
+        `growth_budget="split"` divides `max_epochs` across the growth rounds,
+        so a grown tree costs about what a fixed one does and, as the
+        measurements show, is under-trained at the same budget. `"full"` gives
+        every round the whole budget; the fit costs up to `rounds` times more.
+        """
+        if self.growth_budget == "full":
+            return max(1, self.max_epochs)
+        return max(1, self.max_epochs // max(1, rounds))
+
+    def _initialise_split(self, model, victim: int, X_t, y_t, w_t, n_classes: int):
+        """
+        Open `victim` for splitting and set up its two children.
+
+        The children's distributions are untrained zeros, so left to themselves
+        the split would (a) replace the parent's learned distribution with a
+        uniform one, breaking the function the tree had, and (b) start the two
+        children identical, which by Proposition 1 leaves the new gate without
+        a gradient. That was the behaviour before 0.7 and is kept as
+        `growth_init="uniform"` only so the comparison can be reproduced.
+
+        Every other setting copies the parent's logits to both children and
+        breaks the symmetry the same way `deepen` does: random noise, or the
+        parent leaf's residual direction, optionally with the gate pointed at
+        the samples pulling towards the right child. The gate is otherwise
+        reset to neutral so that, up to the perturbation, the split preserves
+        the function.
+        """
+        left, right = 2 * victim + 1, 2 * victim + 2
+        with torch.no_grad():
+            if self.growth_init == "uniform":
+                model.is_split[victim] = True
+                return
+            parent = model.node_logits[victim].clone()
+            if self.growth_init == "random":
+                step = self.growth_jitter * torch.randn_like(parent)
+                gate = None
+            else:
+                direction, gate = model.split_direction_for(X_t, y_t, victim, w_t)
+                step = self.growth_jitter * math.sqrt(n_classes) * direction
+                if self.growth_init != "residual_gate":
+                    gate = None
+            model.node_logits[left] = parent - step
+            model.node_logits[right] = parent + step
+            model.gates.weight[victim] = 0.0 if gate is None else 0.1 * gate
+            model.gates.bias[victim] = 0.0
+            model.log_beta[victim] = 0.0
+            model.is_split[victim] = True
 
     @staticmethod
     def _neediest_leaf(model, X_t, y_t):
@@ -894,7 +994,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         `depth` rounds, so an incremental fit costs about what a fixed-depth fit
         of the same `max_epochs` costs.
         """
-        epochs_per_round = max(1, self.max_epochs // max(1, self.depth))
+        epochs_per_round = self._epochs_per_round(self.depth)
 
         model = _SoftTreeModule(
             n_features=self.n_features_in_,
