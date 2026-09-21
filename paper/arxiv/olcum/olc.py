@@ -165,9 +165,12 @@ class Buyuyen(ClassifierMixin, BaseEstimator):
 SONUC["jitter_test"] = {}
 for ad in ("Iris", "Wine"):
     X, y = veri(ad)
-    X = StandardScaler().fit_transform(X)
+    # Ölçekleme testin kendi katlarında (Pipeline); tüm veriyi önceden
+    # ölçeklemek test katının istatistiklerini eğitime sızdırır.
     r = combined_5x2cv_f_test(
-        Buyuyen(jitter=0.0), Buyuyen(jitter=0.2), X, y, random_state=0
+        make_pipeline(StandardScaler(), Buyuyen(jitter=0.0)),
+        make_pipeline(StandardScaler(), Buyuyen(jitter=0.2)),
+        X, y, random_state=0,
     )
     SONUC["jitter_test"][ad] = [
         round(float(r.statistic), 3),
@@ -198,10 +201,9 @@ for ad in ("Iris", "Wine", "Digits"):
 
 for ad in ("Iris", "Wine"):
     X, y = veri(ad)
-    X = StandardScaler().fit_transform(X)
     r = combined_5x2cv_f_test(
-        GALNetwork(max_epochs=150, growth_init="random", random_state=0),
-        GALNetwork(max_epochs=150, growth_init="residual", random_state=0),
+        make_pipeline(StandardScaler(), GALNetwork(max_epochs=150, growth_init="random", random_state=0)),
+        make_pipeline(StandardScaler(), GALNetwork(max_epochs=150, growth_init="residual", random_state=0)),
         X,
         y,
         random_state=0,
