@@ -329,13 +329,14 @@ Proposition~\ref{prop:zero} says it should be.
 
 Because this is the paper's central claim I test it rather than only describing
 it. The combined $5\times2$cv $F$ test comparing $\varepsilon = 0$ against
-$\varepsilon = 0.2$ gives $F = 4.33$, $p = 0.0596$ on Iris,
-$F = 10.20$, $p = 0.0097$ on Wine and $F = 222.98$, $p < 0.0001$ on Digits.
+$\varepsilon = 0.2$ gives $F = 4.83$, $p = 0.0480$ on Iris,
+$F = 10.07$, $p = 0.0100$ on Wine and $F = 405.67$, $p < 0.0001$ on Digits.
 
-The Iris result sits just above the conventional threshold and I am not going
-to describe it as significant. It is the smallest dataset here, at 150 samples,
-and the $5\times2$cv test is deliberately conservative. The other two reject
-equality, and on Digits the margin is not close.
+The Iris result sits at the conventional threshold and I do not lean on it. It
+is the smallest dataset here, at 150 samples, the $5\times2$cv test is
+deliberately conservative, and a value this close to $0.05$ moved from one side
+of it to the other when the scaling was moved inside the test's folds. The
+other two reject equality, and on Digits the margin is not close.
 
 A regression test in the repository asserts that the gate gradient is zero when
 the symmetry is not broken, so the mechanism itself is checked in continuous
@@ -366,13 +367,13 @@ with the residual.
 Dataset & New unit & Accuracy & Hidden units & $5\times2$cv $F$ \\
 \midrule
 Iris   & random   & 0.936 $\pm$ 0.046   & 17.2 $\pm$ 2.4   & \\
-       & residual & 0.956 $\pm$ 0.037   & 6.9 $\pm$ 1.5   & \raisebox{1.4ex}[0pt]{$F = 2.33$, $p = 0.1811$} \\
+       & residual & 0.956 $\pm$ 0.037   & 6.9 $\pm$ 1.5   & \raisebox{1.4ex}[0pt]{$F = 3.00$, $p = 0.1185$} \\
 \midrule
 Wine   & random   & 0.985 $\pm$ 0.015   & 6.3 $\pm$ 2.2   & \\
-       & residual & 0.985 $\pm$ 0.015   & 4.3 $\pm$ 0.5   & \raisebox{1.4ex}[0pt]{$F = 0.82$, $p = 0.6332$} \\
+       & residual & 0.985 $\pm$ 0.015   & 4.3 $\pm$ 0.5   & \raisebox{1.4ex}[0pt]{$F = 0.81$, $p = 0.6383$} \\
 \midrule
 Digits & random   & 0.949 $\pm$ 0.013 & 7.5 $\pm$ 0.6 & \\
-       & residual & 0.928 $\pm$ 0.015 & 5.7 $\pm$ 0.5 & \raisebox{1.4ex}[0pt]{$F = 25.18$, $p = 0.0012$} \\
+       & residual & 0.928 $\pm$ 0.015 & 5.7 $\pm$ 0.5 & \raisebox{1.4ex}[0pt]{$F = 8.20$, $p = 0.0157$} \\
 \bottomrule
 \end{tabular}
 \caption{GAL network, 150 epochs, three seeds of five-fold cross validation.

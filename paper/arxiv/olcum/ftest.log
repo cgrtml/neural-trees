@@ -1,7 +1,4 @@
-
-### JITTER · Iris
-  jitter=0.0   0.762 ± 0.103   (7s)
-  jitter=0.05  0.942 ± 0.041   (7s)
-  jitter=0.2   0.942 ± 0.044   (7s)
-  jitter=0.5   0.938 ± 0.050   (7s)
-  sıfırdan     0.958 ± 0.032   (9s)
+Iris    jitter eski [4.332, 0.05964] → yeni [4.831, 0.048029] | GAL eski [2.333, 0.18108] → yeni [3.000, 0.118484]
+Wine    jitter eski [10.198, 0.00968] → yeni [10.070, 0.009959] | GAL eski [0.818, 0.63319] → yeni [0.810, 0.638274]
+Digits  jitter eski [222.984, 6e-06] → yeni [405.667, 0.000001] | GAL eski [25.176, 0.001174] → yeni [8.195, 0.015746]
+BİTTİ
