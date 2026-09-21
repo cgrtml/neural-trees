@@ -24,6 +24,7 @@ from sklearn.datasets import (
     make_classification,
 )
 from sklearn.model_selection import StratifiedKFold
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 import neural_trees.decision_trees.soft_decision_tree as sdt_mod

@@ -23,6 +23,7 @@ from sklearn.datasets import (
     load_wine,
 )
 from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 from neural_trees import SoftDecisionTree, combined_5x2cv_f_test
@@ -91,8 +92,9 @@ def main():
             R[kol] = cv(kol, X, y)
             print(f"  {kol:14s} {R[kol][0]:.3f} ± {R[kol][1]:.3f}", flush=True)
         Xd, on = onisleyici(X)
-        r = combined_5x2cv_f_test(yap("random", 0), yap("residual_gate", 0),
-                                  on.fit_transform(Xd), y, random_state=0)
+        r = combined_5x2cv_f_test(make_pipeline(onisleyici(Xd)[1], yap("random", 0)),
+                                  make_pipeline(onisleyici(Xd)[1], yap("residual_gate", 0)),
+                                  Xd, y, random_state=0)
         R["test_gate_vs_random"] = [round(float(r.statistic), 3), round(float(r.p_value), 6)]
         print(f"  F test          F={R['test_gate_vs_random'][0]}  p={R['test_gate_vs_random'][1]}", flush=True)
         R["sure_sn"] = round(time.time() - t0)

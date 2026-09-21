@@ -23,6 +23,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 import neural_trees.decision_trees.soft_decision_tree as sdt_mod
@@ -126,8 +127,8 @@ def main():
         R["jitter"] = J
         print("  jitter :", J, flush=True)
 
-        on = onisleyici(X).fit(X)
-        r = combined_5x2cv_f_test(Buyuyen(0.0), Buyuyen(0.2), on.transform(X), y, random_state=0)
+        r = combined_5x2cv_f_test(make_pipeline(onisleyici(X), Buyuyen(0.0)),
+                                  make_pipeline(onisleyici(X), Buyuyen(0.2)), X, y, random_state=0)
         R["jitter_test"] = [round(float(r.statistic), 3), round(float(r.p_value), 6)]
         print("  F test :", R["jitter_test"], flush=True)
 

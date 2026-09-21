@@ -1,0 +1,93 @@
+
+### Iris  n=150 p=4 K=3
+  random         0.942 ± 0.044
+  residual       0.927 ± 0.048
+  residual_gate  0.940 ± 0.044
+  sıfırdan       0.958 ± 0.032
+  F test          F=3.0  p=0.118484
+
+### Wine  n=178 p=13 K=3
+  random         0.979 ± 0.020
+  residual       0.981 ± 0.018
+  residual_gate  0.981 ± 0.018
+  sıfırdan       0.978 ± 0.016
+  F test          F=1.333  p=0.395471
+
+### Cancer  n=569 p=30 K=2
+  random         0.971 ± 0.013
+  residual       0.971 ± 0.013
+  residual_gate  0.971 ± 0.013
+  sıfırdan       0.970 ± 0.012
+  F test          F=4.986  p=0.045066
+
+### Digits  n=1797 p=64 K=10
+  random         0.921 ± 0.027
+  residual       0.929 ± 0.014
+  residual_gate  0.930 ± 0.015
+  sıfırdan       0.925 ± 0.029
+  F test          F=0.706  p=0.701873
+
+### banknote-authentication  n=1372 p=4 K=2
+  random         0.985 ± 0.007
+  residual       0.985 ± 0.007
+  residual_gate  0.985 ± 0.007
+  sıfırdan       1.000 ± 0.000
+  F test          F=0.0  p=1.0
+
+### blood-transfusion-service-center  n=748 p=4 K=2
+  random         0.788 ± 0.025
+  residual       0.786 ± 0.025
+  residual_gate  0.790 ± 0.023
+  sıfırdan       0.799 ± 0.025
+  F test          F=0.886  p=0.594765
+
+### phoneme  n=5000 p=5 K=2
+  random         0.828 ± 0.017
+  residual       0.828 ± 0.016
+  residual_gate  0.828 ± 0.015
+  sıfırdan       0.849 ± 0.012
+  F test          F=0.545  p=0.806444
+
+### diabetes  n=768 p=8 K=2
+  random         0.770 ± 0.029
+  residual       0.769 ± 0.030
+  residual_gate  0.769 ± 0.030
+  sıfırdan       0.731 ± 0.033
+  F test          F=1.556  p=0.326851
+
+### vehicle  n=846 p=18 K=4
+  random         0.777 ± 0.030
+  residual       0.782 ± 0.033
+  residual_gate  0.781 ± 0.036
+  sıfırdan       0.798 ± 0.031
+  F test          F=1.141  p=0.469802
+
+### segment  n=2310 p=18 K=7
+  random         0.931 ± 0.013
+  residual       0.931 ± 0.011
+  residual_gate  0.931 ± 0.010
+  sıfırdan       0.948 ± 0.014
+  F test          F=0.874  p=0.601082
+
+### satimage  n=5000 p=36 K=6
+  random         0.883 ± 0.010
+  residual       0.881 ± 0.010
+  residual_gate  0.881 ± 0.010
+  sıfırdan       0.880 ± 0.011
+  F test          F=0.842  p=0.619614
+
+### optdigits  n=5000 p=64 K=10
+  random         0.941 ± 0.011
+  residual       0.939 ± 0.020
+  residual_gate  0.941 ± 0.013
+  sıfırdan       0.937 ± 0.024
+  F test          F=3.363  p=0.096445
+
+### pendigits  n=5000 p=16 K=10
+  random         0.909 ± 0.036
+  residual       0.901 ± 0.031
+  residual_gate  0.904 ± 0.030
+  sıfırdan       0.930 ± 0.029
+  F test          F=2.528  p=0.158893
+
+### spambase  n=4601 p=57 K=2

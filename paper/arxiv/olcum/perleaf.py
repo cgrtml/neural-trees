@@ -21,6 +21,7 @@ import time
 import numpy as np
 from sklearn.datasets import fetch_openml, load_digits
 from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 from neural_trees import SoftDecisionTree, combined_5x2cv_f_test
@@ -58,7 +59,9 @@ def cv(yap, X, y, olcu=None):
 
 
 def ftest(a, b, X, y):
-    r = combined_5x2cv_f_test(a, b, StandardScaler().fit_transform(X), y, random_state=0)
+    # ölçekleme testin kendi katlarında
+    r = combined_5x2cv_f_test(make_pipeline(StandardScaler(), a),
+                              make_pipeline(StandardScaler(), b), X, y, random_state=0)
     return [round(float(r.statistic), 3), round(float(r.p_value), 6)]
 
 
@@ -84,6 +87,13 @@ def main():
         R["tam"] = cv(lambda s: SoftDecisionTree(depth=6, max_epochs=180, random_state=s),
                       X, y, olcu=lambda e: len(e.get_split_weights()))
         print(f"  tam depth-6      {R['tam'][0]:.3f} ± {R['tam'][1]:.3f}  bölme {R['tam'][2]:.1f}", flush=True)
+        # Büyüyen ağaçlar eğitim katının %10'unu doğrulamaya ayırır; tam ağaç
+        # ayırmaz. Adil kontrol: aynı ayrımla, erken durmadan (patience = bütçe),
+        # doğrulamada en iyi durumu tutan tam ağaç.
+        R["tam_val"] = cv(lambda s: SoftDecisionTree(depth=6, max_epochs=180, early_stopping=True,
+                                                     n_iter_no_change=180, random_state=s),
+                          X, y, olcu=lambda e: len(e.get_split_weights()))
+        print(f"  tam depth-6 %90  {R['tam_val'][0]:.3f} ± {R['tam_val'][1]:.3f}", flush=True)
         for init in ("uniform", "random", "residual", "residual_gate"):
             R[f"perleaf_{init}"] = cv(lambda s, i=init: perleaf(i, s), X, y,
                                       olcu=lambda e: len(e.get_split_weights()))
@@ -98,6 +108,9 @@ def main():
             print(f"  artimli {butce:6s}   {r[0]:.3f} ± {r[1]:.3f}  derinlik {r[2]:.1f}", flush=True)
         R["sifirdan4"] = cv(lambda s: SoftDecisionTree(depth=4, max_epochs=150, random_state=s), X, y)
         print(f"  sıfırdan depth-4 {R['sifirdan4'][0]:.3f} ± {R['sifirdan4'][1]:.3f}", flush=True)
+        R["sifirdan4_val"] = cv(lambda s: SoftDecisionTree(depth=4, max_epochs=150, early_stopping=True,
+                                                           n_iter_no_change=150, random_state=s), X, y)
+        print(f"  sıfırdan d-4 %90 {R['sifirdan4_val'][0]:.3f} ± {R['sifirdan4_val'][1]:.3f}", flush=True)
         R["test_artimli_full_vs_split"] = ftest(artimli("split", 0), artimli("full", 0), X, y)
         print(f"  F artimli        {R['test_artimli_full_vs_split']}", flush=True)
         R["sure_sn"] = round(time.time() - t0)
