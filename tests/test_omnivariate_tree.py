@@ -131,13 +131,14 @@ def test_small_nodes_fall_back_rather_than_trusting_a_powerless_test(wine_split)
     X_train, _, y_train, _ = wine_split
 
     huge_threshold = OmnivariateDecisionTree(
-        max_depth=3, selection="test", min_samples_test=10**6
+        max_depth=3, selection="test", min_samples_test=10**6, random_state=0
     ).fit(X_train, y_train)
-    by_accuracy = OmnivariateDecisionTree(max_depth=3, selection="accuracy").fit(
-        X_train, y_train
-    )
+    by_accuracy = OmnivariateDecisionTree(
+        max_depth=3, selection="accuracy", random_state=0
+    ).fit(X_train, y_train)
 
-    # With the test never firing, the two must agree exactly.
+    # With the test never firing, the two must agree exactly (same seed: the
+    # test path draws no extra random numbers when it never runs).
     assert (
         huge_threshold.get_split_type_distribution()
         == by_accuracy.get_split_type_distribution()
@@ -158,3 +159,25 @@ def test_both_selections_still_classify(wine_split):
         )
         assert tree.score(X_test, y_test) > 0.8
         np.testing.assert_allclose(tree.predict_proba(X_test).sum(axis=1), 1.0, atol=1e-9)
+
+
+def test_random_state_makes_the_tree_reproducible(wine_split):
+    """#96: the seed reaches KMeans, the stump, the MLP and the F test."""
+    X_train, X_test, y_train, y_test = wine_split
+    a = OmnivariateDecisionTree(max_depth=3, random_state=7).fit(X_train, y_train)
+    b = OmnivariateDecisionTree(max_depth=3, random_state=7).fit(X_train, y_train)
+    assert a.get_split_type_distribution() == b.get_split_type_distribution()
+    assert np.array_equal(a.predict_proba(X_test), b.predict_proba(X_test))
+    # Different seeds are allowed to differ, and None must not be a silent 42.
+    assert OmnivariateDecisionTree(max_depth=3).get_params()["random_state"] is None
+
+
+def test_passes_every_scikit_learn_estimator_check():
+    from sklearn.utils.estimator_checks import check_estimator
+
+    failures = [
+        r["check_name"]
+        for r in check_estimator(OmnivariateDecisionTree(max_depth=2, random_state=0), on_fail=None)
+        if r["status"] != "passed"
+    ]
+    assert failures == []

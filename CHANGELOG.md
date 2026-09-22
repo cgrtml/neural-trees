@@ -39,6 +39,21 @@ All notable changes to this project are documented here. This project follows
   model to float32 precision; `to_json()`/`from_json()` round-trip exactly
   and the file carries a format tag. Meant for shipping a fitted tree to a
   service without PyTorch and for freezing one for audit.
+- `sample_weight` in `NaiveBayesClassifier` and `WeightedKNN` (#94). Naive
+  Bayes is exact: integer weights reproduce the fit on repeated rows, and it
+  now passes all 63 scikit-learn checks. In the KNN a weight scales the
+  neighbour's vote and a zero weight drops the row, which is not the same as
+  repeating rows (a repeated row fills several of the `k` slots), so it
+  passes 62 of 63 and the docstring says which one and why.
+- `random_state` in `OmnivariateDecisionTree` (#96). It reaches the k-means
+  class pairing, the stump and MLP candidates and the F test's folds; the
+  hard-coded seed of 42 is gone. Measured on Breast Cancer with
+  `selection="test"`, the split-type counts move between seeds, which the
+  fixed seed had hidden.
+- `benchmarks/run_benchmarks.py --check` compares a fresh run with the README
+  table (tolerance 0.0005, i.e. the run must round to the README cell) and
+  a CI job runs it when the
+  models, the script or the README change, and weekly (#98).
 
 ### Changed
 

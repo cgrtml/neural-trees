@@ -145,13 +145,13 @@ def test_each_subset_is_built_from_a_different_ordering():
     knn = WeightedKNN(condense=True, n_condensed_sets=4, random_state=0).fit(X, y)
 
     assert len(knn.stores_) == 4
-    for store_X, store_y in knn.stores_:
-        assert len(store_X) == len(store_y)
+    for store_X, store_y, store_w in knn.stores_:
+        assert len(store_X) == len(store_y) == len(store_w)
         assert len(store_X) < len(X)
 
     # Different orderings keep different prototypes, otherwise voting would be
     # four copies of one opinion.
-    signatures = {tuple(np.sort(store_X[:, 0])) for store_X, _ in knn.stores_}
+    signatures = {tuple(np.sort(store_X[:, 0])) for store_X, _, _ in knn.stores_}
     assert len(signatures) > 1
 
 

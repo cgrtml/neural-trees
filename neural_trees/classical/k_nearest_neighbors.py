@@ -18,7 +18,12 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import (
+    _check_sample_weight,
+    check_array,
+    check_is_fitted,
+    check_X_y,
+)
 
 from neural_trees._validation import check_predict_input
 
@@ -91,7 +96,7 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
             return np.abs(x1[:, None] - x2[None, :]).sum(axis=-1)
         raise ValueError(f"Unknown metric: {self.metric}")
 
-    def _condense(self, X: np.ndarray, y: np.ndarray):
+    def _condense(self, X: np.ndarray, y: np.ndarray, w: np.ndarray):
         """
         Condensed Nearest Neighbor (Hart, 1968).
 
@@ -120,9 +125,19 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
                     still_remaining.append(i)
             remaining = still_remaining
 
-        return X[store_idx], y[store_idx]
+        return X[store_idx], y[store_idx], w[store_idx]
 
-    def fit(self, X, y) -> "WeightedKNN":
+    def fit(self, X, y, sample_weight=None) -> "WeightedKNN":
+        """
+        Store the training set, condensed or not.
+
+        `sample_weight` scales a neighbour's vote, on top of the inverse
+        distance factor. A sample with zero weight is dropped before storing,
+        so it neither votes nor becomes a prototype; the result is the fit on
+        the data without that row. Integer weights are *not* the same as
+        repeating rows: a repeated row occupies several of the `k` neighbour
+        slots, a weighted one occupies one slot and votes harder.
+        """
         if self.metric not in ("euclidean", "manhattan"):
             raise ValueError(
                 f"metric must be 'euclidean' or 'manhattan', got {self.metric!r}"
@@ -132,10 +147,18 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
 
         X, y = check_X_y(X, y)
         check_classification_targets(y)
+        w = _check_sample_weight(sample_weight, X, dtype=np.float64)
+        if (w < 0).any():
+            raise ValueError("sample_weight must be non-negative")
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
         self.n_features_in_ = X.shape[1]
+        keep = w > 0
+        if not keep.all():
+            if not keep.any():
+                raise ValueError("sample_weight is zero for every sample")
+            X, y_enc, w = X[keep], y_enc[keep], w[keep]
 
         if isinstance(self.n_condensed_sets, bool) or not isinstance(
             self.n_condensed_sets, int
@@ -152,14 +175,14 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
                 # The first subset uses the data as given, so a single set
                 # reproduces the previous behaviour exactly.
                 order = np.arange(len(X)) if i == 0 else rng.permutation(len(X))
-                store_X, store_y = self._condense(X[order], y_enc[order])
-                self.stores_.append((store_X, store_y))
+                store_X, store_y, store_w = self._condense(X[order], y_enc[order], w[order])
+                self.stores_.append((store_X, store_y, store_w))
         else:
-            self.stores_ = [(X, y_enc)]
+            self.stores_ = [(X, y_enc, w)]
 
         # The first store is the one an unvoted classifier would use, and the
         # attribute is part of the public surface.
-        self.X_train_, self.y_train_ = self.stores_[0]
+        self.X_train_, self.y_train_, self.sample_weight_ = self.stores_[0]
 
         return self
 
@@ -173,10 +196,12 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         """
         check_is_fitted(self)
         X = check_predict_input(self, X)
-        votes = [self._vote(X, store_X, store_y) for store_X, store_y in self.stores_]
+        votes = [self._vote(X, *store) for store in self.stores_]
         return np.mean(votes, axis=0)
 
-    def _vote(self, X: np.ndarray, store_X: np.ndarray, store_y: np.ndarray) -> np.ndarray:
+    def _vote(
+        self, X: np.ndarray, store_X: np.ndarray, store_y: np.ndarray, store_w: np.ndarray
+    ) -> np.ndarray:
         dists = self._distance(X, store_X)  # (n_test, n_store)
         k = min(self.k, len(store_X))
         n_classes = len(self.classes_)
@@ -197,7 +222,7 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
                 weights = 1.0 / (nn_dists ** self.weight_power + 1e-10)
 
             for j, idx in enumerate(nn_idx):
-                probs[i, store_y[idx]] += weights[j]
+                probs[i, store_y[idx]] += weights[j] * store_w[idx]
 
         probs /= probs.sum(axis=1, keepdims=True)
         return probs

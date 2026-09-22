@@ -28,6 +28,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.utils import check_random_state
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
@@ -40,8 +41,11 @@ class _OmnivariateNode:
 
     def __init__(self, depth: int, max_depth: int, min_samples_split: int, cv_folds: int,
                  n_classes: int = 0, selection: str = "accuracy", alpha: float = 0.05,
-                 min_samples_test: int = 50):
+                 min_samples_test: int = 50, random_state: Optional[int] = None):
         self.depth = depth
+        # One stream per node, seeded by the parent, so a tree is a pure
+        # function of its seed however the recursion is scheduled.
+        self._rng = np.random.RandomState(random_state)
         self.n_classes = n_classes
         self.distribution: Optional[np.ndarray] = None
         self.max_depth = max_depth
@@ -78,17 +82,24 @@ class _OmnivariateNode:
             return (y == present[1]).astype(int)
 
         centroids = np.vstack([X[y == c].mean(axis=0) for c in present])
-        group_of_class = KMeans(n_clusters=2, n_init=10, random_state=42).fit_predict(centroids)
+        group_of_class = KMeans(
+            n_clusters=2, n_init=10, random_state=self._seed()
+        ).fit_predict(centroids)
         if len(np.unique(group_of_class)) < 2:
             return None
         mapping = {c: int(g) for c, g in zip(present, group_of_class)}
         return np.array([mapping[label] for label in y])
 
+    def _seed(self) -> int:
+        return int(self._rng.randint(np.iinfo(np.int32).max))
+
     def _candidates(self) -> "Dict[str, Any]":
         return {
-            "univariate": DecisionTreeClassifier(max_depth=1, random_state=42),
+            "univariate": DecisionTreeClassifier(max_depth=1, random_state=self._seed()),
             "linear": LinearDiscriminantAnalysis(),
-            "nonlinear": MLPClassifier(hidden_layer_sizes=(10,), max_iter=200, random_state=42),
+            "nonlinear": MLPClassifier(
+                hidden_layer_sizes=(10,), max_iter=200, random_state=self._seed()
+            ),
         }
 
     def _select_best_splitter(self, X: np.ndarray, y_bin: np.ndarray):
@@ -149,7 +160,7 @@ class _OmnivariateNode:
             try:
                 result = combined_5x2cv_f_test(
                     candidates[split_type], candidates[best_type], X, y_bin,
-                    alpha=self.alpha,
+                    alpha=self.alpha, random_state=self._seed(),
                 )
             except Exception:
                 continue
@@ -184,13 +195,16 @@ class _OmnivariateNode:
         if mask_right.sum() == 0 or mask_left.sum() == 0:
             return self._make_leaf(y)
 
+        left_seed, right_seed = self._seed(), self._seed()
         self.left = _OmnivariateNode(
             self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
             self.n_classes, self.selection, self.alpha, self.min_samples_test,
+            random_state=left_seed,
         ).fit(X[mask_left], y[mask_left])
         self.right = _OmnivariateNode(
             self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
             self.n_classes, self.selection, self.alpha, self.min_samples_test,
+            random_state=right_seed,
         ).fit(X[mask_right], y[mask_right])
         return self
 
@@ -265,6 +279,15 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         The default matters: at 20 the test fires on nodes too small to resolve
         anything and Wine drops from 0.977 to 0.961, while at 50 it recovers
         completely.
+    random_state : int or None, default=None
+        Seed for everything stochastic in the fit: the k-means that pairs
+        classes into two groups at each node, the stump and MLP candidates,
+        and the fold assignment of the F test. Same seed, same tree. The seed
+        moves the tree more than usual here because the *type* of split
+        chosen at a node can flip: on Breast Cancer with ``selection="test"``
+        and ``max_depth=3``, five seeds gave (univariate, linear, nonlinear)
+        counts of (2, 1, 1), (0, 0, 1), (0, 0, 1), (1, 1, 2) and (2, 1, 2).
+        Until this parameter existed a fixed seed of 42 hid that.
 
     Examples
     --------
@@ -290,6 +313,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         selection: str = "accuracy",
         alpha: float = 0.05,
         min_samples_test: int = 50,
+        random_state: Optional[int] = None,
     ):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -297,6 +321,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         self.selection = selection
         self.alpha = alpha
         self.min_samples_test = min_samples_test
+        self.random_state = random_state
 
     def fit(self, X, y) -> "OmnivariateDecisionTree":
         if self.selection not in ("test", "accuracy"):
@@ -309,6 +334,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
         self.n_features_in_ = X.shape[1]
+        rng = check_random_state(self.random_state)
 
         self.root_ = _OmnivariateNode(
             depth=0,
@@ -319,6 +345,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
             selection=self.selection,
             alpha=self.alpha,
             min_samples_test=self.min_samples_test,
+            random_state=int(rng.randint(np.iinfo(np.int32).max)),
         ).fit(X, y_enc)
         return self
 

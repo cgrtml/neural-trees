@@ -14,7 +14,12 @@ from scipy.special import logsumexp
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import (
+    _check_sample_weight,
+    check_array,
+    check_is_fitted,
+    check_X_y,
+)
 
 from neural_trees._validation import check_predict_input
 
@@ -42,7 +47,17 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
         self.alpha = alpha
         self.var_smoothing = var_smoothing
 
-    def fit(self, X, y) -> "NaiveBayesClassifier":
+    def fit(self, X, y, sample_weight=None) -> "NaiveBayesClassifier":
+        """
+        Fit the class priors and per-class sufficient statistics.
+
+        `sample_weight` enters exactly: priors are weighted class totals over
+        the weighted total, and every per-class statistic is a weighted
+        moment or count. Integer weights therefore reproduce the fit on the
+        dataset with each row repeated that many times, up to the order of
+        floating-point summation. A class whose total weight is zero keeps
+        its place in `classes_` with a prior of zero.
+        """
         if self.likelihood not in ("gaussian", "bernoulli", "multinomial"):
             raise ValueError(
                 "likelihood must be 'gaussian', 'bernoulli' or 'multinomial', got "
@@ -51,6 +66,7 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
 
         X, y = check_X_y(X, y)
         check_classification_targets(y)
+        w = _check_sample_weight(sample_weight, X, dtype=np.float64)
         self.le_ = LabelEncoder()
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
@@ -62,19 +78,25 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
 
         for c in range(n_classes):
             X_c = X[y_enc == c]
-            self.class_log_prior_[c] = np.log(len(X_c) / len(X))
+            w_c = w[y_enc == c]
+            total = w_c.sum()
+            with np.errstate(divide="ignore"):
+                self.class_log_prior_[c] = np.log(total / w.sum())
 
             if self.likelihood == "gaussian":
-                mean = X_c.mean(axis=0)
-                var = X_c.var(axis=0) + self.var_smoothing
-                self.theta_.append({"mean": mean, "var": var})
+                if total > 0:
+                    mean = np.average(X_c, axis=0, weights=w_c)
+                    var = np.average((X_c - mean) ** 2, axis=0, weights=w_c)
+                else:
+                    mean, var = np.zeros(X.shape[1]), np.zeros(X.shape[1])
+                self.theta_.append({"mean": mean, "var": var + self.var_smoothing})
 
             elif self.likelihood == "bernoulli":
-                p = (X_c.sum(axis=0) + self.alpha) / (len(X_c) + 2 * self.alpha)
+                p = (w_c @ X_c + self.alpha) / (total + 2 * self.alpha)
                 self.theta_.append({"p": p})
 
             elif self.likelihood == "multinomial":
-                counts = X_c.sum(axis=0) + self.alpha
+                counts = w_c @ X_c + self.alpha
                 self.theta_.append({"log_p": np.log(counts / counts.sum())})
 
         return self

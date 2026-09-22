@@ -44,10 +44,11 @@ class _SoftTreeRegModule(_SoftTreeModule):
 
     def predict_values(self, x: torch.Tensor) -> torch.Tensor:
         _, _, terminal = self._walk(x)
-        out = None
+        out: Optional[torch.Tensor] = None
         for log_mu, indices in terminal:
             part = (log_mu.exp().unsqueeze(2) * self.node_logits[indices].unsqueeze(0)).sum(dim=1)
             out = part if out is None else out + part
+        assert out is not None  # _walk always yields the bottom level
         return out
 
 

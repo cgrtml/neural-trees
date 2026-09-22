@@ -7,8 +7,19 @@ StandardScaler + model pipeline, with a fixed seed.
 
 Run with:
     python benchmarks/run_benchmarks.py
+
+Check the README against a fresh run with:
+    python benchmarks/run_benchmarks.py --check
+
+CI runs that check (see .github/workflows/benchmark-table.yml). Cells are
+compared with an explicit tolerance, `TOLERANCE` below; a cell that moves by
+more than that fails loudly rather than being rounded away.
 """
 import argparse
+import json
+import os
+import re
+import sys
 import warnings
 
 import numpy as np
@@ -72,6 +83,54 @@ def run(seeds):
     return results
 
 
+# The README shows three decimals, so "matches" means the fresh mean rounds to
+# the README cell: half a unit in the last digit. The drift that motivated the
+# check was one unit (0.951 -> 0.952), so anything looser would have missed it.
+# The reference environment is the CI runner; if another machine's torch build
+# lands a cell elsewhere, that is reported rather than absorbed.
+TOLERANCE = 0.0005
+README = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "README.md")
+
+
+def read_readme_table(path=README):
+    """The benchmark table as {model: {dataset: value}}, bold markers stripped."""
+    with open(path, encoding="utf-8") as f:
+        lines = [ln.strip() for ln in f if ln.startswith("|")]
+    header = next(ln for ln in lines if ln.startswith("| Model |"))
+    datasets = [c.strip() for c in header.strip("|").split("|")][1:]
+    table = {}
+    for ln in lines[lines.index(header) + 2:]:
+        cells = [c.strip() for c in ln.strip("|").split("|")]
+        if len(cells) != len(datasets) + 1:
+            break
+        model = re.sub(r"\*\*", "", cells[0])
+        try:
+            table[model] = {d: float(v) for d, v in zip(datasets, cells[1:])}
+        except ValueError:
+            break
+    return table
+
+
+def check_against_readme(results, tolerance=TOLERANCE):
+    """Return the list of cells that disagree with the README; empty means it matches."""
+    table = read_readme_table()
+    problems = []
+    for model, scores in results.items():
+        if model not in table:
+            problems.append(f"{model}: missing from README")
+            continue
+        for dataset, (mean, _) in scores.items():
+            expected = table[model].get(dataset)
+            if expected is None:
+                problems.append(f"{model} / {dataset}: missing from README")
+            elif abs(mean - expected) > tolerance:
+                problems.append(
+                    f"{model} / {dataset}: README says {expected:.3f}, run gives {mean:.3f} "
+                    f"(difference {abs(mean - expected):.3f} > {tolerance})"
+                )
+    return problems
+
+
 def print_markdown_table(results):
     header = "| Model | " + " | ".join(DATASETS) + " |"
     print("\n" + header)
@@ -84,7 +143,32 @@ def print_markdown_table(results):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seeds", type=int, default=5, help="number of seeds to average")
+    parser.add_argument(
+        "--check", action="store_true",
+        help="compare the run with the README table and exit 1 if any cell differs "
+             f"by more than {TOLERANCE}",
+    )
+    parser.add_argument(
+        "--results", metavar="JSON",
+        help="read results from this file if it exists, otherwise run and write them there",
+    )
     args = parser.parse_args()
 
     warnings.filterwarnings("ignore")
-    print_markdown_table(run(range(args.seeds)))
+    if args.results and os.path.exists(args.results):
+        with open(args.results, encoding="utf-8") as f:
+            results = {m: {d: tuple(v) for d, v in s.items()} for m, s in json.load(f).items()}
+    else:
+        results = run(range(args.seeds))
+        if args.results:
+            with open(args.results, "w", encoding="utf-8") as f:
+                json.dump(results, f, indent=1)
+    print_markdown_table(results)
+    if args.check:
+        problems = check_against_readme(results)
+        if problems:
+            print("\nREADME benchmark table does not match this run:", file=sys.stderr)
+            for line in problems:
+                print("  " + line, file=sys.stderr)
+            sys.exit(1)
+        print(f"\nREADME table matches (tolerance {TOLERANCE}).")
