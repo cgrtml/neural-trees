@@ -30,3 +30,5 @@ docs/generated/
 docs/sg_execution_times.rst
 benchmarks/rakipler-hizli.json
 benchmarks/*.log
+.pt_tmp/
+lightning_logs/

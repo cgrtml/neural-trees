@@ -33,6 +33,41 @@ tree competitive with a much deeper CART. And because the model is a mixture,
 ``feature_importances_`` is computed from the gate weights rather than from
 impurity decrease.
 
+Probabilities
+^^^^^^^^^^^^^
+
+The mixture output is a genuine probability, and measured it is a calibrated
+one. Expected calibration error over three seeds of five-fold
+cross-validation (lower is better), against a logistic regression and a
+300-tree random forest on the same folds:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 26 26 26
+
+   * - dataset
+     - soft tree, depth 4
+     - logistic regression
+     - random forest
+   * - Breast Cancer
+     - 0.023
+     - 0.026
+     - 0.038
+   * - Wine
+     - 0.052
+     - 0.048
+     - 0.098
+   * - Digits
+     - 0.030
+     - 0.022
+     - 0.201
+
+The soft tree sits with logistic regression and well clear of the forest,
+whose probabilities are the usual over-confident vote fractions. Brier scores
+tell the same story. ``learn_temperature=True`` does not improve calibration
+reliably (it helped on Wine, hurt on the other two) and cost 3 points of
+accuracy on Digits, so it stays off by default.
+
 Growing the tree
 ^^^^^^^^^^^^^^^^
 
@@ -76,6 +111,29 @@ was about four times faster.
 
 *Reference:* İrsoy, O., Yıldız, O. T. and Alpaydın, E. (2012). Soft Decision
 Trees. *ICPR*, 1819–1822.
+
+Shipping the tree without PyTorch
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``to_numpy()`` is the other export. It is the *same* model, mixture over
+leaves included: predictions agree with the torch model to float32
+precision, and nothing in the prediction path imports torch. The object
+serialises to JSON and back, so a fitted tree can be frozen for audit or
+handed to a service that installs only numpy.
+
+.. code-block:: python
+
+   from neural_trees import NumpySoftTree
+
+   npt = model.to_numpy(feature_names=feature_names)
+   npt.to_json("tree.json")
+
+   # elsewhere, without torch
+   npt = NumpySoftTree.from_json("tree.json")
+   npt.predict_proba(X_new)
+
+The JSON carries a ``format`` field (``neural-trees/soft-tree/1``) so a
+later layout change can be detected rather than misread.
 
 Regression
 ^^^^^^^^^^

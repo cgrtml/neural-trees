@@ -33,6 +33,12 @@ All notable changes to this project are documented here. This project follows
   scikit-learn regressor check except `check_sample_weight_equivalence`,
   for the same mini-batch reason as the classifier. Growth and the hard-tree
   export are not available for it yet (#103).
+- `SoftDecisionTree.to_numpy()` and `NumpySoftTree`: a torch-free copy of
+  the fitted tree with the mixture over leaves kept, so it is the same model
+  rather than the hard-tree approximation. Predictions agree with the torch
+  model to float32 precision; `to_json()`/`from_json()` round-trip exactly
+  and the file carries a format tag. Meant for shipping a fitted tree to a
+  service without PyTorch and for freezing one for audit.
 
 ### Changed
 
@@ -55,6 +61,11 @@ All notable changes to this project are documented here. This project follows
 
 ### Measured
 
+- The soft tree's probabilities are calibrated: expected calibration error
+  0.023 / 0.052 / 0.030 on Breast Cancer / Wine / Digits, against 0.026 /
+  0.048 / 0.022 for logistic regression and 0.038 / 0.098 / 0.201 for a
+  random forest. `learn_temperature=True` does not help reliably and stays
+  off by default. Documented under "Probabilities" in the user guide.
 - The cost of exactly function-preserving deepening tracks the number of
   classes and not the number of features: over twenty OpenML CC-18 datasets,
   mean -0.2 points on the thirteen binary problems and 40.2 points on the

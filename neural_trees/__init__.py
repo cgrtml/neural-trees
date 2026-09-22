@@ -38,6 +38,7 @@ _LAZY = {
     "HierarchicalMixtureOfExperts": "neural_trees.mixture_of_experts.hierarchical_moe",
     "SoftDecisionTree": "neural_trees.decision_trees.soft_decision_tree",
     "SoftDecisionTreeRegressor": "neural_trees.decision_trees.soft_decision_tree_regressor",
+    "NumpySoftTree": "neural_trees.decision_trees.numpy_soft_tree",
 }
 
 if TYPE_CHECKING:  # so type checkers and IDEs still see them
@@ -75,6 +76,7 @@ __all__ = [
     "HierarchicalMixtureOfExperts",
     "MultivariateDecisionTree",
     "NaiveBayesClassifier",
+    "NumpySoftTree",
     "OmnivariateDecisionTree",
     "SoftDecisionTree",
     "SoftDecisionTreeRegressor",

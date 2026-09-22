@@ -10,6 +10,7 @@ Decision trees
 
    neural_trees.SoftDecisionTree
    neural_trees.SoftDecisionTreeRegressor
+   neural_trees.NumpySoftTree
    neural_trees.MultivariateDecisionTree
    neural_trees.OmnivariateDecisionTree
    neural_trees.HardDecisionTree

@@ -1183,6 +1183,32 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             stack.extend([2 * node + 2, 2 * node + 1])
         return np.array(sorted(leaves))
 
+    def to_numpy(self, feature_names=None):
+        """
+        Export the fitted tree as a :class:`~neural_trees.NumpySoftTree`.
+
+        Unlike :meth:`to_hard_tree`, this is the *same* model: the mixture
+        over leaves is kept and predictions agree with the torch model to
+        float32 precision, without PyTorch in the prediction path. The
+        object serialises to JSON and back, which is the intended way to ship
+        a fitted tree to a service that does not install torch, or to freeze
+        one for audit.
+        """
+        from neural_trees.decision_trees.numpy_soft_tree import NumpySoftTree
+
+        check_is_fitted(self)
+        m = self.model_
+        return NumpySoftTree(
+            depth=m.depth,
+            weights=m.gates.weight.detach().cpu().numpy(),
+            biases=m.gates.bias.detach().cpu().numpy(),
+            log_beta=m.log_beta.detach().cpu().numpy(),
+            node_logits=m.node_logits.detach().cpu().numpy(),
+            is_split=m.is_split.detach().cpu().numpy(),
+            classes=self.classes_,
+            feature_names=feature_names,
+        )
+
     def to_hard_tree(self):
         """
         Export the trained tree with its gates read as hard decisions.
