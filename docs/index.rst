@@ -54,6 +54,7 @@ when only the fold assignment changes.
 
    model_comparison
    design_decisions
+   performance
    api
 
 .. toctree::

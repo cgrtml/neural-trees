@@ -48,8 +48,8 @@ from sklearn.utils.validation import (
     check_is_fitted,
     check_X_y,
 )
-from torch.utils.data import DataLoader, TensorDataset
 
+from neural_trees._batching import TensorBatches
 from neural_trees._validation import check_predict_input, resolve_device
 from neural_trees.decision_trees.hard_tree import HardDecisionTree
 
@@ -689,12 +689,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         if self.random_state is not None:
             generator = torch.Generator()
             generator.manual_seed(self.random_state)
-        loader = DataLoader(
-            TensorDataset(X_t, y_t, w_t),
-            batch_size=self.batch_size,
-            shuffle=True,
-            generator=generator,
-        )
+        loader = TensorBatches((X_t, y_t, w_t), self.batch_size, generator)
 
         self.training_history_: List[dict] = []
 

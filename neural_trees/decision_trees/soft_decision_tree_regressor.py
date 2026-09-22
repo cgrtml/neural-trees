@@ -26,8 +26,8 @@ import torch
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import _check_sample_weight, check_is_fitted, check_X_y
-from torch.utils.data import DataLoader, TensorDataset
 
+from neural_trees._batching import TensorBatches
 from neural_trees._validation import check_predict_input, resolve_device
 from neural_trees.decision_trees.soft_decision_tree import _SoftTreeModule
 
@@ -178,11 +178,8 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             penalty_coef=self.penalty_coef,
             learn_temperature=False,
         ).to(device)
-        loader = DataLoader(
-            TensorDataset(X_t, Y_t, w_t),
-            batch_size=min(self.batch_size, len(X_t)),
-            shuffle=True,
-            generator=torch.Generator().manual_seed(self.random_state or 0),
+        loader = TensorBatches(
+            (X_t, Y_t, w_t), self.batch_size, torch.Generator().manual_seed(self.random_state or 0)
         )
         optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
 

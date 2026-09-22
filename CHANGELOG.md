@@ -34,6 +34,15 @@ All notable changes to this project are documented here. This project follows
   for the same mini-batch reason as the classifier. Growth and the hard-tree
   export are not available for it yet (#103).
 
+### Changed
+
+- Mini-batches are sliced directly from tensors instead of going through
+  `DataLoader(TensorDataset(...))`, which indexed one sample at a time. The
+  new iterator draws exactly the permutation the loader drew from the same
+  seed, so fits with a `random_state` are bit-identical to 0.6.2's; they are
+  14-21% faster. A "Performance" page documents measured fit times from
+  1 000 to 50 000 samples.
+
 ### Fixed
 
 - Per-leaf growth started the two children of a split leaf as identical,
