@@ -32,7 +32,7 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 - `sample_weight` and `class_weight` on every classifier; sparse input where it is cheap
 - Tested on standard benchmarks (Iris, Wine, Breast Cancer), with the table checked in CI
 
-**[Try it in the browser](https://neural-trees.streamlit.app)** — every model
+**[Try it in the browser](https://neural-trees.streamlit.app)**: every model
 in this library against CART, Random Forest and SVM, with live decision
 boundaries and a hypothesis test instead of an eyeballed accuracy difference.
 
