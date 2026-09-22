@@ -605,8 +605,9 @@ validation.}
 \label{tab:omni}
 \end{table}
 
-The rule does what it was asked to do at each node and the tree is worse for it
-on both datasets. A simpler split separates its node's data less cleanly, so its
+The rule does what it was asked to do at each node and the tree is not better
+for it: on Breast Cancer it is larger and less accurate, on Digits larger for the
+same accuracy. A simpler split separates its node's data less cleanly, so its
 children inherit harder problems and have to be split in turn. Parsimony enforced
 locally is paid for globally.
 

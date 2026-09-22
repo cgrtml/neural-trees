@@ -1,0 +1,8 @@
+Cancer  accuracy  acc 0.971 ± 0.020   düğüm 4.7 ± 1.8
+Cancer  test      acc 0.958 ± 0.016   düğüm 7.0 ± 1.9
+Digits  accuracy  acc 0.599 ± 0.036   düğüm 12.2 ± 1.0
+Digits  test      acc 0.596 ± 0.055   düğüm 13.7 ± 1.4
+--- min_samples_test, Wine, selection='test' ---
+min_samples_test= 20  acc 0.959 ± 0.041   düğüm 9.3 ± 1.5
+min_samples_test= 50  acc 0.987 ± 0.018   düğüm 5.1 ± 0.5
+BİTTİ

@@ -377,8 +377,74 @@ fills several of the ``k`` neighbour slots while a weighted one fills one. The
 three mini-batch learners batch a repeated dataset differently, so for them
 the equivalence holds only in expectation.
 
-Those four therefore fail exactly one scikit-learn check,
-``check_sample_weight_equivalence_on_dense_data`` (and its sparse twin for the
-KNN, which accepts sparse input), which requires weighting a sample to be
-identical to repeating it. Naive Bayes passes it. The two tree models without
-``sample_weight`` pass all 55 checks.
+:class:`~neural_trees.MultivariateDecisionTree` and
+:class:`~neural_trees.OmnivariateDecisionTree` take ``sample_weight`` and
+``class_weight`` as well, and the weights reach inside the split search, not
+only the leaves. In the multivariate tree they enter the discriminant at every
+node (weighted class means, pooled covariance and prior ratio), the Gini
+decrease and the leaf distributions. In the omnivariate tree they enter the
+two-group construction, the model selection (weighted fold accuracy, and the
+candidate's own fit where it accepts weights: the stump does, scikit-learn's
+LDA does not, its MLP only from 1.7) and the leaf distributions. Both count
+rows, not weight, for ``min_samples_split`` and ``min_samples_leaf``, as
+scikit-learn's trees do, and both take ``min_weight_fraction_leaf`` for the
+case where a down-weighted class would otherwise keep leaves of its own.
+
+Whether weighting changes the *kind* of split the omnivariate tree chooses
+was the open question. Measured on three datasets with one class cut to a
+tenth (three seeds of five-fold cross-validation; recall is of that class):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 26 16 14 14 30
+
+   * - Dataset, model
+     - ``class_weight``
+     - accuracy
+     - recall
+     - splits per fit (uni / lin / nonlin)
+   * - Breast Cancer, multivariate
+     - none / balanced
+     - 0.983 / 0.959
+     - 0.82 / 0.52
+     -
+   * - Breast Cancer, omnivariate
+     - none / balanced
+     - 0.984 / 0.984
+     - 0.77 / 0.85
+     - 0.3, 1.3, 0.0 / 1.2, 1.0, 0.4
+   * - Wine, multivariate
+     - none / balanced
+     - 0.978 / 0.990
+     - 0.80 / 1.00
+     -
+   * - Wine, omnivariate
+     - none / balanced
+     - 0.970 / 0.985
+     - 0.73 / 0.73
+     - 0.2, 1.3, 0.7 / 0.1, 1.9, 0.1
+   * - Digits (depth 6), multivariate
+     - none / balanced
+     - 0.938 / 0.947
+     - 0.88 / 0.95
+     -
+   * - Digits (depth 6), omnivariate
+     - none / balanced
+     - 0.950 / 0.955
+     - 0.78 / 0.90
+     - 2.4, 3.4, 7.7 / 2.3, 2.8, 7.7
+
+So yes, on Breast Cancer balancing moves the omnivariate tree from linear
+splits toward stumps and MLPs while raising minority recall, and on Wine it
+moves it the other way, toward linear splits; on Digits the mix hardly
+changes. For the multivariate tree balancing helped on Wine and Digits and
+hurt on Breast Cancer, where a 6% class weighted up sixteenfold pulled the
+root hyperplane too far. The setting is a trade, not a default.
+
+All six estimators with ``sample_weight`` therefore fail exactly one
+scikit-learn check, ``check_sample_weight_equivalence_on_dense_data`` (and its
+sparse twin for the KNN), which requires weighting a sample to be identical
+to repeating it, except naive Bayes, which passes it. For the two trees the
+reason is the check's data: 15 rows and 30 features, so every node
+discriminant is under-determined and the weighted and unweighted solvers agree
+only to floating point.

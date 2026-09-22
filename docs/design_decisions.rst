@@ -215,7 +215,8 @@ which prefers a nonlinear split for any improvement at all, however small.
 Demanding statistical significance instead sounds strictly better: simpler nodes
 at little cost.
 
-Measured at maximum depth 3, it is worse on both axes on both datasets.
+Measured at maximum depth 3, it is worse on both axes on Breast Cancer and
+larger for the same accuracy on Digits.
 
 .. list-table::
    :header-rows: 1
@@ -227,29 +228,31 @@ Measured at maximum depth 3, it is worse on both axes on both datasets.
      - Nodes
    * - Breast Cancer
      - ``"accuracy"``
-     - 0.971 ± 0.018
-     - 3.8 ± 1.0
+     - 0.971 ± 0.020
+     - 4.7 ± 1.8
    * -
      - ``"test"``
-     - 0.959 ± 0.020
-     - 8.1 ± 2.5
+     - 0.958 ± 0.016
+     - 7.0 ± 1.9
    * - Digits
      - ``"accuracy"``
-     - 0.510 ± 0.083
-     - 10.1 ± 1.7
+     - 0.599 ± 0.036
+     - 12.2 ± 1.0
    * -
      - ``"test"``
-     - 0.492 ± 0.076
-     - 11.5 ± 2.3
+     - 0.596 ± 0.055
+     - 13.7 ± 1.4
 
-The rule does what it was asked to do at each node and the tree is worse for
-it. A simpler split separates its node's data less cleanly, so its children
-inherit harder problems and must themselves be split, and the tree roughly
-doubles on Breast Cancer while losing a point of accuracy. Parsimony enforced
-locally is paid for globally. The Digits accuracies are low for a reason
-unrelated to the rule: a depth-3 tree has at most eight leaves and Digits has
-ten classes, so the row is a comparison between the rules, not a claim about
-how well omnivariate trees classify digits.
+The rule does what it was asked to do at each node and the tree is not better
+for it. A simpler split separates its node's data less cleanly, so its children
+inherit harder problems and must themselves be split: the tree grows by half
+on Breast Cancer while losing a point of accuracy, and by a node on Digits for
+no gain. Parsimony enforced locally is paid for globally. The Digits accuracies
+are low for a reason unrelated to the rule: a depth-3 tree has at most eight
+leaves and Digits has ten classes, so the row is a comparison between the
+rules, not a claim about how well omnivariate trees classify digits. These
+numbers were re-measured after the two-group construction was fixed (#104);
+the script is ``paper/arxiv/olcum/omni_yenile.py``.
 
 On Iris and Wine the rule never fires, because the test needs a minimum sample
 count per node and almost every node below the root falls under it. A

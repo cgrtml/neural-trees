@@ -85,6 +85,18 @@ All notable changes to this project are documented here. This project follows
   faster at 6 MB against 1.6 GB. The dense-only models (the torch models
   and the two multivariate trees) now raise a `TypeError` that names the
   model and the fix, `X.toarray()`.
+- `sample_weight`, `class_weight` and `min_weight_fraction_leaf` in
+  `MultivariateDecisionTree` and `OmnivariateDecisionTree` (#95). The weights
+  reach inside the split search: the multivariate tree's node discriminant
+  is solved with weighted means, pooled covariance and prior ratio, the Gini
+  decrease and the leaves are weighted; the omnivariate tree weights the
+  two-group construction, the model selection (weighted fold accuracy and
+  the candidate's fit where it takes weights) and the leaves. Size limits
+  count rows, as in scikit-learn's trees. Without weights the fits are
+  unchanged. Measured with one class cut to a tenth, balancing changes
+  which *kind* of split the omnivariate tree picks (Breast Cancer: from
+  linear toward stumps and MLPs, Wine: the other way) and raises minority
+  recall on two of three datasets; the table is in the user guide.
 - `benchmarks/run_benchmarks.py --check` compares a fresh run with the README
   table (tolerance 0.0005, i.e. the run must round to the README cell) and
   a CI job runs it when the
@@ -105,6 +117,27 @@ All notable changes to this project are documented here. This project follows
 
 ### Fixed
 
+- Both multivariate trees closed nodes that still held every class when one
+  class at the node was rare (#104). The two-group problem at a node is built
+  by clustering the class centroids; unweighted, a class with a sample or two
+  far from the rest became a group of its own, the discriminant separated
+  one sample from a thousand with a hyperplane of norm 1e15, `min_samples_leaf`
+  refused that split and the node became a leaf. Two changes, in
+  `_grouping.py`, shared by both trees: centroids are clustered with each
+  class's mass as its weight, and when the discriminant fitted to that
+  grouping still cannot make a legal split (a few far-away samples are
+  separable, so it overfits them) a mass-balanced cut along the centroids'
+  principal axis is tried before the node gives up. A third guard is in the
+  multivariate tree alone: scikit-learn's SVD discriminant on ill-conditioned
+  node data (pixel features, constant columns) can return a hyperplane of
+  norm 1e18 that classifies its own training groups worse than the majority
+  rule, and which side of a rank threshold that happens on depended on the
+  BLAS thread count; such a hyperplane is now rejected and a shrinkage
+  discriminant fitted instead. Digits at depth 6, standardised, 3 seeds of
+  5-fold: `MultivariateDecisionTree` 0.354 to 0.932 (3 to 17 internal
+  nodes), `OmnivariateDecisionTree` 0.490 to 0.948. Every published number
+  for these two models was re-measured; the ones that moved are listed with
+  them.
 - Per-leaf growth started the two children of a split leaf as identical,
   untrained distributions, which discarded what the leaf had learned and, by
   Proposition 1 of the paper, left the new gate with no gradient. Children

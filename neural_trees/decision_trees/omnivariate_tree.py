@@ -23,24 +23,50 @@ from typing import Any, Dict, Optional
 import numpy as np
 from joblib import Parallel, delayed, effective_n_jobs
 from sklearn.base import BaseEstimator, ClassifierMixin, clone
-from sklearn.cluster import KMeans
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import StratifiedKFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import check_random_state
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import (
+    _check_sample_weight,
+    check_array,
+    check_is_fitted,
+    check_X_y,
+    has_fit_parameter,
+)
 
 from neural_trees._validation import check_predict_input, reject_sparse
+from neural_trees.decision_trees._grouping import two_group_candidates
 from neural_trees.statistical_tests.classifier_comparison import combined_5x2cv_f_test
 
 
-def _cv_score_or_none(clf, X, y_bin, n_folds):
-    """Mean CV accuracy of one candidate, or None if it cannot be fitted here."""
+def _cv_score_or_none(clf, X, y_bin, n_folds, w=None):
+    """
+    Mean CV accuracy of one candidate, or None if it cannot be fitted here.
+
+    The folds are `StratifiedKFold(n_folds)` without shuffling, which is what
+    `cross_val_score` uses for a classifier with an integer `cv`, so without
+    weights this is that call. With weights the fold accuracy is weighted,
+    and the weights are passed to the candidate's `fit` when it accepts them
+    (the stump does; scikit-learn's LDA does not, nor does its MLP before
+    1.7), so a candidate that cannot take weights is still judged by them.
+    """
     try:
-        return float(cross_val_score(clf, X, y_bin, cv=n_folds, scoring="accuracy").mean())
+        scores = []
+        takes_weight = w is not None and has_fit_parameter(clf, "sample_weight")
+        for tr, te in StratifiedKFold(n_splits=n_folds).split(X, y_bin):
+            est = clone(clf)
+            if takes_weight:
+                est.fit(X[tr], y_bin[tr], sample_weight=w[tr])
+            else:
+                est.fit(X[tr], y_bin[tr])
+            hit = (est.predict(X[te]) == y_bin[te]).astype(float)
+            scores.append(np.average(hit, weights=None if w is None else w[te]))
+        return float(np.mean(scores))
     except Exception:
         return None
 
@@ -51,9 +77,10 @@ class _OmnivariateNode:
     def __init__(self, depth: int, max_depth: int, min_samples_split: int, cv_folds: int,
                  n_classes: int = 0, selection: str = "accuracy", alpha: float = 0.05,
                  min_samples_test: int = 50, random_state: Optional[int] = None,
-                 n_jobs: Optional[int] = None):
+                 n_jobs: Optional[int] = None, min_weight_fraction_leaf: float = 0.0):
         self.depth = depth
         self.n_jobs = n_jobs
+        self.min_weight_fraction_leaf = min_weight_fraction_leaf
         # One stream per node, seeded by the parent, so a tree is a pure
         # function of its seed however the recursion is scheduled.
         self._rng = np.random.RandomState(random_state)
@@ -73,33 +100,12 @@ class _OmnivariateNode:
         self.left: Optional[_OmnivariateNode] = None
         self.right: Optional[_OmnivariateNode] = None
 
-    def _make_leaf(self, y: np.ndarray) -> "_OmnivariateNode":
-        counts = np.bincount(y, minlength=self.n_classes).astype(float)
+    def _make_leaf(self, y: np.ndarray, w: np.ndarray) -> "_OmnivariateNode":
+        counts = np.bincount(y, weights=w, minlength=self.n_classes).astype(float)
         self.is_leaf = True
         self.leaf_class = int(counts.argmax())
         self.distribution = counts / counts.sum() if counts.sum() else counts
         return self
-
-    def _two_group_labels(self, X: np.ndarray, y: np.ndarray):
-        """
-        Reduce the classes at this node to the two-group problem a binary
-        split has to solve. Two classes map directly; more than two are
-        grouped by clustering their centroids.
-        """
-        present = np.unique(y)
-        if len(present) < 2:
-            return None
-        if len(present) == 2:
-            return (y == present[1]).astype(int)
-
-        centroids = np.vstack([X[y == c].mean(axis=0) for c in present])
-        group_of_class = KMeans(
-            n_clusters=2, n_init=10, random_state=self._seed()
-        ).fit_predict(centroids)
-        if len(np.unique(group_of_class)) < 2:
-            return None
-        mapping = {c: int(g) for c, g in zip(present, group_of_class)}
-        return np.array([mapping[label] for label in y])
 
     def _seed(self) -> int:
         return int(self._rng.randint(np.iinfo(np.int32).max))
@@ -113,7 +119,7 @@ class _OmnivariateNode:
             ),
         }
 
-    def _select_best_splitter(self, X: np.ndarray, y_bin: np.ndarray):
+    def _select_best_splitter(self, X: np.ndarray, y_bin: np.ndarray, w: Optional[np.ndarray]):
         """
         Choose a split type for the two-group problem at this node.
 
@@ -149,7 +155,7 @@ class _OmnivariateNode:
         # the spawn cost (3.6 s against 0.9 s sequential, measured).
         n_workers = min(effective_n_jobs(self.n_jobs), len(candidates))
         results = Parallel(n_jobs=n_workers)(
-            delayed(_cv_score_or_none)(clone(clf), X, y_bin, n_folds)
+            delayed(_cv_score_or_none)(clone(clf), X, y_bin, n_folds, w)
             for clf in candidates.values()
         )
         scores = {
@@ -195,40 +201,56 @@ class _OmnivariateNode:
         self.selection_used_ = "test"
         return best_type, candidates[best_type]
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "_OmnivariateNode":
+    def fit(self, X: np.ndarray, y: np.ndarray, w: np.ndarray, weighted: bool = False):
+        # Row counts, not weight, for the size limits, as in scikit-learn's
+        # trees. `weighted` says whether the caller passed any weights at all,
+        # so the unweighted path stays exactly what it was.
         if (
             self.depth >= self.max_depth
             or len(X) < self.min_samples_split
             or len(np.unique(y)) == 1
         ):
-            return self._make_leaf(y)
+            return self._make_leaf(y, w)
 
-        y_bin = self._two_group_labels(X, y)
-        if y_bin is None:
-            return self._make_leaf(y)
-
-        self.split_type, self.classifier = self._select_best_splitter(X, y_bin)
-        self.classifier.fit(X, y_bin)
-
-        # The split is the node classifier's own decision: group 1 goes right,
-        # group 0 goes left. Routing at predict time uses the same rule.
-        mask_right = self.classifier.predict(X) == 1
-        mask_left = ~mask_right
-
-        if mask_right.sum() == 0 or mask_left.sum() == 0:
-            return self._make_leaf(y)
+        # Try the clustered grouping first and the mass-balanced one if the
+        # chosen classifier cannot make a legal split of it (#104).
+        chosen = None
+        for y_bin in two_group_candidates(X, y, w, self._seed(), min_rows=2):
+            split_type, classifier = self._select_best_splitter(
+                X, y_bin, w if weighted else None
+            )
+            if weighted and has_fit_parameter(classifier, "sample_weight"):
+                classifier.fit(X, y_bin, sample_weight=w)
+            else:
+                classifier.fit(X, y_bin)
+            # The split is the node classifier's own decision: group 1 goes
+            # right, group 0 goes left. Routing at predict time uses the same
+            # rule.
+            mask_right = classifier.predict(X) == 1
+            mask_left = ~mask_right
+            if mask_right.sum() == 0 or mask_left.sum() == 0:
+                continue
+            if min(w[mask_right].sum(), w[mask_left].sum()) < self.min_weight_fraction_leaf * w.sum():
+                continue
+            chosen = (split_type, classifier, mask_right, mask_left)
+            break
+        if chosen is None:
+            return self._make_leaf(y, w)
+        self.split_type, self.classifier, mask_right, mask_left = chosen
 
         left_seed, right_seed = self._seed(), self._seed()
         self.left = _OmnivariateNode(
             self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
             self.n_classes, self.selection, self.alpha, self.min_samples_test,
             random_state=left_seed, n_jobs=self.n_jobs,
-        ).fit(X[mask_left], y[mask_left])
+            min_weight_fraction_leaf=self.min_weight_fraction_leaf,
+        ).fit(X[mask_left], y[mask_left], w[mask_left], weighted)
         self.right = _OmnivariateNode(
             self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
             self.n_classes, self.selection, self.alpha, self.min_samples_test,
             random_state=right_seed, n_jobs=self.n_jobs,
-        ).fit(X[mask_right], y[mask_right])
+            min_weight_fraction_leaf=self.min_weight_fraction_leaf,
+        ).fit(X[mask_right], y[mask_right], w[mask_right], weighted)
         return self
 
     def _leaf_for(self, x: np.ndarray) -> "_OmnivariateNode":
@@ -300,8 +322,8 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         five times over; below this the node falls back to the accuracy rule
         rather than treating a test with no power as evidence of no difference.
         The default matters: at 20 the test fires on nodes too small to resolve
-        anything and Wine drops from 0.977 to 0.961, while at 50 it recovers
-        completely.
+        anything and Wine gives 0.959 with 9.3 nodes, while at 50 it gives
+        0.987 with 5.1 (three seeds of five-fold cross-validation, depth 3).
     random_state : int or None, default=None
         Seed for everything stochastic in the fit: the k-means that pairs
         classes into two groups at each node, the stump and MLP candidates,
@@ -322,6 +344,14 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         workers; with ``selection="test"`` 2.72 s against 2.54 s, because the
         F tests that follow the selection stay sequential. Never more workers
         than candidates are started, so ``-1`` cannot be slower than ``1``.
+    class_weight : dict, "balanced" or None, default=None
+        Weights per class, combined multiplicatively with `sample_weight`.
+        `"balanced"` uses `n_samples / (n_classes * bincount(y))`.
+    min_weight_fraction_leaf : float, default=0.0
+        Smallest fraction of the total sample weight a child may hold, as in
+        scikit-learn's trees. Stops a split from isolating a region whose
+        weight is negligible, which is how a down-weighted class would
+        otherwise keep leaves of its own.
 
     Examples
     --------
@@ -349,6 +379,8 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         min_samples_test: int = 50,
         random_state: Optional[int] = None,
         n_jobs: Optional[int] = None,
+        class_weight=None,
+        min_weight_fraction_leaf: float = 0.0,
     ):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -358,8 +390,21 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         self.min_samples_test = min_samples_test
         self.random_state = random_state
         self.n_jobs = n_jobs
+        self.class_weight = class_weight
+        self.min_weight_fraction_leaf = min_weight_fraction_leaf
 
-    def fit(self, X, y) -> "OmnivariateDecisionTree":
+    def fit(self, X, y, sample_weight=None) -> "OmnivariateDecisionTree":
+        """
+        Fit the tree.
+
+        `sample_weight` reaches the two-group construction (weighted class
+        centroids), the model selection (weighted fold accuracy, and the
+        candidate's own `fit` where it accepts weights: the stump does,
+        scikit-learn's LDA does not, its MLP only from 1.7) and the leaf
+        distributions. The 5x2cv F test under `selection="test"` compares
+        unweighted accuracies. Size limits count rows. Without weights the
+        fit is unchanged.
+        """
         if self.selection not in ("test", "accuracy"):
             raise ValueError(
                 f"selection must be 'test' or 'accuracy', got {self.selection!r}"
@@ -371,6 +416,13 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         y_enc = self.le_.fit_transform(y)
         self.classes_ = self.le_.classes_
         self.n_features_in_ = X.shape[1]
+        weighted = sample_weight is not None or self.class_weight is not None
+        w = _check_sample_weight(sample_weight, X, dtype=np.float64)
+        if self.class_weight is not None:
+            class_weights = compute_class_weight(
+                self.class_weight, classes=np.arange(len(self.classes_)), y=y_enc
+            )
+            w = w * class_weights[y_enc]
         rng = check_random_state(self.random_state)
 
         self.root_ = _OmnivariateNode(
@@ -384,7 +436,8 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
             min_samples_test=self.min_samples_test,
             random_state=int(rng.randint(np.iinfo(np.int32).max)),
             n_jobs=self.n_jobs,
-        ).fit(X, y_enc)
+            min_weight_fraction_leaf=self.min_weight_fraction_leaf,
+        ).fit(X, y_enc, w, weighted)
         return self
 
     def predict_proba(self, X) -> np.ndarray:

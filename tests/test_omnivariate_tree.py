@@ -172,7 +172,7 @@ def test_random_state_makes_the_tree_reproducible(wine_split):
     assert OmnivariateDecisionTree(max_depth=3).get_params()["random_state"] is None
 
 
-def test_passes_every_scikit_learn_estimator_check():
+def test_passes_every_scikit_learn_estimator_check_but_row_repetition():
     from sklearn.utils.estimator_checks import check_estimator
 
     failures = [
@@ -180,7 +180,9 @@ def test_passes_every_scikit_learn_estimator_check():
         for r in check_estimator(OmnivariateDecisionTree(max_depth=2, random_state=0), on_fail=None)
         if r["status"] == "failed"
     ]
-    assert failures == []
+    # Since sample_weight (#95): size limits count rows, so a weighted row
+    # is not a repeated row where they bind.
+    assert failures == ["check_sample_weight_equivalence_on_dense_data"]
 
 
 @pytest.mark.parametrize("selection", ["accuracy", "test"])
