@@ -343,26 +343,26 @@ suite.
 
 \begin{table}[ht]
 \centering
-\small
+\footnotesize\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrrcccrc}
 \toprule
 Dataset & $n$ & $p$ & $K$ & $\varepsilon = 0$ & $\varepsilon = 0.2$ & from scratch & cost & $p$ \\
 \midrule
-banknote\mbox{-}authentication & 1372 & 4 & 2 & 0.985 $\pm$ 0.007 & 0.985 $\pm$ 0.007 & 1.000 $\pm$ 0.000 & +1.5 & 1.000 \\
-blood\mbox{-}transfusion\mbox{-}service\mbox{-}center & 748 & 4 & 2 & 0.785 $\pm$ 0.019 & 0.788 $\pm$ 0.025 & 0.799 $\pm$ 0.025 & +1.4 & 0.506 \\
-climate\mbox{-}model\mbox{-}simulation\mbox{-}crashes & 540 & 18 & 2 & 0.955 $\pm$ 0.014 & 0.952 $\pm$ 0.018 & 0.932 $\pm$ 0.018 & -2.3 & 0.324 \\
+banknote & 1372 & 4 & 2 & 0.985 $\pm$ 0.007 & 0.985 $\pm$ 0.007 & 1.000 $\pm$ 0.000 & +1.5 & 1.000 \\
+blood\mbox{-}transfusion & 748 & 4 & 2 & 0.785 $\pm$ 0.019 & 0.788 $\pm$ 0.025 & 0.799 $\pm$ 0.025 & +1.4 & 0.506 \\
+climate\mbox{-}crashes & 540 & 18 & 2 & 0.955 $\pm$ 0.014 & 0.952 $\pm$ 0.018 & 0.932 $\pm$ 0.018 & -2.3 & 0.324 \\
 diabetes & 768 & 8 & 2 & 0.769 $\pm$ 0.028 & 0.770 $\pm$ 0.029 & 0.731 $\pm$ 0.033 & -3.8 & 0.535 \\
 ilpd & 583 & 10 & 2 & 0.711 $\pm$ 0.019 & 0.704 $\pm$ 0.030 & 0.699 $\pm$ 0.042 & -1.2 & 0.588 \\
 kc1 & 2109 & 21 & 2 & 0.855 $\pm$ 0.007 & 0.857 $\pm$ 0.011 & 0.854 $\pm$ 0.012 & -0.1 & 0.214 \\
-ozone\mbox{-}level\mbox{-}8hr & 2534 & 72 & 2 & 0.939 $\pm$ 0.007 & 0.936 $\pm$ 0.006 & 0.929 $\pm$ 0.009 & -1.0 & 0.323 \\
+ozone\mbox{-}8hr & 2534 & 72 & 2 & 0.939 $\pm$ 0.007 & 0.936 $\pm$ 0.006 & 0.929 $\pm$ 0.009 & -1.0 & 0.323 \\
 pc1 & 1109 & 21 & 2 & 0.931 $\pm$ 0.002 & 0.933 $\pm$ 0.008 & 0.922 $\pm$ 0.011 & -0.9 & 0.298 \\
 pc3 & 1563 & 37 & 2 & 0.898 $\pm$ 0.000 & 0.893 $\pm$ 0.010 & 0.874 $\pm$ 0.013 & -2.4 & 0.213 \\
 phoneme & 5000 & 5 & 2 & 0.778 $\pm$ 0.011 & 0.828 $\pm$ 0.017 & 0.849 $\pm$ 0.012 & +7.1 & 0.005 \\
 qsar\mbox{-}biodeg & 1055 & 41 & 2 & 0.868 $\pm$ 0.016 & 0.870 $\pm$ 0.018 & 0.855 $\pm$ 0.024 & -1.3 & 0.488 \\
 spambase & 4601 & 57 & 2 & 0.928 $\pm$ 0.006 & 0.931 $\pm$ 0.006 & 0.929 $\pm$ 0.008 & +0.1 & 0.616 \\
-steel\mbox{-}plates\mbox{-}fault & 1941 & 33 & 2 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & +0.0 & 1.000 \\
+steel\mbox{-}plates & 1941 & 33 & 2 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & +0.0 & 1.000 \\
 vehicle & 846 & 18 & 4 & 0.470 $\pm$ 0.014 & 0.777 $\pm$ 0.030 & 0.798 $\pm$ 0.031 & +32.7 & $<0.0001$ \\
-wall\mbox{-}robot\mbox{-}navigation & 5000 & 24 & 4 & 0.672 $\pm$ 0.007 & 0.867 $\pm$ 0.011 & 0.875 $\pm$ 0.015 & +20.3 & $<0.0001$ \\
+wall\mbox{-}robot & 5000 & 24 & 4 & 0.672 $\pm$ 0.007 & 0.867 $\pm$ 0.011 & 0.875 $\pm$ 0.015 & +20.3 & $<0.0001$ \\
 satimage & 5000 & 36 & 6 & 0.663 $\pm$ 0.093 & 0.883 $\pm$ 0.010 & 0.880 $\pm$ 0.011 & +21.7 & $<0.0001$ \\
 segment & 2310 & 18 & 7 & 0.569 $\pm$ 0.041 & 0.931 $\pm$ 0.013 & 0.948 $\pm$ 0.014 & +37.9 & $<0.0001$ \\
 optdigits & 5000 & 64 & 10 & 0.367 $\pm$ 0.038 & 0.941 $\pm$ 0.011 & 0.937 $\pm$ 0.024 & +57.0 & $<0.0001$ \\
@@ -405,7 +405,7 @@ twenty-four datasets.
 
 \begin{table}[ht]
 \centering
-\small
+\footnotesize\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrccccc}
 \toprule
 Dataset & $K$ & random & residual & residual $+$ gate & from scratch & $p$ \\
@@ -414,8 +414,8 @@ Iris & 3 & 0.942 $\pm$ 0.044 & 0.927 $\pm$ 0.048 & 0.940 $\pm$ 0.044 & 0.958 $\p
 Wine & 3 & 0.979 $\pm$ 0.020 & 0.981 $\pm$ 0.018 & 0.981 $\pm$ 0.018 & 0.978 $\pm$ 0.016 & 0.395 \\
 Cancer & 2 & 0.971 $\pm$ 0.013 & 0.971 $\pm$ 0.013 & 0.971 $\pm$ 0.013 & 0.970 $\pm$ 0.012 & 0.045 \\
 Digits & 10 & 0.921 $\pm$ 0.027 & 0.929 $\pm$ 0.014 & 0.930 $\pm$ 0.015 & 0.925 $\pm$ 0.029 & 0.702 \\
-banknote\mbox{-}authentication & 2 & 0.985 $\pm$ 0.007 & 0.985 $\pm$ 0.007 & 0.985 $\pm$ 0.007 & 1.000 $\pm$ 0.000 & 1.000 \\
-blood\mbox{-}transfusion\mbox{-}service\mbox{-}center & 2 & 0.788 $\pm$ 0.025 & 0.786 $\pm$ 0.025 & 0.790 $\pm$ 0.023 & 0.799 $\pm$ 0.025 & 0.595 \\
+banknote & 2 & 0.985 $\pm$ 0.007 & 0.985 $\pm$ 0.007 & 0.985 $\pm$ 0.007 & 1.000 $\pm$ 0.000 & 1.000 \\
+blood\mbox{-}transfusion & 2 & 0.788 $\pm$ 0.025 & 0.786 $\pm$ 0.025 & 0.790 $\pm$ 0.023 & 0.799 $\pm$ 0.025 & 0.595 \\
 phoneme & 2 & 0.828 $\pm$ 0.017 & 0.828 $\pm$ 0.016 & 0.828 $\pm$ 0.015 & 0.849 $\pm$ 0.012 & 0.806 \\
 diabetes & 2 & 0.770 $\pm$ 0.029 & 0.769 $\pm$ 0.030 & 0.769 $\pm$ 0.030 & 0.731 $\pm$ 0.033 & 0.327 \\
 vehicle & 4 & 0.777 $\pm$ 0.030 & 0.782 $\pm$ 0.033 & 0.781 $\pm$ 0.036 & 0.798 $\pm$ 0.031 & 0.470 \\
@@ -424,13 +424,13 @@ satimage & 6 & 0.883 $\pm$ 0.010 & 0.881 $\pm$ 0.010 & 0.881 $\pm$ 0.010 & 0.880
 optdigits & 10 & 0.941 $\pm$ 0.011 & 0.939 $\pm$ 0.020 & 0.941 $\pm$ 0.013 & 0.937 $\pm$ 0.024 & 0.096 \\
 pendigits & 10 & 0.909 $\pm$ 0.036 & 0.901 $\pm$ 0.031 & 0.904 $\pm$ 0.030 & 0.930 $\pm$ 0.029 & 0.159 \\
 spambase & 2 & 0.931 $\pm$ 0.006 & 0.932 $\pm$ 0.007 & 0.932 $\pm$ 0.007 & 0.929 $\pm$ 0.008 & 0.742 \\
-steel\mbox{-}plates\mbox{-}fault & 2 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 \\
+steel\mbox{-}plates & 2 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 $\pm$ 0.001 & 1.000 \\
 ilpd & 2 & 0.704 $\pm$ 0.030 & 0.711 $\pm$ 0.025 & 0.711 $\pm$ 0.023 & 0.699 $\pm$ 0.042 & 0.044 \\
-climate\mbox{-}model\mbox{-}simulation\mbox{-}crashes & 2 & 0.952 $\pm$ 0.018 & 0.954 $\pm$ 0.015 & 0.953 $\pm$ 0.016 & 0.932 $\pm$ 0.018 & 0.298 \\
+climate\mbox{-}crashes & 2 & 0.952 $\pm$ 0.018 & 0.954 $\pm$ 0.015 & 0.953 $\pm$ 0.016 & 0.932 $\pm$ 0.018 & 0.298 \\
 texture & 11 & 0.952 $\pm$ 0.045 & 0.978 $\pm$ 0.030 & 0.984 $\pm$ 0.023 & 0.938 $\pm$ 0.057 & 0.326 \\
-wall\mbox{-}robot\mbox{-}navigation & 4 & 0.867 $\pm$ 0.011 & 0.870 $\pm$ 0.008 & 0.870 $\pm$ 0.010 & 0.875 $\pm$ 0.015 & 0.773 \\
+wall\mbox{-}robot & 4 & 0.867 $\pm$ 0.011 & 0.870 $\pm$ 0.008 & 0.870 $\pm$ 0.010 & 0.875 $\pm$ 0.015 & 0.773 \\
 qsar\mbox{-}biodeg & 2 & 0.870 $\pm$ 0.018 & 0.867 $\pm$ 0.020 & 0.867 $\pm$ 0.019 & 0.855 $\pm$ 0.024 & 0.621 \\
-ozone\mbox{-}level\mbox{-}8hr & 2 & 0.936 $\pm$ 0.006 & 0.935 $\pm$ 0.006 & 0.936 $\pm$ 0.005 & 0.929 $\pm$ 0.009 & 0.535 \\
+ozone\mbox{-}8hr & 2 & 0.936 $\pm$ 0.006 & 0.935 $\pm$ 0.006 & 0.936 $\pm$ 0.005 & 0.929 $\pm$ 0.009 & 0.535 \\
 kc1 & 2 & 0.857 $\pm$ 0.011 & 0.856 $\pm$ 0.011 & 0.857 $\pm$ 0.011 & 0.854 $\pm$ 0.012 & 0.404 \\
 pc1 & 2 & 0.933 $\pm$ 0.008 & 0.932 $\pm$ 0.008 & 0.933 $\pm$ 0.009 & 0.922 $\pm$ 0.011 & 0.535 \\
 pc3 & 2 & 0.893 $\pm$ 0.010 & 0.894 $\pm$ 0.011 & 0.896 $\pm$ 0.010 & 0.874 $\pm$ 0.013 & 0.497 \\
@@ -566,7 +566,7 @@ holdout the grown tree uses, so that the two can be compared on equal data.
 
 \begin{table}[ht]
 \centering
-\small
+\footnotesize\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrcccccrc}
 \toprule
  & & \multicolumn{2}{c}{complete, 63 splits} & \multicolumn{3}{c}{per-leaf} & & \\
@@ -602,7 +602,7 @@ separates them for level-wise growth at depth four.
 
 \begin{table}[ht]
 \centering
-\small
+\footnotesize\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrccccc}
 \toprule
  & & \multicolumn{2}{c}{from scratch} & \multicolumn{2}{c}{grown} & \\

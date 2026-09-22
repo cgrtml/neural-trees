@@ -102,6 +102,14 @@ def _oku(ad):
     q = KOK / "paper/arxiv/olcum" / ad
     return json.loads(q.read_text(encoding="utf-8")) if q.exists() else {}
 
+KISA = {"blood-transfusion-service-center": "blood-transfusion",
+        "climate-model-simulation-crashes": "climate-crashes",
+        "wall-robot-navigation": "wall-robot", "banknote-authentication": "banknote",
+        "steel-plates-fault": "steel-plates", "ozone-level-8hr": "ozone-8hr"}
+
+def _ad(a):
+    return KISA.get(a, a).replace("-", "\\mbox{-}")
+
 def _pm(x):
     return f"{x[0]:.3f} $\\pm$ {x[1]:.3f}"
 
@@ -117,7 +125,7 @@ rows, bedel, Ks, Ps, sig = [], [], [], [], 0
 for did, R in sorted(OM.items(), key=lambda kv: (kv[1]["K"], kv[1]["ad"])):
     J = R["jitter"]; b = (J["sıfırdan"][0] - J["jitter=0.0"][0]) * 100
     bedel.append(b); Ks.append(R["K"]); Ps.append(R["p"]); pv = R["jitter_test"][1]; sig += pv < 0.05
-    ad = R["ad"].replace("-", "\\mbox{-}")
+    ad = _ad(R["ad"])
     rows.append(f"{ad} & {R['n']} & {R['p']} & {R['K']} & {_pm(J['jitter=0.0'])} & {_pm(J['jitter=0.2'])} & {_pm(J['sıfırdan'])} & {b:+.1f} & {_p(pv)} \\\\")
 D["TABLE_OPENML"] = "\n".join(rows)
 bedel = _np.array(bedel); Ks = _np.array(Ks)
@@ -144,7 +152,7 @@ rows, gaps, sd_r, sd_g, sig = [], [], [], [], 0
 for ad, R in BU.items():
     g = (R["residual_gate"][0] - R["random"][0]) * 100; gaps.append(g)
     sd_r.append(R["random"][1]); sd_g.append(R["residual_gate"][1]); pv = R["test_gate_vs_random"][1]; sig += pv < 0.05
-    rows.append(f"{ad.replace('-', chr(92) + 'mbox{-}')} & {R['K']} & {_pm(R['random'])} & {_pm(R['residual'])} & {_pm(R['residual_gate'])} & {_pm(R['sıfırdan'])} & {_p(pv)} \\\\")
+    rows.append(f"{_ad(ad)} & {R['K']} & {_pm(R['random'])} & {_pm(R['residual'])} & {_pm(R['residual_gate'])} & {_pm(R['sıfırdan'])} & {_p(pv)} \\\\")
 D["TABLE_BUYUME"] = "\n".join(rows)
 gaps = _np.array(gaps)
 D["BU_N"] = str(len(BU)); D["BU_MEAN"] = f"{gaps.mean():+.2f}"; D["BU_MEDIAN"] = f"{_np.median(gaps):+.2f}"
@@ -157,7 +165,7 @@ D["BU_SD_R_MC"] = f"{_np.mean([BU[k]['random'][1] for k in mc]):.4f}"; D["BU_SD_
 PL = _oku("perleaf-sonuc.json")
 rows, rows2 = [], []
 for ad, R in PL.items():
-    n = ad.replace("-", "\\mbox{-}")
+    n = _ad(ad)
     rows.append(f"{n} & {R['K']} & {_pm(R['tam'])} & {_pm(R['tam_val'])} & {_pm(R['perleaf_uniform'])} & {_pm(R['perleaf_random'])} & {_pm(R['perleaf_residual'])} & {R['perleaf_residual'][2]:.1f} & {_p(R['test_perleaf_gate_vs_uniform'][1])} \\\\")
     rows2.append(f"{n} & {R['K']} & {_pm(R['sifirdan4'])} & {_pm(R['sifirdan4_val'])} & {_pm(R['artimli_split'])} & {_pm(R['artimli_full'])} & {_p(R['test_artimli_full_vs_split'][1])} \\\\")
 D["TABLE_PERLEAF"] = "\n".join(rows) if rows else "\\multicolumn{9}{c}{(pending)} \\\\"
