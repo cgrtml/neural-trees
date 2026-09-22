@@ -71,3 +71,5 @@
 
 ### pendigits  n=5000 p=16 K=10
   tam depth-6      0.989 ± 0.004  bölme 63.0
+  tam depth-6 %90  0.988 ± 0.002
+  perleaf uniform        0.910 ± 0.101  bölme 17.6 ± 6.3

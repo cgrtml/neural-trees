@@ -3,6 +3,47 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `SoftDecisionTree.explain(X, feature_names=...)`: per-prediction
+  explanations. For each sample: the predicted class and probability, the leaf
+  that received most of the sample's mass and its distribution, every gate on
+  the path to it with the direction taken, its probability and the largest
+  feature terms, a per-feature contribution score along the path, and the
+  smallest single-feature change that flips the class, verified by
+  re-predicting. Returned as `Explanation` objects with `to_text()` and
+  `to_dict()`. The contribution score reads the linear gates directly and is
+  not SHAP; the counterfactual is `None` when no single-feature change on the
+  path flips the class. Documented in "Explaining a prediction", with a
+  gallery example.
+- `growth_init` in `{"random", "residual", "residual_gate"}`: how the
+  symmetry between a new gate's two children is broken when a soft tree grows.
+  Measured on 24 datasets, the direction does not change accuracy against
+  random noise (mean +0.20 points, median 0.00); it lowers fold-to-fold
+  variance by about 15% on multi-class problems. Also `growth_jitter`, the
+  size of the perturbation (#97).
+- `growth_budget` in `{"split", "full"}`: whether `max_epochs` is divided
+  across growth rounds (the previous behaviour) or given to every round.
+
+### Fixed
+
+- Per-leaf growth started the two children of a split leaf as identical,
+  untrained distributions, which discarded what the leaf had learned and, by
+  Proposition 1 of the paper, left the new gate with no gradient. Children
+  now inherit the parent and the symmetry is broken as in level-wise growth.
+  On Digits this moves per-leaf growth from 0.703 to 0.927 at about ten
+  splits, against 0.967 for a complete depth-six tree with 63. The previous
+  behaviour is kept as `growth_init="uniform"` for reproducing the comparison.
+
+### Measured
+
+- The cost of exactly function-preserving deepening tracks the number of
+  classes and not the number of features: over twenty OpenML CC-18 datasets,
+  mean -0.2 points on the thirteen binary problems and 40.2 points on the
+  seven multi-class ones (Spearman with K: 0.71; with p: 0.02).
+
 ## [0.6.2] - 2026-09-16
 
 An archival release with no library behaviour changes. It exists because the

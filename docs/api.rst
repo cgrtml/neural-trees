@@ -43,3 +43,13 @@ Statistical tests
    neural_trees.combined_5x2cv_f_test
    neural_trees.mcnemar_test
    neural_trees.paired_t_test
+
+Explanations
+------------
+
+.. autosummary::
+   :toctree: generated
+
+   neural_trees.Explanation
+   neural_trees.GateStep
+   neural_trees.Counterfactual

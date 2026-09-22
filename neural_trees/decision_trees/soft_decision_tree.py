@@ -1111,6 +1111,48 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         idx = np.argmax(proba, axis=1)
         return self.le_.inverse_transform(idx)
 
+    def explain(self, X, feature_names=None, max_terms: int = 3, counterfactual: bool = True):
+        """
+        Explain individual predictions.
+
+        For each row of `X`: the predicted class and its probability, the leaf
+        that received most of the sample's probability mass and that leaf's
+        class distribution, every gate on the path to that leaf with the
+        direction taken, the probability of that direction and the largest
+        feature terms behind it, a per-feature contribution score aggregated
+        along the path, and the smallest single-feature change that flips the
+        predicted class, verified by re-predicting the changed sample.
+
+        The contribution score reads the linear gates directly and is not
+        SHAP. The counterfactual is searched only among the gates on the
+        dominant path and is `None` when no single-feature change there flips
+        the class. All values are in the model's input units.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features) or (n_features,)
+        feature_names : sequence of str, optional
+        max_terms : int, default=3
+            Feature terms shown per gate, largest ``|weight * value|`` first.
+        counterfactual : bool, default=True
+            Search for the flipping change; costs one prediction per
+            candidate, so turn it off when explaining many samples.
+
+        Returns
+        -------
+        Explanation or list of Explanation
+            One object per row; a single object if `X` was one-dimensional.
+            Each has `to_text()` and `to_dict()`.
+        """
+        from neural_trees.explain import explain_soft_tree
+
+        check_is_fitted(self)
+        single = np.ndim(X) == 1
+        X = check_predict_input(self, np.atleast_2d(np.asarray(X)))
+        out = explain_soft_tree(self, X, feature_names=feature_names,
+                                max_terms=max_terms, counterfactual=counterfactual)
+        return out[0] if single else out
+
     def get_leaf_distributions(self) -> np.ndarray:
         """
         Return the class distribution stored in each leaf node.

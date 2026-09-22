@@ -46,6 +46,7 @@ when only the fold assignment changes.
 
    install
    user_guide
+   explaining
 
 .. toctree::
    :maxdepth: 2

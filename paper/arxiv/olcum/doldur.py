@@ -98,50 +98,78 @@ for ad, kisa in (("Cancer", "CANCER"), ("Digits", "DIGITS")):
 # ══════════════ v2 · OpenML, yönlü büyütme, per-leaf tabloları ══════════════
 import numpy as _np  # noqa: E402
 
+
 def _oku(ad):
     q = KOK / "paper/arxiv/olcum" / ad
     return json.loads(q.read_text(encoding="utf-8")) if q.exists() else {}
 
-KISA = {"blood-transfusion-service-center": "blood-transfusion",
-        "climate-model-simulation-crashes": "climate-crashes",
-        "wall-robot-navigation": "wall-robot", "banknote-authentication": "banknote",
-        "steel-plates-fault": "steel-plates", "ozone-level-8hr": "ozone-8hr"}
+
+KISA = {
+    "blood-transfusion-service-center": "blood-transfusion",
+    "climate-model-simulation-crashes": "climate-crashes",
+    "wall-robot-navigation": "wall-robot",
+    "banknote-authentication": "banknote",
+    "steel-plates-fault": "steel-plates",
+    "ozone-level-8hr": "ozone-8hr",
+}
+
 
 def _ad(a):
     return KISA.get(a, a).replace("-", "\\mbox{-}")
 
+
 def _pm(x):
     return f"{x[0]:.3f} $\\pm$ {x[1]:.3f}"
+
 
 def _p(pv):
     return "$<0.0001$" if pv < 1e-4 else f"{pv:.3f}"
 
+
 def _spearman(a, b):
-    ra = _np.argsort(_np.argsort(a)); rb = _np.argsort(_np.argsort(b))
+    ra = _np.argsort(_np.argsort(a))
+    rb = _np.argsort(_np.argsort(b))
     return float(_np.corrcoef(ra, rb)[0, 1])
+
 
 OM = _oku("openml-sonuc.json")
 rows, bedel, Ks, Ps, sig = [], [], [], [], 0
 for did, R in sorted(OM.items(), key=lambda kv: (kv[1]["K"], kv[1]["ad"])):
-    J = R["jitter"]; b = (J["sıfırdan"][0] - J["jitter=0.0"][0]) * 100
-    bedel.append(b); Ks.append(R["K"]); Ps.append(R["p"]); pv = R["jitter_test"][1]; sig += pv < 0.05
+    J = R["jitter"]
+    b = (J["sıfırdan"][0] - J["jitter=0.0"][0]) * 100
+    bedel.append(b)
+    Ks.append(R["K"])
+    Ps.append(R["p"])
+    pv = R["jitter_test"][1]
+    sig += pv < 0.05
     ad = _ad(R["ad"])
-    rows.append(f"{ad} & {R['n']} & {R['p']} & {R['K']} & {_pm(J['jitter=0.0'])} & {_pm(J['jitter=0.2'])} & {_pm(J['sıfırdan'])} & {b:+.1f} & {_p(pv)} \\\\")
+    rows.append(
+        f"{ad} & {R['n']} & {R['p']} & {R['K']} & {_pm(J['jitter=0.0'])} & {_pm(J['jitter=0.2'])} & {_pm(J['sıfırdan'])} & {b:+.1f} & {_p(pv)} \\\\"
+    )
 D["TABLE_OPENML"] = "\n".join(rows)
-bedel = _np.array(bedel); Ks = _np.array(Ks)
+bedel = _np.array(bedel)
+Ks = _np.array(Ks)
 D["OM_N"] = str(len(OM))
-D["OM_BIN_N"] = str(int((Ks == 2).sum())); D["OM_MC_N"] = str(int((Ks > 2).sum()))
-D["OM_BIN_COST"] = f"{bedel[Ks == 2].mean():.1f}"; D["OM_MC_COST"] = f"{bedel[Ks > 2].mean():.1f}"
-D["OM_MC_MIN"] = f"{bedel[Ks > 2].min():.0f}"; D["OM_MC_MAX"] = f"{bedel[Ks > 2].max():.0f}"
-D["OM_SPEAR_K"] = f"{_spearman(Ks, bedel):.2f}"; D["OM_SPEAR_P"] = f"{_spearman(_np.array(Ps), bedel):.2f}"
+D["OM_BIN_N"] = str(int((Ks == 2).sum()))
+D["OM_MC_N"] = str(int((Ks > 2).sum()))
+D["OM_BIN_COST"] = f"{bedel[Ks == 2].mean():.1f}"
+D["OM_MC_COST"] = f"{bedel[Ks > 2].mean():.1f}"
+D["OM_MC_MIN"] = f"{bedel[Ks > 2].min():.0f}"
+D["OM_MC_MAX"] = f"{bedel[Ks > 2].max():.0f}"
+D["OM_SPEAR_K"] = f"{_spearman(Ks, bedel):.2f}"
+D["OM_SPEAR_P"] = f"{_spearman(_np.array(Ps), bedel):.2f}"
 D["OM_SIG"] = str(sig)
-G_w = [0, 0, 0]; G_ratio = []; P_w = [0, 0, 0]; P_gap = []
+G_w = [0, 0, 0]
+G_ratio = []
+P_w = [0, 0, 0]
+P_gap = []
 for R in OM.values():
     dg = R["gal"]["residual"][0] - R["gal"]["random"][0]
     G_w[0 if dg > 0.005 else 2 if dg < -0.005 else 1] += 1
     G_ratio.append(R["gal"]["residual"][2] / R["gal"]["random"][2])
     dp = R["per_leaf"]["per_leaf"][0] - R["per_leaf"]["none"][0]
-    P_w[0 if dp > 0.005 else 2 if dp < -0.005 else 1] += 1; P_gap.append(dp * 100)
+    P_w[0 if dp > 0.005 else 2 if dp < -0.005 else 1] += 1
+    P_gap.append(dp * 100)
 D["OM_GAL_WIN"], D["OM_GAL_TIE"], D["OM_GAL_LOSS"] = map(str, G_w)
 D["OM_GAL_RATIO"] = f"{100 * (1 - _np.mean(G_ratio)):.0f}"
 D["OM_PL_WIN"], D["OM_PL_TIE"], D["OM_PL_LOSS"] = map(str, P_w)
@@ -150,37 +178,73 @@ D["OM_PL_GAP"] = f"{_np.mean(P_gap):+.1f}"
 BU = _oku("buyume-sonuc.json")
 rows, gaps, sd_r, sd_g, sig = [], [], [], [], 0
 for ad, R in BU.items():
-    g = (R["residual_gate"][0] - R["random"][0]) * 100; gaps.append(g)
-    sd_r.append(R["random"][1]); sd_g.append(R["residual_gate"][1]); pv = R["test_gate_vs_random"][1]; sig += pv < 0.05
-    rows.append(f"{_ad(ad)} & {R['K']} & {_pm(R['random'])} & {_pm(R['residual'])} & {_pm(R['residual_gate'])} & {_pm(R['sıfırdan'])} & {_p(pv)} \\\\")
+    g = (R["residual_gate"][0] - R["random"][0]) * 100
+    gaps.append(g)
+    sd_r.append(R["random"][1])
+    sd_g.append(R["residual_gate"][1])
+    pv = R["test_gate_vs_random"][1]
+    sig += pv < 0.05
+    rows.append(
+        f"{_ad(ad)} & {R['K']} & {_pm(R['random'])} & {_pm(R['residual'])} & {_pm(R['residual_gate'])} & {_pm(R['sıfırdan'])} & {_p(pv)} \\\\"
+    )
 D["TABLE_BUYUME"] = "\n".join(rows)
 gaps = _np.array(gaps)
-D["BU_N"] = str(len(BU)); D["BU_MEAN"] = f"{gaps.mean():+.2f}"; D["BU_MEDIAN"] = f"{_np.median(gaps):+.2f}"
-D["BU_MIN"] = f"{gaps.min():+.1f}"; D["BU_MAX"] = f"{gaps.max():+.1f}"; D["BU_SIG"] = str(sig)
-D["BU_WIN"] = str(int((gaps > 0.5).sum())); D["BU_LOSS"] = str(int((gaps < -0.5).sum()))
-D["BU_SD_R"] = f"{_np.mean(sd_r):.4f}"; D["BU_SD_G"] = f"{_np.mean(sd_g):.4f}"
+D["BU_N"] = str(len(BU))
+D["BU_MEAN"] = f"{gaps.mean():+.2f}"
+D["BU_MEDIAN"] = f"{_np.median(gaps):+.2f}"
+D["BU_MIN"] = f"{gaps.min():+.1f}"
+D["BU_MAX"] = f"{gaps.max():+.1f}"
+D["BU_SIG"] = str(sig)
+D["BU_WIN"] = str(int((gaps > 0.5).sum()))
+D["BU_LOSS"] = str(int((gaps < -0.5).sum()))
+D["BU_SD_R"] = f"{_np.mean(sd_r):.4f}"
+D["BU_SD_G"] = f"{_np.mean(sd_g):.4f}"
 mc = [k for k, R in BU.items() if R["K"] > 2]
-D["BU_SD_R_MC"] = f"{_np.mean([BU[k]['random'][1] for k in mc]):.4f}"; D["BU_SD_G_MC"] = f"{_np.mean([BU[k]['residual_gate'][1] for k in mc]):.4f}"
+D["BU_SD_R_MC"] = f"{_np.mean([BU[k]['random'][1] for k in mc]):.4f}"
+D["BU_SD_G_MC"] = f"{_np.mean([BU[k]['residual_gate'][1] for k in mc]):.4f}"
 
 PL = _oku("perleaf-sonuc.json")
 rows, rows2 = [], []
 for ad, R in PL.items():
     n = _ad(ad)
-    rows.append(f"{n} & {R['K']} & {_pm(R['tam'])} & {_pm(R['tam_val'])} & {_pm(R['perleaf_uniform'])} & {_pm(R['perleaf_random'])} & {_pm(R['perleaf_residual'])} & {R['perleaf_residual'][2]:.1f} & {_p(R['test_perleaf_gate_vs_uniform'][1])} \\\\")
-    rows2.append(f"{n} & {R['K']} & {_pm(R['sifirdan4'])} & {_pm(R['sifirdan4_val'])} & {_pm(R['artimli_split'])} & {_pm(R['artimli_full'])} & {_p(R['test_artimli_full_vs_split'][1])} \\\\")
+    rows.append(
+        f"{n} & {R['K']} & {_pm(R['tam'])} & {_pm(R['tam_val'])} & {_pm(R['perleaf_uniform'])} & {_pm(R['perleaf_random'])} & {_pm(R['perleaf_residual'])} & {R['perleaf_residual'][2]:.1f} & {_p(R['test_perleaf_gate_vs_uniform'][1])} \\\\"
+    )
+    rows2.append(
+        f"{n} & {R['K']} & {_pm(R['sifirdan4'])} & {_pm(R['sifirdan4_val'])} & {_pm(R['artimli_split'])} & {_pm(R['artimli_full'])} & {_p(R['test_artimli_full_vs_split'][1])} \\\\"
+    )
 D["TABLE_PERLEAF"] = "\n".join(rows) if rows else "\\multicolumn{9}{c}{(pending)} \\\\"
 D["TABLE_BUDGET"] = "\n".join(rows2) if rows2 else "\\multicolumn{7}{c}{(pending)} \\\\"
 D["PL_N"] = str(len(PL))
 if PL:
-    old_gap = _np.mean([(R["perleaf_uniform"][0] - R["tam"][0]) * 100 for R in PL.values()])
-    new_gap = _np.mean([(R["perleaf_residual"][0] - R["tam"][0]) * 100 for R in PL.values()])
+    old_gap = _np.mean(
+        [(R["perleaf_uniform"][0] - R["tam"][0]) * 100 for R in PL.values()]
+    )
+    new_gap = _np.mean(
+        [(R["perleaf_residual"][0] - R["tam"][0]) * 100 for R in PL.values()]
+    )
     frac = _np.mean([R["perleaf_residual"][2] / 63 for R in PL.values()])
-    D["PL_OLD_GAP"] = f"{old_gap:+.1f}"; D["PL_NEW_GAP"] = f"{new_gap:+.1f}"; D["PL_FRAC"] = f"{frac * 100:.0f}"
-    D["PL_VAL_GAP"] = f"{_np.mean([(R['sifirdan4'][0] - R['sifirdan4_val'][0]) * 100 for R in PL.values()]):+.1f}"
-    D["PL_INC_VS_VAL"] = f"{_np.mean([(R['artimli_full'][0] - R['sifirdan4_val'][0]) * 100 for R in PL.values()]):+.1f}"
-    D["PL_FULL_VS_SPLIT"] = f"{_np.mean([(R['artimli_full'][0] - R['artimli_split'][0]) * 100 for R in PL.values()]):+.1f}"
+    D["PL_OLD_GAP"] = f"{old_gap:+.1f}"
+    D["PL_NEW_GAP"] = f"{new_gap:+.1f}"
+    D["PL_FRAC"] = f"{frac * 100:.0f}"
+    D["PL_VAL_GAP"] = (
+        f"{_np.mean([(R['sifirdan4'][0] - R['sifirdan4_val'][0]) * 100 for R in PL.values()]):+.1f}"
+    )
+    D["PL_INC_VS_VAL"] = (
+        f"{_np.mean([(R['artimli_full'][0] - R['sifirdan4_val'][0]) * 100 for R in PL.values()]):+.1f}"
+    )
+    D["PL_FULL_VS_SPLIT"] = (
+        f"{_np.mean([(R['artimli_full'][0] - R['artimli_split'][0]) * 100 for R in PL.values()]):+.1f}"
+    )
 else:
-    for k in ("PL_OLD_GAP", "PL_NEW_GAP", "PL_FRAC", "PL_VAL_GAP", "PL_INC_VS_VAL", "PL_FULL_VS_SPLIT"):
+    for k in (
+        "PL_OLD_GAP",
+        "PL_NEW_GAP",
+        "PL_FRAC",
+        "PL_VAL_GAP",
+        "PL_INC_VS_VAL",
+        "PL_FULL_VS_SPLIT",
+    ):
         D[k] = "?"
 
 sab = (KOK / "paper/arxiv/main.tex.tmpl").read_text(encoding="utf-8")

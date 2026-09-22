@@ -31,6 +31,8 @@ __version__ = "0.6.2"
 __author__ = "Cagri Temel"
 
 # name -> module that defines it, for the estimators that need torch
+from neural_trees.explain import Counterfactual, Explanation, GateStep  # noqa: E402
+
 _LAZY = {
     "GALNetwork": "neural_trees.classical.multilayer_perceptron",
     "HierarchicalMixtureOfExperts": "neural_trees.mixture_of_experts.hierarchical_moe",
@@ -63,7 +65,10 @@ def __dir__():
 
 
 __all__ = [
+    "Counterfactual",
+    "Explanation",
     "GALNetwork",
+    "GateStep",
     "HardDecisionTree",
     "HardRoutedExperts",
     "HierarchicalMixtureOfExperts",
