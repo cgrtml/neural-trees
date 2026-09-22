@@ -27,6 +27,13 @@ All notable changes to this project are documented here. This project follows
 - `growth_budget` in `{"split", "full"}`: whether `max_epochs` is divided
   across growth rounds (the previous behaviour) or given to every round.
 
+- `SoftDecisionTreeRegressor`: the soft tree for regression, with
+  multi-output targets, `sample_weight`, early stopping, internal target
+  scaling and leaves initialised at the target mean. Passes every
+  scikit-learn regressor check except `check_sample_weight_equivalence`,
+  for the same mini-batch reason as the classifier. Growth and the hard-tree
+  export are not available for it yet (#103).
+
 ### Fixed
 
 - Per-leaf growth started the two children of a split leaf as identical,

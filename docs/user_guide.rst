@@ -77,6 +77,28 @@ was about four times faster.
 *Reference:* İrsoy, O., Yıldız, O. T. and Alpaydın, E. (2012). Soft Decision
 Trees. *ICPR*, 1819–1822.
 
+Regression
+^^^^^^^^^^
+
+:class:`~neural_trees.SoftDecisionTreeRegressor` is the same tree with a
+value in each leaf instead of a class distribution; the prediction is the
+arrival-probability-weighted average of the leaf values, trained on the
+weighted squared error. It accepts multi-output targets (``y`` of shape
+``(n, k)``), ``sample_weight`` and early stopping, and passes the scikit-learn
+regressor checks except the one no mini-batch learner can pass. Targets are
+centred and scaled internally and leaves start at the target mean, so an
+untrained tree predicts the mean. Growth during training and the hard-tree
+export are not available for the regressor yet and raise or are absent
+rather than silently missing.
+
+.. code-block:: python
+
+   from neural_trees import SoftDecisionTreeRegressor
+
+   reg = SoftDecisionTreeRegressor(depth=3, max_epochs=100, random_state=0).fit(X_train, y_train)
+   reg.score(X_test, y_test)      # R^2
+   reg.get_leaf_values()          # in target units
+
 Multivariate and omnivariate trees
 ----------------------------------
 

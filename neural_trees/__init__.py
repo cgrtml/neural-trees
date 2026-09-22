@@ -37,6 +37,7 @@ _LAZY = {
     "GALNetwork": "neural_trees.classical.multilayer_perceptron",
     "HierarchicalMixtureOfExperts": "neural_trees.mixture_of_experts.hierarchical_moe",
     "SoftDecisionTree": "neural_trees.decision_trees.soft_decision_tree",
+    "SoftDecisionTreeRegressor": "neural_trees.decision_trees.soft_decision_tree_regressor",
 }
 
 if TYPE_CHECKING:  # so type checkers and IDEs still see them
@@ -76,6 +77,7 @@ __all__ = [
     "NaiveBayesClassifier",
     "OmnivariateDecisionTree",
     "SoftDecisionTree",
+    "SoftDecisionTreeRegressor",
     "WeightedKNN",
     "combined_5x2cv_f_test",
     "mcnemar_test",
