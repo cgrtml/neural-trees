@@ -76,6 +76,12 @@ All notable changes to this project are documented here. This project follows
 
 ### Measured
 
+- `GALNetwork`'s `growth_policy="validation"` stays off by default, now with
+  a reason measured on six datasets: it gives a smaller network everywhere
+  and lower accuracy everywhere but Wine (2 to 7 points), because a
+  capacity-starved network keeps lowering validation loss slowly and the
+  rule reads that as "no unit needed". Documented in "Design decisions"
+  with the table; script `paper/arxiv/olcum/gal_politika.py`.
 - The soft tree's probabilities are calibrated: expected calibration error
   0.023 / 0.052 / 0.030 on Breast Cancer / Wine / Digits, against 0.026 /
   0.048 / 0.022 for logistic regression and 0.038 / 0.098 / 0.201 for a

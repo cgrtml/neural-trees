@@ -134,6 +134,76 @@ because a smaller network is what the growth mechanism is for, but if the
 problem has enough classes and features to need the extra units, ``"random"``
 is the setting to try.
 
+Stopping on validation loss under-grows
+---------------------------------------
+
+``growth_policy="validation"`` holds out a fifth of the training data and
+changes the architecture only when validation loss stops improving. It is
+the more principled rule and it is not the default, because on six datasets
+it lost accuracy on five. Three seeds of stratified five-fold
+cross-validation, 150 epochs, accuracy ± sd / mean hidden units:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 14 22 22 22 22
+
+   * - Dataset
+     - threshold, random
+     - threshold, residual
+     - validation, random
+     - validation, residual
+   * - Iris
+     - 0.936 ± 0.046 / 17.2
+     - 0.956 ± 0.037 / 6.9
+     - 0.898 ± 0.044 / 9.1
+     - 0.947 ± 0.033 / 11.5
+   * - Wine
+     - 0.985 ± 0.015 / 6.3
+     - 0.985 ± 0.015 / 4.3
+     - 0.981 ± 0.017 / 8.8
+     - 0.978 ± 0.016 / 12.2
+   * - Digits
+     - 0.949 ± 0.013 / 7.5
+     - 0.928 ± 0.015 / 5.7
+     - 0.878 ± 0.035 / 5.3
+     - 0.894 ± 0.046 / 6.3
+   * - vehicle
+     - 0.786 ± 0.027 / 31.9
+     - 0.803 ± 0.026 / 32.0
+     - 0.714 ± 0.035 / 6.0
+     - 0.775 ± 0.031 / 7.9
+   * - segment
+     - 0.940 ± 0.012 / 8.9
+     - 0.942 ± 0.012 / 6.7
+     - 0.900 ± 0.023 / 5.2
+     - 0.909 ± 0.025 / 5.1
+   * - satimage
+     - 0.883 ± 0.009 / 30.0
+     - 0.892 ± 0.010 / 17.5
+     - 0.857 ± 0.008 / 7.1
+     - 0.872 ± 0.010 / 9.2
+
+Under the validation rule the network is smaller on every dataset with more
+than a handful of units, and less accurate on every dataset but Wine: by
+3.4 to 7.1 points on Digits, 2.9 to 7.3 on vehicle,
+3.3 to 4.0 on segment and 2.0 to 2.6 on satimage, the smaller loss in each
+pair being the residual initialisation. The mechanism is the one measured
+on synthetic data in the class docstring: a network that needs more
+capacity keeps lowering its validation loss slowly, so "loss still
+falling" never says that a unit is what is missing, and the rule stops
+growing too early. The threshold rule has the opposite failure: on vehicle
+it grew at every check and stopped at the epoch budget's cap of 32 units
+(two initial units plus one per five-epoch check over 150 epochs), so its
+network size there is the budget, not a decision. Neither rule knows what a
+new unit would buy; a stopping rule that does is the open problem, and
+until it exists the default is the rule that errs toward accuracy.
+
+The residual initialisation keeps its earlier reading on the wider set:
+smaller networks under the threshold rule on five of six datasets, and
+accuracy that moves both ways, up on Iris and vehicle, down on Digits.
+The script is ``paper/arxiv/olcum/gal_politika.py`` and the numbers above
+are read from its output file.
+
 Node-level significance does not compose
 ----------------------------------------
 
