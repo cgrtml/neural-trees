@@ -52,7 +52,7 @@ from sklearn.utils.validation import (
 )
 
 from neural_trees._batching import TensorBatches
-from neural_trees._validation import check_predict_input, resolve_device
+from neural_trees._validation import check_predict_input, reject_sparse, resolve_device
 
 
 class GALNetwork(ClassifierMixin, BaseEstimator):
@@ -500,6 +500,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
                 f"validation_fraction must be in (0, 1), got {self.validation_fraction!r}"
             )
 
+        reject_sparse(self, X)
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         if self.random_state is not None:

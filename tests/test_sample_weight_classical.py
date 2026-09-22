@@ -121,4 +121,7 @@ def test_knn_passes_every_estimator_check_but_row_repetition():
     not, because a repeated row fills several of the k slots while a
     weighted one fills one and votes harder. The docstring says so.
     """
-    assert _failures(WeightedKNN()) == ["check_sample_weight_equivalence_on_dense_data"]
+    assert _failures(WeightedKNN()) == [
+        "check_sample_weight_equivalence_on_dense_data",
+        "check_sample_weight_equivalence_on_sparse_data",
+    ]

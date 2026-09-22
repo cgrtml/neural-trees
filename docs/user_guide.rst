@@ -109,6 +109,49 @@ from. It reports its agreement rather than assuming it. Over fifteen folds on
 Wine the mean agreement was 0.998, with 0.971 in the worst fold, and prediction
 was about four times faster.
 
+``rule`` chooses how a sample reaches a leaf. ``"gate"`` (the default) takes
+the sign of each gate on the way down and is the routing the printed rules
+describe. ``"leaf"`` sends the sample to the leaf with the largest arrival
+probability; ``"contribution"`` to the leaf that contributes most to the soft
+mixture's winning class. Both alternatives evaluate every gate rather than
+``depth`` of them. Measured over three seeds of five-fold cross-validation
+(depth 4, 40 epochs), agreement with the soft model and prediction cost:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 14 22 22 22 20
+
+   * - Dataset
+     - ``"gate"``
+     - ``"leaf"``
+     - ``"contribution"``
+     - soft model
+   * - Wine
+     - 0.994 (worst 0.971), 2.6 ms
+     - 0.996 (worst 0.972), 3.1 ms
+     - 0.998 (worst 0.972), 3.4 ms
+     - 12.3 ms
+   * - Digits
+     - 0.992 (worst 0.986), 0.65 ms
+     - 0.995 (worst 0.986), 1.3 ms
+     - 0.999 (worst 0.992), 1.4 ms
+     - 2.4 ms
+   * - satimage
+     - 0.980 (worst 0.974), 0.37 ms
+     - 0.987 (worst 0.979), 1.0 ms
+     - 1.000 (worst 0.997), 1.1 ms
+     - 1.3 ms
+
+Times are per 1 000 predictions, best of five. ``"contribution"`` agrees
+more on every dataset, and on satimage it closes the gap almost entirely,
+but it costs 1.3 to 3 times the ``"gate"`` walk, so the default did not
+change: the rule that is better on both axes does not exist here. Use
+``"contribution"`` when the export must track the soft model and the extra
+dot products are affordable; keep ``"gate"`` when the printed rules must be
+the routing. Walking down by the larger child probability is not a fourth
+rule: a sigmoid exceeds one half exactly when its argument is positive, so
+it is ``"gate"``. The script is ``benchmarks/hard_rules.py``.
+
 *Reference:* İrsoy, O., Yıldız, O. T. and Alpaydın, E. (2012). Soft Decision
 Trees. *ICPR*, 1819–1822.
 
@@ -249,17 +292,93 @@ the paper it cites rather than a single condensed set.
 :class:`~neural_trees.NaiveBayesClassifier` is a Gaussian naive Bayes with
 normalised ``predict_log_proba``.
 
+Sparse input
+------------
+
+:class:`~neural_trees.NaiveBayesClassifier` and
+:class:`~neural_trees.WeightedKNN` accept ``scipy.sparse`` CSR matrices in
+``fit`` and ``predict`` (other sparse formats are converted to CSR). Their
+arithmetic has a sparse form: weighted sums and second moments for the naive
+Bayes statistics, ``|a|^2 + |b|^2 - 2 a.b`` for Euclidean distances. Nothing
+is densified except the Manhattan distance, which has no such identity and
+densifies the store in bounded chunks. Predictions on ``X`` and on
+``csr_matrix(X)`` are identical.
+
+It is cheaper by a wide margin. On 20 newsgroups (token counts, 130 107
+features), measured with ``tracemalloc``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 14 14 14 14
+
+   * - Setting
+     - fit
+     - predict
+     - peak memory
+     - accuracy
+   * - Naive Bayes, sparse, 11 314 documents
+     - 0.04 s
+     - 0.03 s
+     - 25 MB
+     - 0.773
+   * - Naive Bayes, sparse, 2 000 documents
+     - 0.03 s
+     - 0.03 s
+     - 25 MB
+     - 0.417
+   * - Naive Bayes, dense, 2 000 documents
+     - 2.0 s
+     - 60 s
+     - 250 MB
+     - 0.417
+   * - KNN, sparse, 1 000 stored rows, 1 000 features
+     - 0.001 s
+     - 0.03 s
+     - 6 MB
+     - 0.160
+   * - KNN, dense, same
+     - 0.001 s
+     - 0.6 s
+     - 1 602 MB
+     - 0.160
+   * - KNN, sparse, 1 000 rows, all 130 107 features
+     - 0.001 s
+     - 0.03 s
+     - 6 MB
+     - 0.175
+
+The dense naive Bayes could not be run on the full training set at all (it
+would be 11.8 GB), and the dense KNN broadcasts a ``(queries, store,
+features)`` block, which is why its comparison is at 1 000 features. The
+script is ``benchmarks/sparse_input.py``.
+
+The torch-backed models and the two multivariate trees need dense input and
+say so: passing a sparse matrix raises ``TypeError`` naming the model and the
+fix (``X.toarray()``), rather than scikit-learn's generic message.
+
 Weighting
 ---------
 
 :class:`~neural_trees.SoftDecisionTree`,
-:class:`~neural_trees.HierarchicalMixtureOfExperts` and
-:class:`~neural_trees.GALNetwork` accept ``sample_weight`` in ``fit`` and a
-``class_weight`` parameter. For :class:`~neural_trees.GALNetwork` the weights
-are carried into the growth criterion as well, so that weighting changes what
-the network *builds* and not only what it learns.
+:class:`~neural_trees.HierarchicalMixtureOfExperts`,
+:class:`~neural_trees.GALNetwork`, :class:`~neural_trees.NaiveBayesClassifier`
+and :class:`~neural_trees.WeightedKNN` accept ``sample_weight`` in ``fit``;
+the first three also take a ``class_weight`` parameter. For
+:class:`~neural_trees.GALNetwork` the weights are carried into the growth
+criterion as well, so that weighting changes what the network *builds* and not
+only what it learns.
 
-These three estimators fail exactly one scikit-learn check,
-``check_sample_weight_equivalence_on_dense_data``, which requires weighting a
-sample to be bit-identical to repeating it. No stochastic mini-batch learner can
-satisfy it. The other four estimators pass all 55 checks.
+What a weight means differs by model, and the docstrings say which. In naive
+Bayes it is exact: priors and per-class statistics are weighted totals and
+moments, so integer weights reproduce the fit on repeated rows. In the
+nearest-neighbour rule a weight scales the neighbour's vote and a zero weight
+drops the row; that is *not* the same as repeating rows, because a repeated row
+fills several of the ``k`` neighbour slots while a weighted one fills one. The
+three mini-batch learners batch a repeated dataset differently, so for them
+the equivalence holds only in expectation.
+
+Those four therefore fail exactly one scikit-learn check,
+``check_sample_weight_equivalence_on_dense_data`` (and its sparse twin for the
+KNN, which accepts sparse input), which requires weighting a sample to be
+identical to repeating it. Naive Bayes passes it. The two tree models without
+``sample_weight`` pass all 55 checks.

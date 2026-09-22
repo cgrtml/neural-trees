@@ -41,13 +41,28 @@ class HardDecisionTree:
         act as leaves.
     is_split_ : ndarray of shape (n_internal,)
         Whether each internal node routes onward. All True for a complete tree.
+    log_beta_ : ndarray of shape (n_internal,)
+        Log gate temperatures, used by the ``"leaf"`` and ``"contribution"``
+        rules, which need the gate *probabilities* rather than their signs.
+    rule : {"gate", "leaf", "contribution"}
+        How a sample is assigned to a leaf; see `SoftDecisionTree.to_hard_tree`.
     """
 
+    RULES = ("gate", "leaf", "contribution")
+
     def __init__(
-        self, weights, biases, node_distributions, classes, n_features_in, is_split=None
+        self, weights, biases, node_distributions, classes, n_features_in, is_split=None,
+        log_beta=None, rule="gate",
     ):
+        if rule not in self.RULES:
+            raise ValueError(f"rule must be one of {self.RULES}, got {rule!r}")
+        self.rule = rule
         self.weights_ = np.asarray(weights, dtype=np.float64)
         self.biases_ = np.asarray(biases, dtype=np.float64)
+        self.log_beta_ = (
+            np.zeros(len(self.weights_)) if log_beta is None
+            else np.asarray(log_beta, dtype=np.float64)
+        )
         self.node_distributions_ = np.asarray(node_distributions, dtype=np.float64)
         self.classes_ = np.asarray(classes)
         self.n_features_in_ = int(n_features_in)
@@ -75,14 +90,45 @@ class HardDecisionTree:
             stack.extend([2 * node + 2, 2 * node + 1])
         return np.array(sorted(leaves))
 
+    def _arrival_log_probs(self, X: np.ndarray):
+        """
+        Log probability of every acting leaf receiving each sample.
+
+        Costs every gate (2^depth - 1 dot products per sample) where the
+        ``"gate"`` walk costs `depth`, which is why the rules that use it are
+        slower.
+        """
+        z = np.exp(self.log_beta_) * (X @ self.weights_.T + self.biases_)
+        log_right = -np.logaddexp(0.0, -z)
+        log_left = -np.logaddexp(0.0, z)
+        log_mu = np.full((len(X), 2 * self.n_internal_ + 1), -np.inf)
+        log_mu[:, 0] = 0.0
+        for node in range(self.n_internal_):
+            if not self.is_split_[node]:
+                continue
+            log_mu[:, 2 * node + 1] = log_mu[:, node] + log_left[:, node]
+            log_mu[:, 2 * node + 2] = log_mu[:, node] + log_right[:, node]
+        leaves = self._acting_leaves()
+        return leaves, log_mu[:, leaves]
+
     def _leaf_index(self, X: np.ndarray) -> np.ndarray:
         """
-        Walk every sample to the node where its path stops.
+        The node each sample is assigned to, under `rule`.
 
-        A node whose subtree was never grown keeps the sample instead of
-        routing it on, so the walk is a fixpoint rather than a fixed number of
-        levels.
+        ``"gate"`` walks down taking the sign of each gate. ``"leaf"`` picks the
+        acting leaf with the largest arrival probability. ``"contribution"``
+        picks the leaf that contributes most to the soft mixture's winning
+        class. The last two cost every gate rather than `depth` of them.
         """
+        if self.rule != "gate":
+            leaves, log_mu = self._arrival_log_probs(X)
+            if self.rule == "leaf":
+                return leaves[np.argmax(log_mu, axis=1)]
+            mu = np.exp(log_mu)                                    # (n, L)
+            mixture = mu @ self.node_distributions_[leaves]         # (n, K)
+            winner = np.argmax(mixture, axis=1)
+            share = mu * self.node_distributions_[leaves][:, winner].T  # (n, L)
+            return leaves[np.argmax(share, axis=1)]
         node = np.zeros(len(X), dtype=np.int64)
         for _ in range(self.depth):
             moving = (node < self.n_internal_) & self.is_split_[np.minimum(node, self.n_internal_ - 1)]

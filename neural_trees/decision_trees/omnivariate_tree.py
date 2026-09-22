@@ -33,7 +33,7 @@ from sklearn.utils import check_random_state
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
-from neural_trees._validation import check_predict_input
+from neural_trees._validation import check_predict_input, reject_sparse
 from neural_trees.statistical_tests.classifier_comparison import combined_5x2cv_f_test
 
 
@@ -364,6 +364,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
             raise ValueError(
                 f"selection must be 'test' or 'accuracy', got {self.selection!r}"
             )
+        reject_sparse(self, X)
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         self.le_ = LabelEncoder()

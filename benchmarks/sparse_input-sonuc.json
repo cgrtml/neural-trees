@@ -1,0 +1,73 @@
+{
+ "shapes": {
+  "train": [
+   11314,
+   130107
+  ],
+  "test": [
+   7532,
+   130107
+  ],
+  "train_nnz": 1787565
+ },
+ "nb_sparse_full": {
+  "fit_s": 0.044,
+  "predict_s": 0.031,
+  "peak_mb": 24.6,
+  "accuracy": 0.7728,
+  "shape": [
+   11314,
+   130107
+  ]
+ },
+ "nb_sparse_2000": {
+  "fit_s": 0.026,
+  "predict_s": 0.03,
+  "peak_mb": 24.5,
+  "accuracy": 0.4165,
+  "shape": [
+   2000,
+   130107
+  ]
+ },
+ "nb_dense_2000": {
+  "fit_s": 2.008,
+  "predict_s": 60.494,
+  "peak_mb": 249.8,
+  "accuracy": 0.4165,
+  "shape": [
+   2000,
+   130107
+  ]
+ },
+ "knn_sparse": {
+  "fit_s": 0.001,
+  "predict_s": 0.027,
+  "peak_mb": 5.6,
+  "accuracy": 0.16,
+  "shape": [
+   1000,
+   1000
+  ]
+ },
+ "knn_dense": {
+  "fit_s": 0.001,
+  "predict_s": 0.625,
+  "peak_mb": 1601.7,
+  "accuracy": 0.16,
+  "shape": [
+   1000,
+   1000
+  ]
+ },
+ "knn_sparse_full_width": {
+  "fit_s": 0.001,
+  "predict_s": 0.025,
+  "peak_mb": 6.4,
+  "accuracy": 0.175,
+  "shape": [
+   1000,
+   130107
+  ]
+ }
+}

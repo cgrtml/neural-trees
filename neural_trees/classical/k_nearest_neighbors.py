@@ -15,6 +15,7 @@ Also implements "Condensed Nearest Neighbor" (Alpaydın, 1997):
 from typing import Optional
 
 import numpy as np
+import scipy.sparse as sp
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.multiclass import check_classification_targets
@@ -89,11 +90,36 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         self.n_condensed_sets = n_condensed_sets
         self.random_state = random_state
 
-    def _distance(self, x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
+    def _distance(self, x1, x2) -> np.ndarray:
+        if sp.issparse(x1) or sp.issparse(x2):
+            return self._sparse_distance(sp.csr_matrix(x1), sp.csr_matrix(x2))
         if self.metric == "euclidean":
             return np.sqrt(((x1[:, None] - x2[None, :]) ** 2).sum(axis=-1))
         elif self.metric == "manhattan":
             return np.abs(x1[:, None] - x2[None, :]).sum(axis=-1)
+        raise ValueError(f"Unknown metric: {self.metric}")
+
+    def _sparse_distance(self, x1, x2) -> np.ndarray:
+        if self.metric == "euclidean":
+            # |a - b|^2 = |a|^2 + |b|^2 - 2 a.b, every term a sparse product;
+            # clipped at zero before the root because cancellation can leave
+            # a tiny negative on identical rows.
+            n1 = np.asarray(x1.multiply(x1).sum(axis=1)).ravel()
+            n2 = np.asarray(x2.multiply(x2).sum(axis=1)).ravel()
+            sq = n1[:, None] + n2[None, :] - 2.0 * (x1 @ x2.T).toarray()
+            return np.sqrt(np.maximum(sq, 0.0))
+        elif self.metric == "manhattan":
+            # No sparse identity for |a - b|, so the store is densified in
+            # chunks of rows: memory is bounded by chunk x n_features, never
+            # by n_store x n_features.
+            out = np.empty((x1.shape[0], x2.shape[0]))
+            chunk = max(1, 2**22 // max(1, x2.shape[1]))
+            for start in range(0, x2.shape[0], chunk):
+                dense = x2[start:start + chunk].toarray()
+                for i in range(x1.shape[0]):
+                    row = x1[i].toarray()
+                    out[i, start:start + chunk] = np.abs(row - dense).sum(axis=1)
+            return out
         raise ValueError(f"Unknown metric: {self.metric}")
 
     def _condense(self, X: np.ndarray, y: np.ndarray, w: np.ndarray):
@@ -110,14 +136,14 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         that later grows.
         """
         store_idx = [0]
-        remaining = list(range(1, len(X)))
+        remaining = list(range(1, X.shape[0]))
 
         changed = True
         while changed:
             changed = False
             still_remaining = []
             for i in remaining:
-                dists = self._distance(X[i][None, :], X[store_idx])[0]
+                dists = self._distance(X[[i]], X[store_idx])[0]
                 if y[store_idx[int(np.argmin(dists))]] != y[i]:
                     store_idx.append(i)
                     changed = True
@@ -145,7 +171,7 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         if isinstance(self.k, bool) or not isinstance(self.k, int) or self.k < 1:
             raise ValueError(f"k must be a positive integer, got {self.k!r}")
 
-        X, y = check_X_y(X, y)
+        X, y = check_X_y(X, y, accept_sparse="csr")
         check_classification_targets(y)
         w = _check_sample_weight(sample_weight, X, dtype=np.float64)
         if (w < 0).any():
@@ -174,7 +200,7 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
             for i in range(self.n_condensed_sets):
                 # The first subset uses the data as given, so a single set
                 # reproduces the previous behaviour exactly.
-                order = np.arange(len(X)) if i == 0 else rng.permutation(len(X))
+                order = np.arange(X.shape[0]) if i == 0 else rng.permutation(X.shape[0])
                 store_X, store_y, store_w = self._condense(X[order], y_enc[order], w[order])
                 self.stores_.append((store_X, store_y, store_w))
         else:
@@ -195,17 +221,26 @@ class WeightedKNN(ClassifierMixin, BaseEstimator):
         KNN over a single store.
         """
         check_is_fitted(self)
-        X = check_predict_input(self, X)
+        X = check_predict_input(self, X, accept_sparse=True)
         votes = [self._vote(X, *store) for store in self.stores_]
         return np.mean(votes, axis=0)
+
+    # scikit-learn >= 1.6 reads __sklearn_tags__; older versions read _more_tags.
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.input_tags.sparse = True
+        return tags
+
+    def _more_tags(self):
+        return {"X_types": ["2darray", "sparse"]}
 
     def _vote(
         self, X: np.ndarray, store_X: np.ndarray, store_y: np.ndarray, store_w: np.ndarray
     ) -> np.ndarray:
         dists = self._distance(X, store_X)  # (n_test, n_store)
-        k = min(self.k, len(store_X))
+        k = min(self.k, store_X.shape[0])
         n_classes = len(self.classes_)
-        probs = np.zeros((len(X), n_classes))
+        probs = np.zeros((X.shape[0], n_classes))
 
         for i, row in enumerate(dists):
             nn_idx = np.argsort(row)[:k]

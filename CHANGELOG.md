@@ -66,6 +66,25 @@ All notable changes to this project are documented here. This project follows
   seed (tested for both selection rules). The gain is modest because nodes
   are small and the MLP dominates: on Breast Cancer at depth 3, 0.82 s to
   0.68 s with the accuracy rule and 2.72 s to 2.54 s with the test rule.
+- `to_hard_tree(rule=...)` (#101): besides the default `"gate"` walk, a
+  `"leaf"` rule (the leaf with the largest arrival probability) and a
+  `"contribution"` rule (the leaf that contributes most to the soft
+  mixture's winning class). Measured on Wine, Digits and satimage,
+  `"contribution"` agrees with the soft model more on every dataset (0.994
+  to 0.998, 0.992 to 0.999, 0.980 to 1.000) at 1.3 to 3 times the cost of
+  `"gate"`, so the default stays `"gate"`; the table is in the user guide.
+  Walking by the larger child probability is `"gate"` by identity and is
+  not offered as a separate rule.
+- `scipy.sparse` CSR input in `NaiveBayesClassifier` and `WeightedKNN`
+  (#100), with the sparse tag declared so scikit-learn's sparse checks run.
+  Predictions on `X` and `csr_matrix(X)` are identical; nothing is
+  densified except the Manhattan distance, in bounded chunks. On 20
+  newsgroups (130 107 features) the sparse naive Bayes fits 11 314
+  documents in 0.04 s at 25 MB peak, where the dense path takes 2 s and
+  60 s to predict for 2 000 documents; the sparse KNN predicts 20 times
+  faster at 6 MB against 1.6 GB. The dense-only models (the torch models
+  and the two multivariate trees) now raise a `TypeError` that names the
+  model and the fix, `X.toarray()`.
 - `benchmarks/run_benchmarks.py --check` compares a fresh run with the README
   table (tolerance 0.0005, i.e. the run must round to the README cell) and
   a CI job runs it when the

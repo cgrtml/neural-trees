@@ -28,7 +28,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import _check_sample_weight, check_is_fitted, check_X_y
 
 from neural_trees._batching import TensorBatches
-from neural_trees._validation import check_predict_input, resolve_device
+from neural_trees._validation import check_predict_input, reject_sparse, resolve_device
 from neural_trees.decision_trees.soft_decision_tree import _SoftTreeModule
 
 
@@ -139,6 +139,7 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             raise ValueError(
                 f"validation_fraction must be in (0, 1), got {self.validation_fraction!r}"
             )
+        reject_sparse(self, X)
         X, y = check_X_y(X, y, y_numeric=True, multi_output=True, dtype=np.float64)
         self.n_features_in_ = X.shape[1]
         y = np.asarray(y, dtype=np.float64)

@@ -50,7 +50,7 @@ from sklearn.utils.validation import (
 )
 
 from neural_trees._batching import TensorBatches
-from neural_trees._validation import check_predict_input, resolve_device
+from neural_trees._validation import check_predict_input, reject_sparse, resolve_device
 from neural_trees.decision_trees.hard_tree import HardDecisionTree
 
 
@@ -633,6 +633,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                 f"{self.growth!r}"
             )
 
+        reject_sparse(self, X)
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         encoder = LabelEncoder()
@@ -1209,7 +1210,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             feature_names=feature_names,
         )
 
-    def to_hard_tree(self):
+    def to_hard_tree(self, rule: str = "gate"):
         """
         Export the trained tree with its gates read as hard decisions.
 
@@ -1221,6 +1222,24 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         This is a different model, not a re-encoding: a mixture over leaves is
         not a single path, and the two disagree on samples that sit near a
         split. Measure the agreement on held-out data before relying on it.
+
+        Parameters
+        ----------
+        rule : {"gate", "leaf", "contribution"}, default="gate"
+            How a sample reaches a leaf. ``"gate"`` takes the sign of each
+            gate on the way down, `depth` dot products per sample, and is the
+            routing the printed rules describe. ``"leaf"`` sends the sample
+            to the leaf with the largest arrival probability, which can differ
+            from the greedy walk when an early gate is nearly balanced and a
+            later one is decisive. ``"contribution"`` sends it to the leaf
+            that contributes most to the soft mixture's winning class. Both
+            alternatives evaluate every gate, so they cost more per sample,
+            and under them the printed thresholds describe the gates, not the
+            routing. Walking down by the *larger child probability* is not a
+            separate rule: a sigmoid exceeds one half exactly when its
+            argument is positive, so it is ``"gate"``. Measured agreement and
+            cost per rule are in the documentation; the default stays
+            ``"gate"`` because no alternative was better on both axes.
 
         Returns
         -------
@@ -1246,6 +1265,8 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             classes=self.classes_,
             n_features_in=self.n_features_in_,
             is_split=self.model_.is_split.cpu().numpy(),
+            log_beta=self.model_.log_beta.detach().cpu().numpy(),
+            rule=rule,
         )
 
     def get_split_weights(self) -> List[np.ndarray]:

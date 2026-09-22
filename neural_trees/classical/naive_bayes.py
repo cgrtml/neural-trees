@@ -10,6 +10,7 @@ Supports Gaussian, Bernoulli, and Multinomial likelihoods.
 """
 
 import numpy as np
+import scipy.sparse as sp
 from scipy.special import logsumexp
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import LabelEncoder
@@ -22,6 +23,13 @@ from sklearn.utils.validation import (
 )
 
 from neural_trees._validation import check_predict_input
+
+
+def _weighted_sum(X, w):
+    """w @ X for a dense or CSR X, as a 1-d array."""
+    if sp.issparse(X):
+        return np.asarray(X.T @ w).ravel()
+    return w @ X
 
 
 class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
@@ -64,7 +72,7 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
                 f"{self.likelihood!r}"
             )
 
-        X, y = check_X_y(X, y)
+        X, y = check_X_y(X, y, accept_sparse="csr")
         check_classification_targets(y)
         w = _check_sample_weight(sample_weight, X, dtype=np.float64)
         self.le_ = LabelEncoder()
@@ -84,7 +92,12 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
                 self.class_log_prior_[c] = np.log(total / w.sum())
 
             if self.likelihood == "gaussian":
-                if total > 0:
+                if total > 0 and sp.issparse(X_c):
+                    # Weighted moments without densifying: E[x^2] - E[x]^2.
+                    mean = np.asarray(X_c.T @ w_c).ravel() / total
+                    second = np.asarray(X_c.multiply(X_c).T @ w_c).ravel() / total
+                    var = np.maximum(second - mean**2, 0.0)
+                elif total > 0:
                     mean = np.average(X_c, axis=0, weights=w_c)
                     var = np.average((X_c - mean) ** 2, axis=0, weights=w_c)
                 else:
@@ -92,30 +105,53 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
                 self.theta_.append({"mean": mean, "var": var + self.var_smoothing})
 
             elif self.likelihood == "bernoulli":
-                p = (w_c @ X_c + self.alpha) / (total + 2 * self.alpha)
+                p = (_weighted_sum(X_c, w_c) + self.alpha) / (total + 2 * self.alpha)
                 self.theta_.append({"p": p})
 
             elif self.likelihood == "multinomial":
-                counts = w_c @ X_c + self.alpha
+                counts = _weighted_sum(X_c, w_c) + self.alpha
                 self.theta_.append({"log_p": np.log(counts / counts.sum())})
 
         return self
 
-    def _log_likelihood(self, X: np.ndarray, c: int) -> np.ndarray:
+    def _log_likelihood(self, X, c: int) -> np.ndarray:
         params = self.theta_[c]
         if self.likelihood == "gaussian":
-            log_probs = -0.5 * np.log(2 * np.pi * params["var"]) \
-                        - 0.5 * ((X - params["mean"]) ** 2) / params["var"]
+            mean, var = params["mean"], params["var"]
+            if sp.issparse(X):
+                # (x - m)^2 / v expanded so every term is a sparse product:
+                # x^2 . (1/v)  -  2 x . (m/v)  +  sum(m^2 / v). Same quantity as
+                # the dense branch, summed in a different order.
+                quad = (
+                    np.asarray(X.multiply(X) @ (1.0 / var)).ravel()
+                    - 2.0 * np.asarray(X @ (mean / var)).ravel()
+                    + float((mean**2 / var).sum())
+                )
+                return -0.5 * np.log(2 * np.pi * var).sum() - 0.5 * quad
+            log_probs = -0.5 * np.log(2 * np.pi * var) - 0.5 * ((X - mean) ** 2) / var
             return log_probs.sum(axis=1)
 
         elif self.likelihood == "bernoulli":
             p = params["p"]
-            return (X * np.log(p + 1e-10) + (1 - X) * np.log(1 - p + 1e-10)).sum(axis=1)
+            log_p, log_q = np.log(p + 1e-10), np.log(1 - p + 1e-10)
+            if sp.issparse(X):
+                # x log p + (1 - x) log q  =  x (log p - log q) + sum(log q)
+                return np.asarray(X @ (log_p - log_q)).ravel() + float(log_q.sum())
+            return (X * log_p + (1 - X) * log_q).sum(axis=1)
 
         elif self.likelihood == "multinomial":
-            return X.dot(params["log_p"])
+            return np.asarray(X @ params["log_p"]).ravel()
 
         raise ValueError(f"Unknown likelihood: {self.likelihood}")
+
+    # scikit-learn >= 1.6 reads __sklearn_tags__; older versions read _more_tags.
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.input_tags.sparse = True
+        return tags
+
+    def _more_tags(self):
+        return {"X_types": ["2darray", "sparse"]}
 
     def _joint_log_likelihood(self, X):
         """Unnormalized log P(y, x) per class, shape (n_samples, n_classes)."""
@@ -133,7 +169,7 @@ class NaiveBayesClassifier(ClassifierMixin, BaseEstimator):
         log-likelihood is available as `_joint_log_likelihood`.
         """
         check_is_fitted(self)
-        X = check_predict_input(self, X)
+        X = check_predict_input(self, X, accept_sparse=True)
         joint = self._joint_log_likelihood(X)
         return joint - logsumexp(joint, axis=1, keepdims=True)
 

@@ -34,7 +34,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
-from neural_trees._validation import check_predict_input
+from neural_trees._validation import check_predict_input, reject_sparse
 
 
 def _gini(y: np.ndarray, n_classes: int) -> float:
@@ -232,6 +232,7 @@ class MultivariateDecisionTree(ClassifierMixin, BaseEstimator):
         if not isinstance(self.max_depth, int) or isinstance(self.max_depth, bool) or self.max_depth < 1:
             raise ValueError(f"max_depth must be a positive integer, got {self.max_depth!r}")
 
+        reject_sparse(self, X)
         X, y = check_X_y(X, y)
         check_classification_targets(y)
         self.le_ = LabelEncoder()
