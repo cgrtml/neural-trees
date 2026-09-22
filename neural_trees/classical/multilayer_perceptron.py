@@ -108,8 +108,9 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         would buy, which a randomly initialized unit cannot provide.
         On real data the same thing happens: over six datasets (Iris, Wine,
         Digits, vehicle, segment, satimage; three seeds of five-fold CV) the
-        validation rule gave a smaller network everywhere and lower accuracy
-        everywhere but Wine, by 2 to 7 points. The measurements are in the
+        validation rule gave lower accuracy everywhere but Wine, by 2 to 7
+        points, and a smaller network only where the threshold rule had grown
+        large (vehicle, segment, satimage). The measurements are in the
         "Design decisions" page of the documentation.
     growth_init : {"residual", "random"}, default="residual"
         How a new hidden unit is initialized.

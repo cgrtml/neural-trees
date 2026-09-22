@@ -54,6 +54,9 @@ All notable changes to this project are documented here. This project follows
   table (tolerance 0.0005, i.e. the run must round to the README cell) and
   a CI job runs it when the
   models, the script or the README change, and weekly (#98).
+  Its first run found one stale cell: the multivariate tree on Breast Cancer
+  is 0.950 on the Linux runner against the 0.952 the README carried from a
+  laptop; the README now shows the runner's value and says so.
 
 ### Changed
 
@@ -77,8 +80,9 @@ All notable changes to this project are documented here. This project follows
 ### Measured
 
 - `GALNetwork`'s `growth_policy="validation"` stays off by default, now with
-  a reason measured on six datasets: it gives a smaller network everywhere
-  and lower accuracy everywhere but Wine (2 to 7 points), because a
+  a reason measured on six datasets: it gives lower accuracy everywhere but
+  Wine (2 to 7 points) and a smaller network only where the threshold rule
+  had grown large, because a
   capacity-starved network keeps lowering validation loss slowly and the
   rule reads that as "no unit needed". Documented in "Design decisions"
   with the table; script `paper/arxiv/olcum/gal_politika.py`.

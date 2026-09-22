@@ -123,10 +123,15 @@ be re-run and checked:
 python benchmarks/run_benchmarks.py --seeds 5
 ```
 
+A CI job re-runs the script and fails when a cell no longer rounds to the
+value shown (`python benchmarks/run_benchmarks.py --check`). The reference
+machine is that Linux runner; on an Apple Silicon laptop 20 of the 21 cells
+come out identical and the multivariate tree on Breast Cancer reads 0.952.
+
 | Model | Iris | Wine | Breast Cancer |
 |-------|:----:|:----:|:-------------:|
 | **Soft Decision Tree** (depth=4) | 0.900 | 0.979 | 0.976 |
-| **Multivariate Tree** (depth=3) | 0.973 | 0.989 | 0.952 |
+| **Multivariate Tree** (depth=3) | 0.973 | 0.989 | 0.950 |
 | **Hierarchical MoE** (depth=2) | 0.904 | 0.979 | 0.977 |
 | **GAL Network** | 0.952 | 0.982 | 0.978 |
 | CART (sklearn) | 0.943 | 0.917 | 0.920 |

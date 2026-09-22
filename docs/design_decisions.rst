@@ -183,8 +183,10 @@ cross-validation, 150 epochs, accuracy ± sd / mean hidden units:
      - 0.857 ± 0.008 / 7.1
      - 0.872 ± 0.010 / 9.2
 
-Under the validation rule the network is smaller on every dataset with more
-than a handful of units, and less accurate on every dataset but Wine: by
+Under the validation rule the network is smaller where the threshold rule
+grew large (vehicle, satimage, segment) and larger on the two small problems
+(Iris and Wine, where it holds out a fifth of a few dozen samples per class),
+and it is less accurate on every dataset but Wine: by
 3.4 to 7.1 points on Digits, 2.9 to 7.3 on vehicle,
 3.3 to 4.0 on segment and 2.0 to 2.6 on satimage, the smaller loss in each
 pair being the residual initialisation. The mechanism is the one measured
@@ -199,8 +201,9 @@ new unit would buy; a stopping rule that does is the open problem, and
 until it exists the default is the rule that errs toward accuracy.
 
 The residual initialisation keeps its earlier reading on the wider set:
-smaller networks under the threshold rule on five of six datasets, and
-accuracy that moves both ways, up on Iris and vehicle, down on Digits.
+under the threshold rule a smaller network on five of six datasets and the
+capped 32 on vehicle, with accuracy that moves both ways, up on Iris and
+vehicle, down on Digits.
 The script is ``paper/arxiv/olcum/gal_politika.py`` and the numbers above
 are read from its output file.
 
