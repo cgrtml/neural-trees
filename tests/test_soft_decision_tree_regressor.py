@@ -63,7 +63,9 @@ def test_validation():
 
 def test_passes_the_scikit_learn_regressor_checks():
     """
-    Every check but one. The exception is the same one the classifier fails:
+    Every check but one, counting failures only: checks that scikit-learn
+    skips on a runner without pandas or an array-API namespace are not
+    failures. The exception is the same one the classifier fails:
     weighting a sample is not bit-identical to repeating it for a mini-batch
     learner, because the repeated dataset is batched differently. The
     configuration is trained enough to fit the checks' small regression
@@ -71,5 +73,5 @@ def test_passes_the_scikit_learn_regressor_checks():
     training, not for lack of compliance.
     """
     est = SoftDecisionTreeRegressor(depth=3, max_epochs=100, learning_rate=0.05, random_state=0)
-    failures = [r["check_name"] for r in check_estimator(est, on_fail=None) if r["status"] != "passed"]
+    failures = [r["check_name"] for r in check_estimator(est, on_fail=None) if r["status"] == "failed"]
     assert failures == ["check_sample_weight_equivalence_on_dense_data"]

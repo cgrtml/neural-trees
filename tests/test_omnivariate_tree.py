@@ -178,6 +178,6 @@ def test_passes_every_scikit_learn_estimator_check():
     failures = [
         r["check_name"]
         for r in check_estimator(OmnivariateDecisionTree(max_depth=2, random_state=0), on_fail=None)
-        if r["status"] != "passed"
+        if r["status"] == "failed"
     ]
     assert failures == []

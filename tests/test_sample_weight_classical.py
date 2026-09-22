@@ -14,7 +14,7 @@ def wine():
 
 
 def _failures(est):
-    return [r["check_name"] for r in check_estimator(est, on_fail=None) if r["status"] != "passed"]
+    return [r["check_name"] for r in check_estimator(est, on_fail=None) if r["status"] == "failed"]
 
 
 # ── Naive Bayes: exact, so integer weights are repeated rows ──
