@@ -50,6 +50,16 @@ All notable changes to this project are documented here. This project follows
   hard-coded seed of 42 is gone. Measured on Breast Cancer with
   `selection="test"`, the split-type counts move between seeds, which the
   fixed seed had hidden.
+- `early_stopping`, `validation_fraction` and `n_iter_no_change` in
+  `HierarchicalMixtureOfExperts`, with the names, defaults and meaning they
+  have on `SoftDecisionTree` (#99). The split is stratified and drawn with
+  `random_state`, fresh on every call to `fit` so a `warm_start`
+  continuation never scores against a stale one; `n_iter_` reports the
+  epoch reached, and the best validation epoch's parameters are restored.
+  Off by default and then bit-identical to the previous behaviour. With
+  `max_epochs=400` it stopped at 62 epochs on Breast Cancer and 71 on
+  Digits for the same accuracy (0.977 against 0.974 and 0.977 against
+  0.977), 7 and 6 times faster.
 - `benchmarks/run_benchmarks.py --check` compares a fresh run with the README
   table (tolerance 0.0005, i.e. the run must round to the README cell) and
   a CI job runs it when the
@@ -60,8 +70,9 @@ All notable changes to this project are documented here. This project follows
 
 ### Changed
 
-- Mini-batches are sliced directly from tensors instead of going through
-  `DataLoader(TensorDataset(...))`, which indexed one sample at a time. The
+- Mini-batches in every torch model are sliced directly from tensors
+  instead of going through `DataLoader(TensorDataset(...))`, which indexed
+  one sample at a time. The
   new iterator draws exactly the permutation the loader drew from the same
   seed, so fits with a `random_state` are bit-identical to 0.6.2's; they are
   14-21% faster. A "Performance" page documents measured fit times from

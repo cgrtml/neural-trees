@@ -50,8 +50,8 @@ from sklearn.utils.validation import (
     check_is_fitted,
     check_X_y,
 )
-from torch.utils.data import DataLoader, TensorDataset
 
+from neural_trees._batching import TensorBatches
 from neural_trees._validation import check_predict_input, resolve_device
 
 
@@ -550,12 +550,7 @@ class GALNetwork(ClassifierMixin, BaseEstimator):
         if self.random_state is not None:
             generator = torch.Generator()
             generator.manual_seed(self.random_state)
-        loader = DataLoader(
-            TensorDataset(X_t, y_t, w_t),
-            batch_size=min(self.batch_size, len(X_t)),
-            shuffle=True,
-            generator=generator,
-        )
+        loader = TensorBatches((X_t, y_t, w_t), min(self.batch_size, len(X_t)), generator)
 
         self.architecture_history_: List[dict] = []
         best_loss = np.inf

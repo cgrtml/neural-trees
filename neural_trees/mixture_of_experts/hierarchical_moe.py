@@ -51,6 +51,7 @@ except ImportError as exc:  # pragma: no cover - exercised only without torch
 from typing import List, Optional
 
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.utils.multiclass import check_classification_targets
@@ -60,8 +61,8 @@ from sklearn.utils.validation import (
     check_is_fitted,
     check_X_y,
 )
-from torch.utils.data import DataLoader, TensorDataset
 
+from neural_trees._batching import TensorBatches
 from neural_trees._validation import check_predict_input, resolve_device
 from neural_trees.mixture_of_experts.hard_router import HardRoutedExperts
 
@@ -282,6 +283,29 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         Weights per class, combined multiplicatively with `sample_weight`.
         `"balanced"` uses `n_samples / (n_classes * bincount(y))`. Without it a
         rare class contributes so little loss that the model can ignore it.
+    early_stopping : bool, default=False
+        Hold out `validation_fraction` of the training data, stratified and
+        drawn with `random_state`, and stop once validation loss has not
+        improved for `n_iter_no_change` epochs; the parameters from the best
+        validation epoch are restored. Same names, defaults and meaning as on
+        `SoftDecisionTree`. Off, the model trains for exactly `max_epochs` on
+        all the data, as before. Each call to `fit` draws its own split, so a
+        `warm_start` continuation on new data never scores against a stale
+        one. When the data is too small to hold out a stratified split (a
+        class with one member, or fewer held-out rows than classes) the fit
+        falls back to the full budget and `n_iter_` says how far it got.
+    validation_fraction : float, default=0.1
+        Fraction held out when `early_stopping=True`.
+    n_iter_no_change : int, default=10
+        Epochs without validation improvement before stopping.
+
+    Attributes
+    ----------
+    n_iter_ : int
+        Epochs actually run in the last call to `fit`.
+    training_history_ : list of dict
+        One record per epoch with `loss` and `accuracy`, plus `val_loss` and
+        `val_accuracy` when a validation split exists.
 
     Examples
     --------
@@ -315,6 +339,9 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         random_state: Optional[int] = None,
         class_weight=None,
         warm_start: bool = False,
+        early_stopping: bool = False,
+        validation_fraction: float = 0.1,
+        n_iter_no_change: int = 10,
     ):
         self.depth = depth
         self.branching_factor = branching_factor
@@ -330,6 +357,19 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         self.random_state = random_state
         self.class_weight = class_weight
         self.warm_start = warm_start
+        self.early_stopping = early_stopping
+        self.validation_fraction = validation_fraction
+        self.n_iter_no_change = n_iter_no_change
+
+    def _can_hold_out(self, y_enc: np.ndarray) -> bool:
+        """Whether a stratified split of `validation_fraction` is possible."""
+        counts = np.bincount(y_enc)
+        n_val = int(round(len(y_enc) * self.validation_fraction))
+        return bool(
+            counts.min() >= 2
+            and n_val >= len(counts)
+            and len(y_enc) - n_val >= len(counts)
+        )
 
     def _reuse_existing_model(self, n_classes: int) -> bool:
         """
@@ -375,10 +415,28 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         # unweighted fit, so learning_rate keeps its meaning.
         weights = weights * (len(weights) / weights.sum())
 
+        if self.early_stopping and not 0.0 < self.validation_fraction < 1.0:
+            raise ValueError(
+                f"validation_fraction must be in (0, 1), got {self.validation_fraction!r}"
+            )
+        X_fit, y_fit, w_fit = X, y_enc, weights
+        X_val = y_val = None
+        if self.early_stopping and self._can_hold_out(y_enc):
+            X_fit, X_val, y_fit, y_val, w_fit, _ = train_test_split(
+                X,
+                y_enc,
+                weights,
+                test_size=self.validation_fraction,
+                random_state=self.random_state,
+                stratify=y_enc,
+            )
+
         device = self.device_ = resolve_device(self.device)
-        X_t = torch.FloatTensor(X).to(device)
-        y_t = torch.LongTensor(y_enc).to(device)
-        w_t = torch.FloatTensor(weights).to(device)
+        X_t = torch.FloatTensor(X_fit).to(device)
+        y_t = torch.LongTensor(y_fit).to(device)
+        w_t = torch.FloatTensor(w_fit).to(device)
+        X_val_t = torch.FloatTensor(X_val).to(device) if X_val is not None else None
+        y_val_t = torch.LongTensor(y_val).to(device) if X_val is not None else None
 
         if not continuing:
             self.model_ = _HMoEModule(
@@ -397,14 +455,13 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
         if self.random_state is not None:
             generator = torch.Generator()
             generator.manual_seed(self.random_state)
-        loader = DataLoader(
-            TensorDataset(X_t, y_t, w_t),
-            batch_size=self.batch_size,
-            shuffle=True,
-            generator=generator,
-        )
+        loader = TensorBatches((X_t, y_t, w_t), self.batch_size, generator)
 
         self.training_history_: List[dict] = []
+        best_val_loss = np.inf
+        best_state = None
+        epochs_without_improvement = 0
+        self.n_iter_ = 0
 
         for epoch in range(self.max_epochs):
             self.model_.train()
@@ -425,10 +482,41 @@ class HierarchicalMixtureOfExperts(ClassifierMixin, BaseEstimator):
 
             avg_loss = total_loss / total
             acc = correct / total
-            self.training_history_.append({"epoch": epoch + 1, "loss": avg_loss, "accuracy": acc})
+            record = {"epoch": epoch + 1, "loss": avg_loss, "accuracy": acc}
+
+            if X_val_t is not None and y_val_t is not None:
+                self.model_.eval()
+                with torch.no_grad():
+                    val_log_probs = self.model_.log_forward(X_val_t)
+                    record["val_loss"] = F.nll_loss(val_log_probs, y_val_t).item()
+                    record["val_accuracy"] = (
+                        (val_log_probs.argmax(1) == y_val_t).float().mean().item()
+                    )
+                if record["val_loss"] < best_val_loss - 1e-6:
+                    best_val_loss = record["val_loss"]
+                    best_state = {
+                        k: v.detach().clone() for k, v in self.model_.state_dict().items()
+                    }
+                    epochs_without_improvement = 0
+                else:
+                    epochs_without_improvement += 1
+
+            self.training_history_.append(record)
+            self.n_iter_ = epoch + 1
 
             if self.verbose and (epoch + 1) % 10 == 0:
-                print(f"Epoch {epoch+1}/{self.max_epochs}  loss={avg_loss:.4f}  acc={acc:.4f}")
+                message = f"Epoch {epoch+1}/{self.max_epochs}  loss={avg_loss:.4f}  acc={acc:.4f}"
+                if X_val_t is not None:
+                    message += f"  val_loss={record['val_loss']:.4f}"
+                print(message)
+
+            if X_val_t is not None and epochs_without_improvement >= self.n_iter_no_change:
+                if self.verbose:
+                    print(f"Early stopping at epoch {epoch + 1}")
+                break
+
+        if best_state is not None:
+            self.model_.load_state_dict(best_state)
 
         # Built here rather than lazily in predict_proba: an estimator must not
         # mutate its own __dict__ while predicting.

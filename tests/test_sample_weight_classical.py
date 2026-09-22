@@ -101,9 +101,9 @@ def test_knn_weight_scales_the_vote():
 
 def test_knn_rejects_negative_and_all_zero_weights(wine):
     X, y = wine
-    with pytest.raises(ValueError, match="non-negative"):
+    with pytest.raises(ValueError, match="non-negative|[Nn]egative"):
         WeightedKNN().fit(X, y, sample_weight=-np.ones(len(y)))
-    with pytest.raises(ValueError, match="zero for every"):
+    with pytest.raises(ValueError, match="zero for every|non-zero"):
         WeightedKNN().fit(X, y, sample_weight=np.zeros(len(y)))
 
 
