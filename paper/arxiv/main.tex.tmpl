@@ -36,35 +36,37 @@
 \begin{abstract}
 Constructive classifiers add structure while they train: a level to a tree, a
 unit to a hidden layer, a split at a leaf. This paper asks what each of four
-such growth decisions actually buys, measured under one fixed protocol in
-tree-structured and constructive models, and gives an exact diagnosis and a fix
-for the one that buys nothing.
+such growth decisions actually buys, measured under one fixed protocol on
+twenty-four datasets, and gives an exact diagnosis and a fix for the one that
+buys nothing.
 
 The diagnosis concerns the most natural way to deepen a soft decision tree:
 turn every leaf into a gate whose two children inherit the parent's class
 distribution, so that the function is unchanged. I prove that this leaves the
 gradient of every new gate identically zero and, with the gate at $1/2$, gives
-the two children identical gradients, so the added level can never learn.
-Unlike the symmetry that Net2Net breaks with noise or the saddle point that
-splitting steepest descent escapes with second-order information, first-order
-information here is not weak but absent. Over three seeds of five-fold
-cross-validation the construction loses @@JITTER_IRIS_DROP@@ accuracy
-points on Iris, @@JITTER_WINE_DROP@@ on Wine and @@JITTER_DIGITS_DROP@@ on
-Digits against the same depth trained from scratch. The fix is a small random
-perturbation of the children, whose size barely matters. The practical rule is
-one line in a test: after adding parameters, assert that their gradient is
-nonzero.
+the two children identical gradients, so the added level can never learn. The
+tree stays at the width it started with. That predicts where the failure
+costs: nothing on two-class problems, where two leaves already suffice, and a
+great deal where more classes need more leaves. Measured, the cost is
+@@OM_BIN_COST@@ points on average over @@OM_BIN_N@@ binary datasets and
+@@OM_MC_COST@@ points over @@OM_MC_N@@ multi-class ones, and it tracks the
+number of classes (Spearman @@OM_SPEAR_K@@) and not the number of features
+(@@OM_SPEAR_P@@). The fix is any perturbation of the children. Neither its
+size nor its direction matters: a residual-directed initialisation in the
+manner of GradMax changes accuracy by @@BU_MEAN@@ points on average against
+random noise over 24 datasets.
 
-The other three decisions each buy one thing. Fitting a new hidden unit to the
-residual error before installing it buys a smaller network on every dataset,
-though not a more accurate one, and on Digits it costs accuracy significantly.
-Splitting the leaf with the largest expected error buys sparsity, reaching
-@@PL_S1_GROW_ACC@@ with @@PL_S1_GROW_N@@ splits where a complete depth-six tree
-uses 63, but loses @@PL_S2_DROP@@ points on a harder problem. Requiring
-statistical significance before a node receives a more expressive split buys
-nothing: the tree gets larger and less accurate.
+The other three decisions each buy one thing. Fitting a new hidden unit to
+the residual error before installing it buys a smaller network but not a more
+accurate one. Splitting one leaf at a time buys sparsity, and it lost
+accuracy until I found that the split started its two children identical and
+untrained, which is the same defect as above in another place; with the
+children inheriting the parent and the symmetry broken, per-leaf growth comes
+within @@PL_NEW_GAP@@ points of a complete tree using @@PL_FRAC@@\% of its
+splits. Requiring statistical significance before a node receives a more
+expressive split buys nothing.
 
-Every number in the paper is inserted from the measurement script.
+Every number in the paper is inserted from the measurement scripts' output.
 \end{abstract}
 
 \section{Introduction}
@@ -137,27 +139,31 @@ nonlinear split.
 \subsection{Protocol}
 
 Features are standardised to zero mean and unit variance using statistics from
-the training fold only. Every number is computed over stratified five-fold cross
-validation repeated with three seeds, which is fifteen fits, and the same seeds
-and folds are used for every arm of a comparison. I report the mean and, after
-it, the standard deviation across those fifteen fits. That deviation describes
-how much the quantity moves from fold-to-fold. It is not a confidence interval,
-because the fifteen fits share training data and are not independent. Where a
+the training fold only. Every number is computed over stratified five-fold
+cross-validation repeated with three seeds, which is fifteen fits, and the same
+seeds and folds are used for every arm of a comparison. I report the mean and,
+after it, the standard deviation across those fifteen fits. That deviation
+describes how much the quantity moves from fold to fold. It is not a
+confidence interval, because the fifteen fits share training data. Where a
 difference needs a decision rather than a description I use the combined
-$5\times2$cv $F$ test \cite{alpaydin1999combined}, which was designed for exactly
-this situation.
+$5\times2$cv $F$ test \cite{alpaydin1999combined}, with the scaler inside the
+test's own folds so that it sees no test-fold statistics either.
 
-Datasets are Iris ($n=150$, $p=4$, $K=3$), Wine ($n=178$, $p=13$, $K=3$), Breast
-Cancer Wisconsin ($n=569$, $p=30$, $K=2$) and Digits ($n=1797$, $p=64$, $K=10$),
-all as distributed with scikit-learn, plus two synthetic problems described where
-they are used. Digits is included because the first three are small and
-low-dimensional, and a growth operation that only ever sees four features has not
-been tested very hard.
+Datasets are Iris ($n=150$, $p=4$, $K=3$), Wine ($n=178$, $p=13$, $K=3$),
+Breast Cancer Wisconsin ($n=569$, $p=30$, $K=2$) and Digits ($n=1797$, $p=64$,
+$K=10$) as distributed with scikit-learn; twenty datasets from the OpenML
+CC-18 suite, listed in Table~\ref{tab:openml}, with those larger than 5000
+samples stratified down to 5000 for time; and two synthetic problems described
+where they are used.
 
-No per arm hyperparameter search was performed. Both arms of each comparison use
-identical settings apart from the operation under test, which isolates that
-operation and deliberately gives up any claim that either arm is tuned to its
-best.
+One asymmetry in the comparisons has to be stated. A tree that grows during
+training holds out 10\% of its training fold to decide whether the last growth
+step earned its place. A tree of fixed shape does not need that split and
+trains on all of the fold. Where a grown tree is compared with a fixed one,
+Section~5 therefore also reports the fixed tree trained with the same holdout,
+so that the effect of growth can be separated from the effect of 10\% less
+data. No per-arm hyperparameter search was performed; both arms of each
+comparison use identical settings apart from the operation under test.
 
 \subsection{Reproducing this}
 
@@ -285,8 +291,8 @@ Perturbing the child distributions at insertion time,
   \qquad u \sim \mathcal{U}[0,1]^K ,
 \end{equation}
 breaks $Q_L = Q_R$ and with it both halves of Proposition~\ref{prop:zero}. The
-function is then preserved only approximately. Table~\ref{tab:jitter} shows what
-that approximation buys.
+function is then preserved only approximately. Table~\ref{tab:jitter} shows
+what that approximation buys on the first three datasets.
 
 \begin{table}[ht]
 \centering
@@ -302,44 +308,108 @@ Perturbed, $\varepsilon = 0.5$ & @@T_J_IRIS_05@@ & @@T_J_WINE_05@@ & @@T_J_DIGIT
 Same depth, trained from scratch & @@T_J_IRIS_S@@ & @@T_J_WINE_S@@ & @@T_J_DIGITS_S@@ \\
 \bottomrule
 \end{tabular}
-\caption{Depth four soft decision tree grown one level at a time, as a function
+\caption{Depth-four soft decision tree grown one level at a time, as a function
 of the perturbation applied to new child distributions. Mean and standard
-deviation over three seeds of stratified five-fold cross validation.}
+deviation over three seeds of stratified five-fold cross-validation.}
 \label{tab:jitter}
 \end{table}
 
-Three things in that table are worth separating.
-
-The cost of exact preservation is large. It is @@JITTER_IRIS_DROP@@ points on
-Iris and @@JITTER_WINE_DROP@@ on Wine against the same depth trained from
-scratch, and @@JITTER_DIGITS_DROP@@ on Digits.
-
-The variance is worse than the mean suggests. At $\varepsilon = 0$ the fold to
-fold standard deviation is @@T_J_IRIS_0_SD@@ on Iris against
-@@T_J_IRIS_02_SD@@ at the default perturbation. A model that is merely worse is
-easier to live with than a model whose behaviour depends on which fold it landed
-in, and the failure produces both.
-
-The perturbation itself barely matters. Between $\varepsilon = 0.05$ and
+The cost of exact preservation is @@JITTER_IRIS_DROP@@ points on Iris,
+@@JITTER_WINE_DROP@@ on Wine and @@JITTER_DIGITS_DROP@@ on Digits. The
+perturbation itself barely matters: between $\varepsilon = 0.05$ and
 $\varepsilon = 0.5$, a factor of ten, the means move by at most
-@@JITTER_SPREAD@@ points on any of the three datasets. Zero is not a small value
-of $\varepsilon$. It is a different case, which is what
-Proposition~\ref{prop:zero} says it should be.
+@@JITTER_SPREAD@@ points. Zero is not a small value of $\varepsilon$; it is a
+different case, which is what the proposition says it should be. The combined
+$5\times2$cv $F$ test comparing $\varepsilon = 0$ against $\varepsilon = 0.2$
+gives @@FTEST_JITTER_IRIS@@ on Iris, @@FTEST_JITTER_WINE@@ on Wine and
+@@FTEST_JITTER_DIGITS@@ on Digits. The Iris value sits at the conventional
+threshold and I do not lean on it: it is the smallest dataset here, the test
+is deliberately conservative, and the value crossed $0.05$ when the scaler was
+moved inside the test's folds.
 
-Because this is the paper's central claim I test it rather than only describing
-it. The combined $5\times2$cv $F$ test comparing $\varepsilon = 0$ against
-$\varepsilon = 0.2$ gives @@FTEST_JITTER_IRIS@@ on Iris,
-@@FTEST_JITTER_WINE@@ on Wine and @@FTEST_JITTER_DIGITS@@ on Digits.
+\subsection{Where the cost comes from}
 
-The Iris result sits at the conventional threshold and I do not lean on it. It
-is the smallest dataset here, at 150 samples, the $5\times2$cv test is
-deliberately conservative, and a value this close to $0.05$ moved from one side
-of it to the other when the scaling was moved inside the test's folds. The
-other two reject equality, and on Digits the margin is not close.
+Three datasets say that the failure is real. They do not say when it is
+expensive, and the proposition does. A tree deepened this way computes the
+function of the tree it started from, which here has depth one and two
+leaves. Two leaves can carry two class distributions. On a two-class problem
+that is all the tree needs, so the dead levels should cost nothing; on a
+$K$-class problem the tree can never reach the $K$ leaves it needs, and the
+cost should grow with $K$ and not with the number of features.
 
-A regression test in the repository asserts that the gate gradient is zero when
-the symmetry is not broken, so the mechanism itself is checked in continuous
-integration rather than only in this paper.
+Table~\ref{tab:openml} tests that on @@OM_N@@ datasets from the OpenML CC-18
+suite.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrrrcccrc}
+\toprule
+Dataset & $n$ & $p$ & $K$ & $\varepsilon = 0$ & $\varepsilon = 0.2$ & from scratch & cost & $p$ \\
+\midrule
+@@TABLE_OPENML@@
+\bottomrule
+\end{tabular}
+\caption{The same comparison on twenty OpenML CC-18 datasets, sorted by number
+of classes. \emph{cost} is the accuracy of the tree trained from scratch minus
+the exactly function-preserving one, in points; $p$ is the combined
+$5\times2$cv $F$ test of $\varepsilon = 0$ against $\varepsilon = 0.2$.}
+\label{tab:openml}
+\end{table}
+
+The prediction holds. Over the @@OM_BIN_N@@ binary datasets the mean cost is
+@@OM_BIN_COST@@ points, which is to say none; on several of them the frozen
+tree does slightly better than a depth-four tree trained from scratch, because
+the latter overfits a small two-class problem that two leaves already solve.
+Over the @@OM_MC_N@@ multi-class datasets the mean cost is @@OM_MC_COST@@
+points, from @@OM_MC_MIN@@ to @@OM_MC_MAX@@, and the $F$ test rejects
+equality on every one of them. The Spearman correlation of the cost with the
+number of classes is @@OM_SPEAR_K@@; with the number of features it is
+@@OM_SPEAR_P@@. The earlier draft of this paper reported the failure as
+costing "about twenty points". The right statement is that it costs whatever
+the gap is between the starting tree's capacity and the problem's need, which
+on these problems is zero or catastrophic and rarely in between.
+
+\subsection{Does the direction of the perturbation matter?}
+
+Random noise breaks the symmetry in an arbitrary direction. A better
+direction seems available: the residual of the log-likelihood with respect to
+the leaf's distribution says which classes the leaf under-predicts, and the
+two children can be placed at $Q_\ell \pm \varepsilon d$ along that unit
+direction $d$, with the same expected perturbation size as the noise. The new
+gate can also be pointed at the samples whose residual aligns with $+d$, so
+that routing starts informative. This is GradMax's idea \cite{evci2022gradmax}
+applied to a tree gate, and it is implemented as \texttt{growth\_init} in the
+library. Table~\ref{tab:direction} compares it with random noise on all
+twenty-four datasets.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrccccc}
+\toprule
+Dataset & $K$ & random & residual & residual $+$ gate & from scratch & $p$ \\
+\midrule
+@@TABLE_BUYUME@@
+\bottomrule
+\end{tabular}
+\caption{Symmetry broken by random noise, along the residual direction, and
+along the residual with the gate pointed at the samples pulling right. Depth
+four, 150 epochs, three seeds of five-fold cross-validation; $p$ is the
+$5\times2$cv $F$ test of the last of these against random noise.}
+\label{tab:direction}
+\end{table}
+
+The direction does not matter. Over @@BU_N@@ datasets the residual-directed
+initialisation with the gate changes accuracy by @@BU_MEAN@@ points on average
+against random noise, median @@BU_MEDIAN@@, from @@BU_MIN@@ to @@BU_MAX@@,
+with @@BU_WIN@@ gains and @@BU_LOSS@@ losses larger than half a point and
+@@BU_SIG@@ $F$ tests under $0.05$, which is about what chance produces. The
+one measurable effect is on stability: the fold-to-fold standard deviation
+falls from @@BU_SD_R_MC@@ to @@BU_SD_G_MC@@ on the multi-class datasets. I
+had expected the direction to help and it did not. Once the symmetry is
+broken, gradient descent finds the split on its own, and the only thing the
+proposition requires of the initialisation is that the gradient not be zero.
 
 \section{Where to put a new hidden unit}
 
@@ -407,6 +477,11 @@ criterion cannot tell the two apart.
 An earlier draft of this work reported the Iris accuracy gain on its own. That is
 the kind of claim that survives exactly until somebody runs a fourth dataset.
 
+On the twenty OpenML datasets the picture is the same. The residual variant
+gives a smaller network on average, @@OM_GAL_RATIO@@\% fewer hidden units, and
+against random initialisation it wins on @@OM_GAL_WIN@@, ties on
+@@OM_GAL_TIE@@ and loses on @@OM_GAL_LOSS@@ by more than half a point.
+
 One implementation detail cost me a day. The candidate objective involves a
 normalisation of the form $s / \sqrt{v}$ where $v$ is a variance that can be zero
 on a degenerate batch. At $v = 0$ the derivative of the square root is infinite
@@ -416,45 +491,92 @@ by then the gradient has already been formed.
 
 \section{Which leaf to split}
 
-A soft tree can be grown a level at a time, as in Section~3, or a leaf at a time.
-The per-leaf rule of \.Irsoy, Y\i{}ld\i{}z and Alpayd\i{}n \cite{irsoy2012soft}
-splits the leaf carrying the most expected error,
+A soft tree can be grown a level at a time, as in Section~3, or a leaf at a
+time. The per-leaf rule of \.Irsoy, Y\i{}ld\i{}z and Alpayd\i{}n
+\cite{irsoy2012soft} splits the leaf carrying the most expected error,
 $\arg\max_\ell \sum_i \mu_\ell(x_i)\,e_i$, where $e_i$ is the error on sample
-$i$.
+$i$. It produces by far the sparsest trees.
+
+\subsection{The same defect in another place}
+
+On the twenty OpenML datasets, per-leaf growth against a complete depth-six
+tree won on @@OM_PL_WIN@@, tied on @@OM_PL_TIE@@ and lost on @@OM_PL_LOSS@@,
+by @@OM_PL_GAP@@ points on average, and it lost on every multi-class dataset.
+The sparsity was real, from 63 splits to between one and eighteen, but it
+looked as if it were paid for in accuracy.
+
+It was paid for in a defect. When a leaf was split, the implementation marked
+the node as split and did nothing else. Its two children kept the untrained
+logits they were constructed with, so the split replaced the parent's learned
+distribution with a uniform one and started the children identical to each
+other. That is Proposition~\ref{prop:zero} again, at a single node instead of
+a whole level: no gradient for the new gate, and the tree's function broken
+at every split for good measure. The level-wise deepening of Section~3 had
+been cured of both problems; the per-leaf path had not.
+
+The fix is the one Section~3 uses. The children inherit the parent's logits,
+the gate is reset to neutral, and the symmetry is broken by noise or along the
+leaf's residual direction. Table~\ref{tab:perleaf} measures the difference on
+Digits and the seven multi-class OpenML datasets, which are where the loss
+was. The column marked 90\% is the complete tree trained with the same 10\%
+holdout the grown tree uses, so that the two can be compared on equal data.
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{llcc}
+\small
+\begin{tabular}{lrcccccrc}
 \toprule
-Problem & Growth & Accuracy & Splits \\
+ & & \multicolumn{2}{c}{complete, 63 splits} & \multicolumn{3}{c}{per-leaf} & & \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-7}
+Dataset & $K$ & all data & 90\% & untrained & noise & residual & splits & $p$ \\
 \midrule
-800 samples, 20 features  & complete depth 6 & @@T_P_S1_NONE@@ & @@T_P_S1_NONE_N@@ \\
-                          & per leaf         & @@T_P_S1_PL@@   & @@T_P_S1_PL_N@@ \\
-\midrule
-2000 samples, 50 features & complete depth 6 & @@T_P_S2_NONE@@ & @@T_P_S2_NONE_N@@ \\
-                          & per leaf         & @@T_P_S2_PL@@   & @@T_P_S2_PL_N@@ \\
+@@TABLE_PERLEAF@@
 \bottomrule
 \end{tabular}
-\caption{Growing one leaf at a time against a complete tree of the same maximum
-depth, on two synthetic problems. Three seeds of five-fold cross validation.}
+\caption{Per-leaf growth, depth at most six, 180 epochs. \emph{untrained} is
+the previous behaviour; \emph{noise} and \emph{residual} inherit the parent
+and break the symmetry. \emph{splits} is the mean number of splits of the
+residual variant; $p$ tests residual with the gate against untrained.}
 \label{tab:perleaf}
 \end{table}
 
-On the first problem this is the result the rule is supposed to give. A complete
-tree spends most of its capacity on regions that were already separated, and the
-per-leaf rule puts a split where the error is. It reached a higher accuracy with
-roughly one seventeenth of the splits.
+Across these @@PL_N@@ datasets the previous per-leaf tree was @@PL_OLD_GAP@@
+points from the complete tree; with the children inheriting the parent it is
+@@PL_NEW_GAP@@ points from it, using on average @@PL_FRAC@@\% of the splits.
+As in Section~3, the direction of the symmetry breaking is a second-order
+matter; inheriting the parent is what changed the result.
 
-On the second problem the sparsity survives and the accuracy does not. The rule
-still stops at @@T_P_S2_PL_N@@ splits, but it now loses @@PL_S2_DROP@@ points to
-the complete tree. Note also that both arms are poor there in absolute terms, so
-what the second row shows is two ways of underfitting the same problem rather
-than a good model beating a bad one.
+\subsection{Budget and holdout}
 
-I take the honest reading to be that the rule buys sparsity reliably and buys
-accuracy only when the problem has enough structure for a handful of oblique
-splits to capture it. Reported on the first problem alone it looks like a free
-win. It is not one.
+Two other things separate a grown tree from one trained from scratch, and
+neither is growth. The grown tree divides its epoch budget across growth
+rounds, and it holds out 10\% of its training fold. Table~\ref{tab:budget}
+separates them for level-wise growth at depth four.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lrccccc}
+\toprule
+ & & \multicolumn{2}{c}{from scratch} & \multicolumn{2}{c}{grown} & \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+Dataset & $K$ & all data & 90\% & split budget & full budget & $p$ \\
+\midrule
+@@TABLE_BUDGET@@
+\bottomrule
+\end{tabular}
+\caption{Depth four, 150 epochs. \emph{split budget} divides the epochs across
+growth rounds, which is the default; \emph{full budget} gives every round all
+of them. $p$ tests full against split.}
+\label{tab:budget}
+\end{table}
+
+The holdout alone costs the fixed tree @@PL_VAL_GAP@@ points on average on
+these datasets. Against a fixed tree trained on the same data, the grown tree
+with the full budget is @@PL_INC_VS_VAL@@ points away, and the full budget is
+worth @@PL_FULL_VS_SPLIT@@ points over the split one. Some of what looked like
+a cost of growing was a cost of having 10\% less data, which is a different
+thing and should be stated as one.
 
 \section{Choosing the model class at a node}
 
@@ -502,57 +624,57 @@ because almost every node below the root falls under the threshold. A
 significance criterion is least available exactly where a recursive partitioning
 method does most of its work. This is why the option ships switched off.
 
-\section{What the three outcomes have in common}
+\section{What the four outcomes have in common}
 
-The four outcomes line up on one axis: whether the optimiser has something to act
+The outcomes line up on one axis: whether the optimiser has something to act
 on at the moment the new structure arrives.
 
-A unit fitted to the residual and installed with zero outgoing weights leaves the
-function unchanged and has a nonzero gradient immediately. It reliably produces a
-smaller network, which is what an operation that actually works looks like when
-its benefit is parsimony. A split placed at the leaf with the most error changes
-the function and puts capacity where the error already is. A level of gates
-inserted with identical children leaves the function unchanged and has no
-gradient at all, now or later, and it is the only one of the four that fails on
-every dataset I tried.
+A unit fitted to the residual and installed with zero outgoing weights leaves
+the function unchanged and has a nonzero gradient immediately; it reliably
+produces a smaller network. A leaf split into two children that inherit the
+parent and differ from each other leaves the function nearly unchanged and has
+a nonzero gradient immediately; it now comes within a few points of a complete
+tree at a fraction of the splits. A level of gates inserted with identical
+children, or a leaf split into identical untrained children, leaves the
+optimiser nothing, and the cost is exactly the capacity the tree can no longer
+reach.
 
-The axis predicts which operations can work. It does not predict how much they
-help, and Sections 4 and 5 show that the amount is dataset dependent enough to
-change sign. Those are two different questions and I can only answer the first
-one.
-
-The practical rule is narrow and easy to check. When you add parameters to a
-differentiable model during training, compute the gradient with respect to those
-parameters on the first batch after insertion and assert that it is not zero. It
-is one line in a test. In my case it was the difference between a growth
-mechanism that worked and one that silently did nothing while consuming
-parameters and compute.
+The axis predicts which operations can work. It does not predict how much
+they help, and Sections 4 and 5 show that the amount depends on the problem.
+Nor does it care how the symmetry is broken: noise and a carefully chosen
+direction come out the same. The practical rule is narrow and easy to check.
+When you add parameters to a differentiable model during training, compute
+the gradient with respect to those parameters on the first batch after
+insertion and assert that it is not zero. It is one line in a test, and in
+this library it would have caught both defects.
 
 \section{Limitations}
 
-The datasets are small and standard, and Digits at $p=64$ is the largest thing
-here. These are the problems the model families in question are normally
-demonstrated on, but conclusions about accuracy should not be read as
-generalising to large scale problems.
+The datasets are standard and of moderate size; the largest have 5000 samples
+after subsampling and 72 features. They are the problems these model families
+are normally demonstrated on, and conclusions about accuracy should not be
+read as generalising to large-scale problems.
 
-Each finding compares two arms of a single implementation with settings held
+Each finding compares arms of a single implementation with settings held
 fixed. That isolates the operation under test. It does not establish that the
 winning arm is the best available method, and it does not rule out an
-implementation detail of ours being responsible for part of an effect.
+implementation detail of mine being responsible for part of an effect. Section
+5 is a case in point: one such detail was responsible for all of one.
 
-Proposition~\ref{prop:zero} is exact and implementation independent. The
-empirical results are neither. They are measurements of these operations in this
-setting.
+Proposition~\ref{prop:zero} is exact and implementation-independent. The
+empirical results are neither. The standard deviations describe fold-to-fold
+spread over fifteen non-independent fits and are not confidence intervals;
+where I needed to decide rather than describe I used the combined
+$5\times2$cv $F$ test, and with twenty-four datasets and three comparisons the
+reader should expect a few values under $0.05$ by chance, as
+Table~\ref{tab:direction} shows.
 
-The standard deviations I report describe fold-to-fold spread over fifteen
-non independent fits. They are not confidence intervals and should not be read as
-such. Where I needed to decide rather than describe I used the combined
-$5\times2$cv $F$ test, which is reported alongside.
-
-I did not try the obvious repair suggested by Remark~\ref{rem:asimetri}, which
-is to choose the split direction of a new gate from second-order information in
-the manner of splitting steepest descent \cite{liu2019splitting} instead of
-perturbing the children at random. That is the experiment I would run next.
+The residual-directed initialisation is one of several ways to choose a
+direction. A second-order splitting direction in the manner of
+\cite{liu2019splitting} is another, and I have not tried it; given that a
+first-order data-driven direction did no better than noise, I would not expect
+it to change the accuracy either, but that is an expectation and not a
+measurement.
 
 \section{Related work}
 
@@ -590,16 +712,17 @@ machinery in Section~6 is the combined $5\times2$cv $F$ test
 \section{Conclusion}
 
 Growth operations that look safest are not. Preserving a soft tree's function
-exactly while deepening it produces a gate whose gradient is identically zero and
-children that move together forever, and it costs around
-@@JITTER_IRIS_DROP@@ points on Iris and @@JITTER_WINE_DROP@@ on Wine while
-multiplying the fold-to-fold standard deviation by @@JITTER_SD_RATIO@@. Requiring statistical
-significance before choosing a more expressive split makes each node simpler and
-the tree larger and less accurate.
+exactly while deepening it freezes the tree at the width it started with, and
+the cost of that is zero on two-class problems and tens of points on
+multi-class ones, in proportion to how many leaves the problem needs and the
+tree can no longer grow. The same defect, at a single node, was responsible
+for per-leaf growth losing to complete trees; with the children inheriting
+the parent it no longer does, at a fraction of the splits.
 
-The two operations that worked share the property the failure lacks. Each adds
-capacity that the optimiser can move on the next step. That is a cheap thing to
-check, and it is now checked in a test.
+How the symmetry is broken does not matter. Noise and a residual-directed
+initialisation come out the same across twenty-four datasets. What matters is
+that the new parameters have a gradient on the first step, which is a cheap
+thing to check, and which this library now checks in a test.
 
 \section*{Code and data availability}
 
