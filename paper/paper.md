@@ -64,12 +64,15 @@ none of them announced it:
   a prototype store that did not classify that set correctly.
 
 All four were found by writing tests, not by reading the code. The library had
-21 tests when the work began and one model under test; it has 283 now, and
-every classifier is checked against `sklearn.utils.estimator_checks`. Four of
-the seven pass all 55 checks. The three that accept `sample_weight` are held to
-63 checks instead and pass 62, failing only the one that requires weighting a
-sample to be bit-identical to repeating it, which no stochastic mini-batch
-learner can satisfy.
+21 tests when the work began and one model under test; it has 323 now, and
+every estimator is checked against `sklearn.utils.estimator_checks`. The two
+classifiers without `sample_weight` pass all 55 checks. The five that accept it
+are held to 63; naive Bayes, whose weighting is exact, passes every one, and the
+other four fail only the check that requires weighting a sample to be identical
+to repeating it: the three mini-batch learners because a repeated dataset is
+batched differently, the nearest-neighbour rule because a repeated row fills
+more than one of the $k$ neighbour slots. The soft tree regressor passes the
+regressor checks under the same exception.
 
 # State of the field
 
@@ -116,12 +119,14 @@ measurements are the subject of a separate paper.
 A small perturbation of the new leaf distributions breaks the symmetry, and a
 regression test asserts the zero gradient exists without it.
 
-Trained soft models export to plain numpy. `to_hard_tree()` reads each gate as
-a hard decision and prints the resulting rules; on Wine the export agrees with
-the model it came from on 99.8% of held-out samples on average, with 97.1% in
-the worst fold, and predicts about four times faster. The export reports its
-agreement rather than assuming it, because a mixture over leaves is not a
-single path.
+Trained soft models export to plain numpy in two ways. `to_numpy()` is the
+same model without PyTorch in the prediction path: the mixture over leaves is
+kept, predictions agree to float32 precision, and the object round-trips
+through JSON. `to_hard_tree()` reads each gate as a hard decision and prints
+the resulting rules; on Wine the export agrees with the model it came from on
+99.8% of held-out samples on average, with 97.1% in the worst fold, and
+predicts about four times faster. That export reports its agreement rather
+than assuming it, because a mixture over leaves is not a single path.
 
 # Research impact statement
 
