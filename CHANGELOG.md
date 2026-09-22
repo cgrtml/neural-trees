@@ -60,6 +60,12 @@ All notable changes to this project are documented here. This project follows
   `max_epochs=400` it stopped at 62 epochs on Breast Cancer and 71 on
   Digits for the same accuracy (0.977 against 0.974 and 0.977 against
   0.977), 7 and 6 times faster.
+- `n_jobs` in `OmnivariateDecisionTree` (#102): the three candidate split
+  types at a node are cross-validated in parallel, never with more workers
+  than candidates, and the tree is identical for every `n_jobs` on a fixed
+  seed (tested for both selection rules). The gain is modest because nodes
+  are small and the MLP dominates: on Breast Cancer at depth 3, 0.82 s to
+  0.68 s with the accuracy rule and 2.72 s to 2.54 s with the test rule.
 - `benchmarks/run_benchmarks.py --check` compares a fresh run with the README
   table (tolerance 0.0005, i.e. the run must round to the README cell) and
   a CI job runs it when the

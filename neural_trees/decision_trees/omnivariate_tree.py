@@ -21,7 +21,8 @@ Key idea:
 from typing import Any, Dict, Optional
 
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from joblib import Parallel, delayed, effective_n_jobs
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.cluster import KMeans
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import cross_val_score
@@ -36,13 +37,23 @@ from neural_trees._validation import check_predict_input
 from neural_trees.statistical_tests.classifier_comparison import combined_5x2cv_f_test
 
 
+def _cv_score_or_none(clf, X, y_bin, n_folds):
+    """Mean CV accuracy of one candidate, or None if it cannot be fitted here."""
+    try:
+        return float(cross_val_score(clf, X, y_bin, cv=n_folds, scoring="accuracy").mean())
+    except Exception:
+        return None
+
+
 class _OmnivariateNode:
     """A single node in an omnivariate decision tree."""
 
     def __init__(self, depth: int, max_depth: int, min_samples_split: int, cv_folds: int,
                  n_classes: int = 0, selection: str = "accuracy", alpha: float = 0.05,
-                 min_samples_test: int = 50, random_state: Optional[int] = None):
+                 min_samples_test: int = 50, random_state: Optional[int] = None,
+                 n_jobs: Optional[int] = None):
         self.depth = depth
+        self.n_jobs = n_jobs
         # One stream per node, seeded by the parent, so a tree is a pure
         # function of its seed however the recursion is scheduled.
         self._rng = np.random.RandomState(random_state)
@@ -126,14 +137,26 @@ class _OmnivariateNode:
             self.selection_used_ = "fallback"
             return "univariate", candidates["univariate"]
 
-        scores = {}
-        for split_type, clf in candidates.items():
-            try:
-                scores[split_type] = cross_val_score(
-                    clf, X, y_bin, cv=n_folds, scoring="accuracy"
-                ).mean()
-            except Exception:
-                continue
+        # The three candidates are independent, so their cross-validations run
+        # in parallel over candidates (not folds: three tasks of unequal cost,
+        # the MLP dominating, parallelise better than 3 x n_folds tiny ones).
+        # Each candidate is cloned with its seed already set, so the result
+        # does not depend on n_jobs. joblib's loky workers cap their BLAS
+        # threads to cpu_count // n_jobs, which is what keeps the MLP from
+        # oversubscribing the machine.
+        # Never more workers than candidates: n_jobs=-1 on a 12-core machine
+        # would otherwise start twelve processes for three tasks and lose to
+        # the spawn cost (3.6 s against 0.9 s sequential, measured).
+        n_workers = min(effective_n_jobs(self.n_jobs), len(candidates))
+        results = Parallel(n_jobs=n_workers)(
+            delayed(_cv_score_or_none)(clone(clf), X, y_bin, n_folds)
+            for clf in candidates.values()
+        )
+        scores = {
+            split_type: score
+            for split_type, score in zip(candidates, results)
+            if score is not None
+        }
         if not scores:
             self.selection_used_ = "fallback"
             return "univariate", candidates["univariate"]
@@ -199,12 +222,12 @@ class _OmnivariateNode:
         self.left = _OmnivariateNode(
             self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
             self.n_classes, self.selection, self.alpha, self.min_samples_test,
-            random_state=left_seed,
+            random_state=left_seed, n_jobs=self.n_jobs,
         ).fit(X[mask_left], y[mask_left])
         self.right = _OmnivariateNode(
             self.depth + 1, self.max_depth, self.min_samples_split, self.cv_folds,
             self.n_classes, self.selection, self.alpha, self.min_samples_test,
-            random_state=right_seed,
+            random_state=right_seed, n_jobs=self.n_jobs,
         ).fit(X[mask_right], y[mask_right])
         return self
 
@@ -288,6 +311,17 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         and ``max_depth=3``, five seeds gave (univariate, linear, nonlinear)
         counts of (2, 1, 1), (0, 0, 1), (0, 0, 1), (1, 1, 2) and (2, 1, 2).
         Until this parameter existed a fixed seed of 42 hid that.
+    n_jobs : int or None, default=None
+        Processes for the per-node model selection, scikit-learn convention:
+        ``None`` is one, ``-1`` is every core. The three candidate split types
+        at a node are cross-validated in parallel; the tree is identical for
+        every ``n_jobs`` on a fixed ``random_state``. The candidates are few
+        and the nodes small, so the gain is bounded by the MLP's share of the
+        work. Measured on Breast Cancer at ``max_depth=3``: with
+        ``selection="accuracy"`` 0.82 s sequential against 0.68 s with three
+        workers; with ``selection="test"`` 2.72 s against 2.54 s, because the
+        F tests that follow the selection stay sequential. Never more workers
+        than candidates are started, so ``-1`` cannot be slower than ``1``.
 
     Examples
     --------
@@ -314,6 +348,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         alpha: float = 0.05,
         min_samples_test: int = 50,
         random_state: Optional[int] = None,
+        n_jobs: Optional[int] = None,
     ):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -322,6 +357,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
         self.alpha = alpha
         self.min_samples_test = min_samples_test
         self.random_state = random_state
+        self.n_jobs = n_jobs
 
     def fit(self, X, y) -> "OmnivariateDecisionTree":
         if self.selection not in ("test", "accuracy"):
@@ -346,6 +382,7 @@ class OmnivariateDecisionTree(ClassifierMixin, BaseEstimator):
             alpha=self.alpha,
             min_samples_test=self.min_samples_test,
             random_state=int(rng.randint(np.iinfo(np.int32).max)),
+            n_jobs=self.n_jobs,
         ).fit(X, y_enc)
         return self
 

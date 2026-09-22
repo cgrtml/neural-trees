@@ -181,3 +181,15 @@ def test_passes_every_scikit_learn_estimator_check():
         if r["status"] == "failed"
     ]
     assert failures == []
+
+
+@pytest.mark.parametrize("selection", ["accuracy", "test"])
+def test_n_jobs_does_not_change_the_tree(wine_split, selection):
+    """#102: parallelism moves wall clock only."""
+    X_train, X_test, y_train, y_test = wine_split
+    one = OmnivariateDecisionTree(max_depth=3, selection=selection, random_state=5, n_jobs=1)
+    many = OmnivariateDecisionTree(max_depth=3, selection=selection, random_state=5, n_jobs=-1)
+    one.fit(X_train, y_train)
+    many.fit(X_train, y_train)
+    assert one.get_split_type_distribution() == many.get_split_type_distribution()
+    assert np.array_equal(one.predict_proba(X_test), many.predict_proba(X_test))
