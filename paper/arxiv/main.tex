@@ -63,8 +63,8 @@ accurate one. Splitting one leaf at a time buys sparsity, and it lost
 accuracy until I found that the split started its two children identical and
 untrained, which is the same defect as above in another place; with the
 children inheriting the parent and the symmetry broken, per-leaf growth comes
-within -2.4 points of a complete tree using 22\% of its
-splits. Requiring statistical significance before a node receives a more
+within 2.3 points of a complete tree using 23\% of its
+splits, where the previous construction was 8.3 points short. Requiring statistical significance before a node receives a more
 expressive split buys nothing.
 
 Every number in the paper is inserted from the measurement scripts' output.
@@ -578,6 +578,9 @@ vehicle & 4 & 0.800 $\pm$ 0.022 & 0.796 $\pm$ 0.019 & 0.710 $\pm$ 0.044 & 0.792 
 segment & 7 & 0.961 $\pm$ 0.006 & 0.958 $\pm$ 0.008 & 0.948 $\pm$ 0.014 & 0.950 $\pm$ 0.011 & 0.952 $\pm$ 0.008 & 21.9 & 0.523 \\
 satimage & 6 & 0.896 $\pm$ 0.011 & 0.897 $\pm$ 0.008 & 0.870 $\pm$ 0.013 & 0.878 $\pm$ 0.012 & 0.878 $\pm$ 0.011 & 9.4 & 0.754 \\
 optdigits & 10 & 0.970 $\pm$ 0.004 & 0.973 $\pm$ 0.004 & 0.839 $\pm$ 0.090 & 0.936 $\pm$ 0.013 & 0.938 $\pm$ 0.010 & 11.3 & 0.283 \\
+pendigits & 10 & 0.989 $\pm$ 0.004 & 0.988 $\pm$ 0.002 & 0.910 $\pm$ 0.101 & 0.963 $\pm$ 0.009 & 0.954 $\pm$ 0.015 & 15.9 & 0.430 \\
+texture & 11 & 0.997 $\pm$ 0.001 & 0.997 $\pm$ 0.002 & 0.968 $\pm$ 0.041 & 0.989 $\pm$ 0.005 & 0.993 $\pm$ 0.003 & 15.5 & 0.522 \\
+wall\mbox{-}robot & 4 & 0.902 $\pm$ 0.010 & 0.890 $\pm$ 0.013 & 0.872 $\pm$ 0.018 & 0.887 $\pm$ 0.015 & 0.876 $\pm$ 0.027 & 17.2 & 0.505 \\
 \bottomrule
 \end{tabular}
 \caption{Per-leaf growth, depth at most six, 180 epochs. \emph{untrained} is
@@ -587,9 +590,9 @@ residual variant; $p$ tests residual with the gate against untrained.}
 \label{tab:perleaf}
 \end{table}
 
-Across these 5 datasets the previous per-leaf tree was -10.5
-points from the complete tree; with the children inheriting the parent it is
--2.4 points from it, using on average 22\% of the splits.
+Across these 8 datasets the previous per-leaf tree was 8.3
+points below the complete tree; with the children inheriting the parent it is
+2.3 points below it, using on average 23\% of the splits.
 As in Section~3, the direction of the symmetry breaking is a second-order
 matter; inheriting the parent is what changed the result.
 
@@ -614,6 +617,9 @@ vehicle & 4 & 0.798 $\pm$ 0.031 & 0.756 $\pm$ 0.031 & 0.777 $\pm$ 0.030 & 0.790 
 segment & 7 & 0.948 $\pm$ 0.014 & 0.947 $\pm$ 0.012 & 0.931 $\pm$ 0.013 & 0.946 $\pm$ 0.009 & 0.648 \\
 satimage & 6 & 0.880 $\pm$ 0.011 & 0.883 $\pm$ 0.010 & 0.883 $\pm$ 0.010 & 0.881 $\pm$ 0.010 & 0.584 \\
 optdigits & 10 & 0.937 $\pm$ 0.024 & 0.946 $\pm$ 0.010 & 0.941 $\pm$ 0.011 & 0.941 $\pm$ 0.011 & 0.757 \\
+pendigits & 10 & 0.930 $\pm$ 0.029 & 0.905 $\pm$ 0.037 & 0.909 $\pm$ 0.036 & 0.921 $\pm$ 0.031 & 0.017 \\
+texture & 11 & 0.938 $\pm$ 0.057 & 0.961 $\pm$ 0.055 & 0.952 $\pm$ 0.045 & 0.969 $\pm$ 0.041 & 0.015 \\
+wall\mbox{-}robot & 4 & 0.875 $\pm$ 0.015 & 0.871 $\pm$ 0.010 & 0.867 $\pm$ 0.011 & 0.875 $\pm$ 0.015 & 0.297 \\
 \bottomrule
 \end{tabular}
 \caption{Depth four, 150 epochs. \emph{split budget} divides the epochs across
@@ -622,10 +628,10 @@ of them. $p$ tests full against split.}
 \label{tab:budget}
 \end{table}
 
-The holdout alone costs the fixed tree +0.5 points on average on
+The holdout alone costs the fixed tree 0.4 points on average on
 these datasets. Against a fixed tree trained on the same data, the grown tree
-with the full budget is +0.3 points away, and the full budget is
-worth +0.5 points over the split one. Some of what looked like
+with the full budget differs by +0.6 points, and the full budget is
+worth +0.8 points over the split one. Some of what looked like
 a cost of growing was a cost of having 10\% less data, which is a different
 thing and should be stated as one.
 
@@ -644,11 +650,11 @@ simpler nodes at little or no cost.
 \toprule
 Dataset & Selection rule & Accuracy & Nodes \\
 \midrule
-Breast Cancer & highest accuracy & 0.971 $\pm$ 0.018  & 3.8 $\pm$ 1.0 \\
-              & significance     & 0.959 $\pm$ 0.020 & 8.1 $\pm$ 2.5 \\
+Breast Cancer & highest accuracy & 0.971 $\pm$ 0.020  & 4.7 $\pm$ 1.8 \\
+              & significance     & 0.958 $\pm$ 0.016 & 7.0 $\pm$ 1.9 \\
 \midrule
-Digits        & highest accuracy & 0.510 $\pm$ 0.083  & 10.1 $\pm$ 1.7 \\
-              & significance     & 0.492 $\pm$ 0.076 & 11.5 $\pm$ 2.3 \\
+Digits        & highest accuracy & 0.599 $\pm$ 0.036  & 12.2 $\pm$ 1.0 \\
+              & significance     & 0.596 $\pm$ 0.055 & 13.7 $\pm$ 1.4 \\
 \bottomrule
 \end{tabular}
 \caption{Omnivariate tree of maximum depth three. Three seeds of five-fold cross
@@ -656,8 +662,9 @@ validation.}
 \label{tab:omni}
 \end{table}
 
-The rule does what it was asked to do at each node and the tree is worse for it
-on both datasets. A simpler split separates its node's data less cleanly, so its
+The rule does what it was asked to do at each node and the tree is not better
+for it: on Breast Cancer it is larger and less accurate, on Digits larger for the
+same accuracy. A simpler split separates its node's data less cleanly, so its
 children inherit harder problems and have to be split in turn. Parsimony enforced
 locally is paid for globally.
 

@@ -63,7 +63,7 @@ accuracy until I found that the split started its two children identical and
 untrained, which is the same defect as above in another place; with the
 children inheriting the parent and the symmetry broken, per-leaf growth comes
 within @@PL_NEW_GAP@@ points of a complete tree using @@PL_FRAC@@\% of its
-splits. Requiring statistical significance before a node receives a more
+splits, where the previous construction was @@PL_OLD_GAP@@ points short. Requiring statistical significance before a node receives a more
 expressive split buys nothing.
 
 Every number in the paper is inserted from the measurement scripts' output.
@@ -541,8 +541,8 @@ residual variant; $p$ tests residual with the gate against untrained.}
 \end{table}
 
 Across these @@PL_N@@ datasets the previous per-leaf tree was @@PL_OLD_GAP@@
-points from the complete tree; with the children inheriting the parent it is
-@@PL_NEW_GAP@@ points from it, using on average @@PL_FRAC@@\% of the splits.
+points below the complete tree; with the children inheriting the parent it is
+@@PL_NEW_GAP@@ points below it, using on average @@PL_FRAC@@\% of the splits.
 As in Section~3, the direction of the symmetry breaking is a second-order
 matter; inheriting the parent is what changed the result.
 
@@ -573,7 +573,7 @@ of them. $p$ tests full against split.}
 
 The holdout alone costs the fixed tree @@PL_VAL_GAP@@ points on average on
 these datasets. Against a fixed tree trained on the same data, the grown tree
-with the full budget is @@PL_INC_VS_VAL@@ points away, and the full budget is
+with the full budget differs by @@PL_INC_VS_VAL@@ points, and the full budget is
 worth @@PL_FULL_VS_SPLIT@@ points over the split one. Some of what looked like
 a cost of growing was a cost of having 10\% less data, which is a different
 thing and should be stated as one.

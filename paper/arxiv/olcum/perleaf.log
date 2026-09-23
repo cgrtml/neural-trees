@@ -73,3 +73,30 @@
   tam depth-6      0.989 ± 0.004  bölme 63.0
   tam depth-6 %90  0.988 ± 0.002
   perleaf uniform        0.910 ± 0.101  bölme 17.6 ± 6.3
+  perleaf random         0.963 ± 0.009  bölme 14.8 ± 3.6
+  perleaf residual       0.954 ± 0.015  bölme 15.9 ± 3.6
+  perleaf residual_gate  0.956 ± 0.017  bölme 17.5 ± 6.3
+  F perleaf        [1.24, 0.429623]
+  artimli split    0.909 ± 0.036  derinlik 4.0
+  artimli full     0.921 ± 0.031  derinlik 4.0
+  sıfırdan depth-4 0.930 ± 0.029
+  sıfırdan d-4 %90 0.905 ± 0.037
+  F artimli        [7.944, 0.016858]
+
+### texture  n=5000 p=40 K=11
+  tam depth-6      0.997 ± 0.001  bölme 63.0
+  tam depth-6 %90  0.997 ± 0.002
+  perleaf uniform        0.968 ± 0.041  bölme 15.1 ± 2.2
+  perleaf random         0.989 ± 0.005  bölme 18.3 ± 6.3
+  perleaf residual       0.993 ± 0.003  bölme 15.5 ± 2.5
+  perleaf residual_gate  0.993 ± 0.003  bölme 15.5 ± 2.5
+  F perleaf        [1.026, 0.522344]
+  artimli split    0.952 ± 0.045  derinlik 4.0
+  artimli full     0.969 ± 0.041  derinlik 4.0
+  sıfırdan depth-4 0.938 ± 0.057
+  sıfırdan d-4 %90 0.961 ± 0.055
+  F artimli        [8.421, 0.014829]
+
+### wall-robot-navigation  n=5000 p=24 K=4
+  tam depth-6      0.902 ± 0.010  bölme 63.0
+  tam depth-6 %90  0.890 ± 0.013

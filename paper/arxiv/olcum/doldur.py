@@ -224,12 +224,15 @@ if PL:
         [(R["perleaf_residual"][0] - R["tam"][0]) * 100 for R in PL.values()]
     )
     frac = _np.mean([R["perleaf_residual"][2] / 63 for R in PL.values()])
-    D["PL_OLD_GAP"] = f"{old_gap:+.1f}"
-    D["PL_NEW_GAP"] = f"{new_gap:+.1f}"
+    # Both gaps are per-leaf minus complete and negative; the text says
+    # "below", so the placeholders carry magnitudes.
+    D["PL_OLD_GAP"] = f"{abs(old_gap):.1f}"
+    D["PL_NEW_GAP"] = f"{abs(new_gap):.1f}"
     D["PL_FRAC"] = f"{frac * 100:.0f}"
-    D["PL_VAL_GAP"] = (
-        f"{_np.mean([(R['sifirdan4'][0] - R['sifirdan4_val'][0]) * 100 for R in PL.values()]):+.1f}"
-    )
+    # A cost, so a magnitude: all-data tree minus 90% tree, positive on
+    # these datasets. The sign is kept only if it ever came out negative.
+    val_gap = _np.mean([(R["sifirdan4"][0] - R["sifirdan4_val"][0]) * 100 for R in PL.values()])
+    D["PL_VAL_GAP"] = f"{val_gap:.1f}" if val_gap >= 0 else f"{val_gap:+.1f}"
     D["PL_INC_VS_VAL"] = (
         f"{_np.mean([(R['artimli_full'][0] - R['sifirdan4_val'][0]) * 100 for R in PL.values()]):+.1f}"
     )
