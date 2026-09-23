@@ -1,3 +1,4 @@
+
 """
 Soft Decision Tree Regressor
 ============================
@@ -19,6 +20,7 @@ training (`growth="incremental"` / `"per_leaf"`) and the hard-tree export.
 Both are the classifier's machinery with the leaf type changed and are the
 next things to add; see issue #103.
 """
+import copy
 from typing import Optional
 
 import numpy as np
@@ -218,14 +220,21 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             model.load_state_dict(best_state)
         self.n_iter_ = len(self.training_history_)
         self.model_ = model
+        # A float64 CPU copy for prediction, as the mixture of experts keeps:
+        # in float32 the same row scored inside a different batch differs by
+        # ~1e-7 from BLAS blocking, which target scaling amplifies past the
+        # tolerance scikit-learn's subset-invariance check applies.
+        self.model_double_ = copy.deepcopy(self.model_).cpu().double()
+        self.model_double_.eval()
         return self
 
     def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
         X = check_predict_input(self, X)
-        self.model_.eval()
         with torch.no_grad():
-            out = self.model_.predict_values(torch.FloatTensor(X).to(self.device_)).cpu().numpy()
+            out = self.model_double_.predict_values(
+                torch.from_numpy(np.ascontiguousarray(X, dtype=np.float64))
+            ).numpy()
         out = out * self.y_scale_ + self.y_mean_
         return out[:, 0] if self._single_output else out
 

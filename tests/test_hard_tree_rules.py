@@ -45,7 +45,7 @@ def test_contribution_rule_never_disagrees_with_the_mixture_more_than_leaf(fitte
     # Each rule returns a valid leaf distribution row.
     for rule in ("gate", "leaf", "contribution"):
         proba = m.to_hard_tree(rule=rule).predict_proba(X)
-        np.testing.assert_allclose(proba.sum(1), 1.0)
+        np.testing.assert_allclose(proba.sum(1), 1.0, atol=1e-6)  # float32 softmax
 
 
 def test_unknown_rule_is_rejected(fitted):
