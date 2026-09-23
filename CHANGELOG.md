@@ -128,6 +128,10 @@ All notable changes to this project are documented here. This project follows
 
 ### Fixed
 
+- `SoftDecisionTreeRegressor.predict` runs in float64 on the CPU, as the
+  mixture of experts already did, so a row's prediction does not depend on
+  the batch it is scored in; scikit-learn's subset-invariance check caught
+  the float32 version on one CI runner.
 - Both multivariate trees closed nodes that still held every class when one
   class at the node was rare (#104). The two-group problem at a node is built
   by clustering the class centroids; unweighted, a class with a sample or two
