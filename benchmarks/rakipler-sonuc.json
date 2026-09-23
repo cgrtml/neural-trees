@@ -1,0 +1,1429 @@
+{
+ "_modeller": [
+  "SoftTree d4",
+  "SoftTree per-leaf",
+  "GAL",
+  "RandomForest",
+  "MLP",
+  "XGBoost",
+  "LightGBM",
+  "GRANDE",
+  "NODE"
+ ],
+ "Iris": {
+  "n": 150,
+  "p": 4,
+  "K": 3,
+  "SoftTree d4": {
+   "acc": 0.9578,
+   "sd": 0.032,
+   "fit_sn": 0.37,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.96,
+   "sd": 0.0314,
+   "fit_sn": 2.28,
+   "yapi": "22 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9556,
+   "sd": 0.0371,
+   "fit_sn": 0.28,
+   "yapi": "6 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9489,
+   "sd": 0.0353,
+   "fit_sn": 0.14,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9511,
+   "sd": 0.0375,
+   "fit_sn": 0.07,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.94,
+   "sd": 0.0458,
+   "fit_sn": 0.02,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9533,
+   "sd": 0.0303,
+   "fit_sn": 0.02,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9556,
+   "sd": 0.0325,
+   "fit_sn": 3.42,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8733,
+   "sd": 0.0645,
+   "fit_sn": 1.62,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "Wine": {
+  "n": 178,
+  "p": 13,
+  "K": 3,
+  "SoftTree d4": {
+   "acc": 0.9775,
+   "sd": 0.0159,
+   "fit_sn": 0.53,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.972,
+   "sd": 0.0182,
+   "fit_sn": 1.45,
+   "yapi": "20 soft splits"
+  },
+  "GAL": {
+   "acc": 0.985,
+   "sd": 0.0145,
+   "fit_sn": 0.28,
+   "yapi": "4 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9776,
+   "sd": 0.0217,
+   "fit_sn": 0.14,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9813,
+   "sd": 0.0173,
+   "fit_sn": 0.05,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9476,
+   "sd": 0.0438,
+   "fit_sn": 0.02,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.972,
+   "sd": 0.0316,
+   "fit_sn": 0.02,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9832,
+   "sd": 0.0142,
+   "fit_sn": 4.08,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.7293,
+   "sd": 0.0988,
+   "fit_sn": 1.79,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "Cancer": {
+  "n": 569,
+  "p": 30,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.9695,
+   "sd": 0.0119,
+   "fit_sn": 1.24,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9736,
+   "sd": 0.0152,
+   "fit_sn": 1.88,
+   "yapi": "10 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9754,
+   "sd": 0.0133,
+   "fit_sn": 0.53,
+   "yapi": "2 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9578,
+   "sd": 0.0188,
+   "fit_sn": 0.21,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9754,
+   "sd": 0.0129,
+   "fit_sn": 0.13,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9648,
+   "sd": 0.0167,
+   "fit_sn": 0.06,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.966,
+   "sd": 0.0119,
+   "fit_sn": 0.07,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9701,
+   "sd": 0.0147,
+   "fit_sn": 10.61,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8278,
+   "sd": 0.0221,
+   "fit_sn": 5.64,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "Digits": {
+  "n": 1797,
+  "p": 64,
+  "K": 10,
+  "SoftTree d4": {
+   "acc": 0.9249,
+   "sd": 0.0287,
+   "fit_sn": 3.62,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9271,
+   "sd": 0.0146,
+   "fit_sn": 8.0,
+   "yapi": "13 soft splits"
+  },
+  "GAL": {
+   "acc": 0.928,
+   "sd": 0.0146,
+   "fit_sn": 1.57,
+   "yapi": "6 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9768,
+   "sd": 0.0077,
+   "fit_sn": 0.42,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9737,
+   "sd": 0.0065,
+   "fit_sn": 0.29,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9657,
+   "sd": 0.0086,
+   "fit_sn": 0.38,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9738,
+   "sd": 0.0067,
+   "fit_sn": 0.44,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9636,
+   "sd": 0.0121,
+   "fit_sn": 37.69,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8789,
+   "sd": 0.0092,
+   "fit_sn": 20.59,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "banknote-authentication": {
+  "n": 1372,
+  "p": 4,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 1.0,
+   "sd": 0.0,
+   "fit_sn": 2.47,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9886,
+   "sd": 0.0061,
+   "fit_sn": 13.93,
+   "yapi": "24 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9888,
+   "sd": 0.0054,
+   "fit_sn": 1.19,
+   "yapi": "3 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9927,
+   "sd": 0.0051,
+   "fit_sn": 0.27,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 1.0,
+   "sd": 0.0,
+   "fit_sn": 0.17,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9956,
+   "sd": 0.005,
+   "fit_sn": 0.03,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9964,
+   "sd": 0.0034,
+   "fit_sn": 0.03,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9985,
+   "sd": 0.0027,
+   "fit_sn": 22.23,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9342,
+   "sd": 0.0194,
+   "fit_sn": 15.25,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "blood-transfusion-service-center": {
+  "n": 748,
+  "p": 4,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.7986,
+   "sd": 0.025,
+   "fit_sn": 1.39,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.7852,
+   "sd": 0.0221,
+   "fit_sn": 2.47,
+   "yapi": "10 soft splits"
+  },
+  "GAL": {
+   "acc": 0.7986,
+   "sd": 0.0223,
+   "fit_sn": 1.14,
+   "yapi": "32 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.7397,
+   "sd": 0.0295,
+   "fit_sn": 0.17,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.7937,
+   "sd": 0.0194,
+   "fit_sn": 0.25,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.742,
+   "sd": 0.0304,
+   "fit_sn": 0.02,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.7366,
+   "sd": 0.0318,
+   "fit_sn": 0.03,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.7874,
+   "sd": 0.0252,
+   "fit_sn": 6.83,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.762,
+   "sd": 0.0026,
+   "fit_sn": 6.71,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "phoneme": {
+  "n": 5000,
+  "p": 5,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.8486,
+   "sd": 0.0116,
+   "fit_sn": 8.35,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.836,
+   "sd": 0.0123,
+   "fit_sn": 22.79,
+   "yapi": "15 soft splits"
+  },
+  "GAL": {
+   "acc": 0.8473,
+   "sd": 0.01,
+   "fit_sn": 3.12,
+   "yapi": "32 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9078,
+   "sd": 0.0068,
+   "fit_sn": 0.86,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.879,
+   "sd": 0.009,
+   "fit_sn": 1.52,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.8947,
+   "sd": 0.0078,
+   "fit_sn": 0.09,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9003,
+   "sd": 0.0077,
+   "fit_sn": 0.09,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.8807,
+   "sd": 0.0083,
+   "fit_sn": 58.02,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8253,
+   "sd": 0.0131,
+   "fit_sn": 128.92,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "diabetes": {
+  "n": 768,
+  "p": 8,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.7309,
+   "sd": 0.0329,
+   "fit_sn": 1.34,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.767,
+   "sd": 0.0305,
+   "fit_sn": 1.5,
+   "yapi": "1 soft splits"
+  },
+  "GAL": {
+   "acc": 0.7617,
+   "sd": 0.0292,
+   "fit_sn": 0.95,
+   "yapi": "32 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.7613,
+   "sd": 0.0289,
+   "fit_sn": 0.19,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.7418,
+   "sd": 0.0264,
+   "fit_sn": 0.3,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.73,
+   "sd": 0.0267,
+   "fit_sn": 0.05,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.7257,
+   "sd": 0.0291,
+   "fit_sn": 0.04,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.7539,
+   "sd": 0.0311,
+   "fit_sn": 6.87,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.6827,
+   "sd": 0.0145,
+   "fit_sn": 6.52,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "vehicle": {
+  "n": 846,
+  "p": 18,
+  "K": 4,
+  "SoftTree d4": {
+   "acc": 0.7979,
+   "sd": 0.0312,
+   "fit_sn": 1.5,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.7802,
+   "sd": 0.0266,
+   "fit_sn": 4.86,
+   "yapi": "7 soft splits"
+  },
+  "GAL": {
+   "acc": 0.8034,
+   "sd": 0.0256,
+   "fit_sn": 0.99,
+   "yapi": "32 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.7494,
+   "sd": 0.0252,
+   "fit_sn": 0.26,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.838,
+   "sd": 0.0226,
+   "fit_sn": 0.34,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.7589,
+   "sd": 0.0279,
+   "fit_sn": 0.16,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.7734,
+   "sd": 0.0227,
+   "fit_sn": 0.18,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.7612,
+   "sd": 0.025,
+   "fit_sn": 12.55,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.4653,
+   "sd": 0.0321,
+   "fit_sn": 7.82,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "segment": {
+  "n": 2310,
+  "p": 18,
+  "K": 7,
+  "SoftTree d4": {
+   "acc": 0.9482,
+   "sd": 0.0134,
+   "fit_sn": 3.94,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9518,
+   "sd": 0.0076,
+   "fit_sn": 17.33,
+   "yapi": "13 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9418,
+   "sd": 0.0117,
+   "fit_sn": 1.26,
+   "yapi": "7 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.971,
+   "sd": 0.0053,
+   "fit_sn": 0.47,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9652,
+   "sd": 0.0084,
+   "fit_sn": 0.8,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9752,
+   "sd": 0.0047,
+   "fit_sn": 0.33,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9786,
+   "sd": 0.0052,
+   "fit_sn": 0.36,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9651,
+   "sd": 0.0096,
+   "fit_sn": 31.43,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8632,
+   "sd": 0.0157,
+   "fit_sn": 24.17,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "satimage": {
+  "n": 5000,
+  "p": 36,
+  "K": 6,
+  "SoftTree d4": {
+   "acc": 0.8805,
+   "sd": 0.0108,
+   "fit_sn": 8.37,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.8778,
+   "sd": 0.0107,
+   "fit_sn": 18.92,
+   "yapi": "8 soft splits"
+  },
+  "GAL": {
+   "acc": 0.8917,
+   "sd": 0.0098,
+   "fit_sn": 3.12,
+   "yapi": "16 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9151,
+   "sd": 0.0085,
+   "fit_sn": 1.43,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9069,
+   "sd": 0.0094,
+   "fit_sn": 2.14,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9165,
+   "sd": 0.0056,
+   "fit_sn": 0.83,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9231,
+   "sd": 0.0058,
+   "fit_sn": 0.79,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.8955,
+   "sd": 0.01,
+   "fit_sn": 73.3,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8349,
+   "sd": 0.0095,
+   "fit_sn": 61.28,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "optdigits": {
+  "n": 5000,
+  "p": 64,
+  "K": 10,
+  "SoftTree d4": {
+   "acc": 0.9369,
+   "sd": 0.0242,
+   "fit_sn": 9.92,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9377,
+   "sd": 0.0104,
+   "fit_sn": 23.59,
+   "yapi": "10 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9324,
+   "sd": 0.0127,
+   "fit_sn": 2.66,
+   "yapi": "5 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9821,
+   "sd": 0.0035,
+   "fit_sn": 1.07,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9811,
+   "sd": 0.0042,
+   "fit_sn": 0.62,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9763,
+   "sd": 0.0041,
+   "fit_sn": 0.95,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9813,
+   "sd": 0.0038,
+   "fit_sn": 0.85,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9745,
+   "sd": 0.0042,
+   "fit_sn": 81.02,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9429,
+   "sd": 0.0086,
+   "fit_sn": 73.55,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "pendigits": {
+  "n": 5000,
+  "p": 16,
+  "K": 10,
+  "SoftTree d4": {
+   "acc": 0.9303,
+   "sd": 0.0292,
+   "fit_sn": 8.8,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9537,
+   "sd": 0.0153,
+   "fit_sn": 29.37,
+   "yapi": "17 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9603,
+   "sd": 0.0096,
+   "fit_sn": 2.53,
+   "yapi": "8 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9884,
+   "sd": 0.0028,
+   "fit_sn": 0.93,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9926,
+   "sd": 0.0025,
+   "fit_sn": 1.0,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9859,
+   "sd": 0.0032,
+   "fit_sn": 0.54,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9881,
+   "sd": 0.0025,
+   "fit_sn": 0.53,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9836,
+   "sd": 0.0029,
+   "fit_sn": 78.82,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9208,
+   "sd": 0.0073,
+   "fit_sn": 62.29,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "spambase": {
+  "n": 4601,
+  "p": 57,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.9289,
+   "sd": 0.0074,
+   "fit_sn": 9.25,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9305,
+   "sd": 0.0055,
+   "fit_sn": 9.44,
+   "yapi": "5 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9295,
+   "sd": 0.007,
+   "fit_sn": 2.42,
+   "yapi": "2 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9542,
+   "sd": 0.0065,
+   "fit_sn": 0.79,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9393,
+   "sd": 0.0067,
+   "fit_sn": 0.96,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.955,
+   "sd": 0.0063,
+   "fit_sn": 0.32,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9578,
+   "sd": 0.0055,
+   "fit_sn": 0.28,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9507,
+   "sd": 0.0079,
+   "fit_sn": 1962.74,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9239,
+   "sd": 0.007,
+   "fit_sn": 2319.15,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "steel-plates-fault": {
+  "n": 1941,
+  "p": 33,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.9995,
+   "sd": 0.0011,
+   "fit_sn": 3.28,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9995,
+   "sd": 0.0011,
+   "fit_sn": 4.83,
+   "yapi": "7 soft splits"
+  },
+  "GAL": {
+   "acc": 0.999,
+   "sd": 0.0013,
+   "fit_sn": 0.96,
+   "yapi": "3 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9936,
+   "sd": 0.0034,
+   "fit_sn": 0.44,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9993,
+   "sd": 0.0012,
+   "fit_sn": 0.11,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 1.0,
+   "sd": 0.0,
+   "fit_sn": 0.08,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 1.0,
+   "sd": 0.0,
+   "fit_sn": 0.07,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 1.0,
+   "sd": 0.0,
+   "fit_sn": 23.22,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9942,
+   "sd": 0.006,
+   "fit_sn": 21.61,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "ilpd": {
+  "n": 583,
+  "p": 10,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.705,
+   "sd": 0.0315,
+   "fit_sn": 1.4,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.7164,
+   "sd": 0.0315,
+   "fit_sn": 1.82,
+   "yapi": "10 soft splits"
+  },
+  "GAL": {
+   "acc": 0.721,
+   "sd": 0.0287,
+   "fit_sn": 1.04,
+   "yapi": "32 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.7067,
+   "sd": 0.0309,
+   "fit_sn": 0.19,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.7141,
+   "sd": 0.0287,
+   "fit_sn": 38.25,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.6942,
+   "sd": 0.0321,
+   "fit_sn": 0.04,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.6987,
+   "sd": 0.0375,
+   "fit_sn": 0.03,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.7221,
+   "sd": 0.0385,
+   "fit_sn": 5.33,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.7136,
+   "sd": 0.0036,
+   "fit_sn": 4.58,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "climate-model-simulation-crashes": {
+  "n": 540,
+  "p": 18,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.9321,
+   "sd": 0.0181,
+   "fit_sn": 1.2,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9444,
+   "sd": 0.0195,
+   "fit_sn": 2.05,
+   "yapi": "5 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9593,
+   "sd": 0.0115,
+   "fit_sn": 0.45,
+   "yapi": "2 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9204,
+   "sd": 0.0104,
+   "fit_sn": 0.2,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9568,
+   "sd": 0.0151,
+   "fit_sn": 13.63,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.95,
+   "sd": 0.0181,
+   "fit_sn": 0.04,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9444,
+   "sd": 0.0144,
+   "fit_sn": 0.05,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9481,
+   "sd": 0.016,
+   "fit_sn": 8.56,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9148,
+   "sd": 0.0038,
+   "fit_sn": 4.28,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "texture": {
+  "n": 5000,
+  "p": 40,
+  "K": 11,
+  "SoftTree d4": {
+   "acc": 0.9375,
+   "sd": 0.0565,
+   "fit_sn": 10.84,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9927,
+   "sd": 0.0029,
+   "fit_sn": 225.92,
+   "yapi": "19 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9843,
+   "sd": 0.0046,
+   "fit_sn": 3.39,
+   "yapi": "5 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9759,
+   "sd": 0.0046,
+   "fit_sn": 2.09,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9977,
+   "sd": 0.0013,
+   "fit_sn": 167.59,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9806,
+   "sd": 0.0049,
+   "fit_sn": 1.78,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9864,
+   "sd": 0.0036,
+   "fit_sn": 1.52,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9736,
+   "sd": 0.0049,
+   "fit_sn": 89.77,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8402,
+   "sd": 0.0147,
+   "fit_sn": 43.69,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "wall-robot-navigation": {
+  "n": 5000,
+  "p": 24,
+  "K": 4,
+  "SoftTree d4": {
+   "acc": 0.8751,
+   "sd": 0.0149,
+   "fit_sn": 10.41,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.8759,
+   "sd": 0.0271,
+   "fit_sn": 33.48,
+   "yapi": "20 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9035,
+   "sd": 0.0107,
+   "fit_sn": 3.61,
+   "yapi": "18 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.993,
+   "sd": 0.0024,
+   "fit_sn": 1.19,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9223,
+   "sd": 0.0097,
+   "fit_sn": 156.29,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.996,
+   "sd": 0.0025,
+   "fit_sn": 0.35,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9963,
+   "sd": 0.0016,
+   "fit_sn": 0.43,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9874,
+   "sd": 0.0048,
+   "fit_sn": 45.15,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8255,
+   "sd": 0.016,
+   "fit_sn": 42.78,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "qsar-biodeg": {
+  "n": 1055,
+  "p": 41,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.855,
+   "sd": 0.0238,
+   "fit_sn": 2.39,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.8724,
+   "sd": 0.0139,
+   "fit_sn": 2.61,
+   "yapi": "8 soft splits"
+  },
+  "GAL": {
+   "acc": 0.8695,
+   "sd": 0.0218,
+   "fit_sn": 0.96,
+   "yapi": "11 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.8711,
+   "sd": 0.0267,
+   "fit_sn": 0.28,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.8717,
+   "sd": 0.0208,
+   "fit_sn": 48.97,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.8673,
+   "sd": 0.018,
+   "fit_sn": 0.13,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.8622,
+   "sd": 0.023,
+   "fit_sn": 0.12,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.8682,
+   "sd": 0.0206,
+   "fit_sn": 13.75,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.6818,
+   "sd": 0.0156,
+   "fit_sn": 8.34,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "ozone-level-8hr": {
+  "n": 2534,
+  "p": 72,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.9295,
+   "sd": 0.0076,
+   "fit_sn": 5.24,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9409,
+   "sd": 0.0058,
+   "fit_sn": 4.33,
+   "yapi": "2 soft splits"
+  },
+  "GAL": {
+   "acc": 0.94,
+   "sd": 0.0076,
+   "fit_sn": 1.64,
+   "yapi": "2 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.9436,
+   "sd": 0.0046,
+   "fit_sn": 0.85,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.9384,
+   "sd": 0.0076,
+   "fit_sn": 108.89,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.944,
+   "sd": 0.0056,
+   "fit_sn": 0.29,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9454,
+   "sd": 0.0056,
+   "fit_sn": 0.34,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9417,
+   "sd": 0.0057,
+   "fit_sn": 26.18,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9369,
+   "sd": 0.0001,
+   "fit_sn": 23.74,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "kc1": {
+  "n": 2109,
+  "p": 21,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.8533,
+   "sd": 0.0121,
+   "fit_sn": 4.68,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.8535,
+   "sd": 0.0077,
+   "fit_sn": 5.16,
+   "yapi": "1 soft splits"
+  },
+  "GAL": {
+   "acc": 0.859,
+   "sd": 0.0098,
+   "fit_sn": 2.05,
+   "yapi": "32 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.8622,
+   "sd": 0.0109,
+   "fit_sn": 0.37,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.8573,
+   "sd": 0.0118,
+   "fit_sn": 114.23,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.8581,
+   "sd": 0.0133,
+   "fit_sn": 0.1,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.8555,
+   "sd": 0.015,
+   "fit_sn": 0.11,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.8559,
+   "sd": 0.01,
+   "fit_sn": 16.91,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8462,
+   "sd": 0.0027,
+   "fit_sn": 15.29,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "pc1": {
+  "n": 1109,
+  "p": 21,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.9209,
+   "sd": 0.011,
+   "fit_sn": 2.33,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.9315,
+   "sd": 0.0054,
+   "fit_sn": 2.52,
+   "yapi": "3 soft splits"
+  },
+  "GAL": {
+   "acc": 0.9306,
+   "sd": 0.0022,
+   "fit_sn": 0.78,
+   "yapi": "2 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.939,
+   "sd": 0.0108,
+   "fit_sn": 0.25,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.93,
+   "sd": 0.011,
+   "fit_sn": 54.79,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.9339,
+   "sd": 0.0126,
+   "fit_sn": 0.07,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.9348,
+   "sd": 0.0111,
+   "fit_sn": 0.06,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.9354,
+   "sd": 0.0084,
+   "fit_sn": 13.67,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.9306,
+   "sd": 0.0022,
+   "fit_sn": 6.99,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ },
+ "pc3": {
+  "n": 1563,
+  "p": 37,
+  "K": 2,
+  "SoftTree d4": {
+   "acc": 0.8748,
+   "sd": 0.0128,
+   "fit_sn": 3.28,
+   "yapi": "15 soft splits"
+  },
+  "SoftTree per-leaf": {
+   "acc": 0.897,
+   "sd": 0.0069,
+   "fit_sn": 3.36,
+   "yapi": "3 soft splits"
+  },
+  "GAL": {
+   "acc": 0.894,
+   "sd": 0.0091,
+   "fit_sn": 1.18,
+   "yapi": "6 hidden units"
+  },
+  "RandomForest": {
+   "acc": 0.8987,
+   "sd": 0.0088,
+   "fit_sn": 0.38,
+   "yapi": "300 trees, unbounded"
+  },
+  "MLP": {
+   "acc": 0.8795,
+   "sd": 0.018,
+   "fit_sn": 71.97,
+   "yapi": "none (64-64 MLP)"
+  },
+  "XGBoost": {
+   "acc": 0.8919,
+   "sd": 0.0103,
+   "fit_sn": 0.13,
+   "yapi": "300 trees x depth 6"
+  },
+  "LightGBM": {
+   "acc": 0.8912,
+   "sd": 0.0105,
+   "fit_sn": 0.13,
+   "yapi": "300 trees x 31 leaves"
+  },
+  "GRANDE": {
+   "acc": 0.888,
+   "sd": 0.0108,
+   "fit_sn": 14.05,
+   "yapi": "256 trees x depth 5"
+  },
+  "NODE": {
+   "acc": 0.8976,
+   "sd": 0.0002,
+   "fit_sn": 10.97,
+   "yapi": "256 oblivious trees x depth 6"
+  }
+ }
+}

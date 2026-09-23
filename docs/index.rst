@@ -53,6 +53,7 @@ when only the fold assignment changes.
    :caption: Reference
 
    model_comparison
+   benchmarks
    design_decisions
    performance
    api

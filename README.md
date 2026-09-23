@@ -152,6 +152,24 @@ depth against a validation split rather than being handed one. This is also why
 the comparison scripts in [`examples/`](examples) use a hypothesis test rather
 than a single accuracy number.
 
+### Against XGBoost, LightGBM, GRANDE and NODE
+
+A second benchmark, [`benchmarks/rakipler.py`](benchmarks/rakipler.py), runs
+nine models on 24 datasets (the four above plus twenty from OpenML CC-18,
+capped at 5 000 rows), three seeds of five-fold cross-validation, **nothing
+tuned**: every model in one fixed configuration everywhere. Over all 24 the
+boosted ensembles, Random Forest and an MLP lead and the soft models sit a
+point or two behind. Split by size the order reverses: on the eight datasets
+with at most 1 000 rows, GAL beats untuned XGBoost on every one (+2.9 points
+on average) and the per-leaf soft tree on seven of eight (+2.1), while above
+1 000 rows XGBoost wins nearly every comparison. The MLP wins on the small
+datasets too, so the finding is that smooth gradient-trained models beat
+untuned boosting on small tables; what the soft tree adds is that it can be
+read, exported and explained. The split at 1 000 rows was chosen after
+seeing the data. Full tables and the caveats are on the
+[Against the field](https://cagritemel.com/neural-trees/benchmarks.html)
+page.
+
 ## Algorithms
 
 These implementations start from the published algorithms below and depart
