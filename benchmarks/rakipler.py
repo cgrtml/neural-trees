@@ -433,8 +433,16 @@ def kumeler(hizli):
         if hizli:
             return
     for did in OPENML:
-        d = fetch_openml(data_id=did, as_frame=False, parser="auto")
-        X, y = d.data.astype(float), LabelEncoder().fit_transform(d.target)
+        d = fetch_openml(data_id=did, as_frame=True, parser="auto")
+        # Categorical columns are ordinal-encoded; every model here needs
+        # numbers, and tuning encodings per model is not what this compares.
+        frame = d.data.copy()
+        for col in frame.columns:
+            if not pd.api.types.is_numeric_dtype(frame[col]):
+                frame[col] = frame[col].astype("category").cat.codes
+        X = frame.to_numpy(dtype=float)
+        X = np.nan_to_num(X, nan=0.0)
+        y = LabelEncoder().fit_transform(np.asarray(d.target))
         if len(y) > N_MAKS:
             X, _, y, _ = train_test_split(
                 X, y, train_size=N_MAKS, stratify=y, random_state=0
