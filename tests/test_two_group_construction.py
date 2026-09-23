@@ -20,7 +20,7 @@ def test_multivariate_tree_grows_on_digits():
     # 1 074 samples and ten classes became a leaf at depth 1.
     Xtr, ytr, Xte, yte = _digits_fold()
     m = MultivariateDecisionTree(max_depth=6, random_state=0).fit(Xtr, ytr)
-    assert m.n_nodes_ >= 12
+    assert m.n_nodes_ >= 8  # three before the fix; 11 to 17 across platforms since
     assert m.score(Xte, yte) > 0.85
 
 
