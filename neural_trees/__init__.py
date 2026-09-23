@@ -27,7 +27,7 @@ from neural_trees.statistical_tests.classifier_comparison import (
     paired_t_test,
 )
 
-__version__ = "0.6.2"
+__version__ = "0.7.0"
 __author__ = "Cagri Temel"
 
 # name -> module that defines it, for the estimators that need torch

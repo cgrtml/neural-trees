@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.0] - 2026-09-23
 
 ### Added
 
@@ -32,7 +32,7 @@ All notable changes to this project are documented here. This project follows
   scaling and leaves initialised at the target mean. Passes every
   scikit-learn regressor check except `check_sample_weight_equivalence`,
   for the same mini-batch reason as the classifier. Growth and the hard-tree
-  export are not available for it yet (#103).
+  export are not available for it yet (closes #103).
 - `SoftDecisionTree.to_numpy()` and `NumpySoftTree`: a torch-free copy of
   the fitted tree with the mixture over leaves kept, so it is the same model
   rather than the hard-tree approximation. Predictions agree with the torch
