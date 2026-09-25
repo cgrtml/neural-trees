@@ -79,3 +79,5 @@ st.caption(
     "hypothesis test; the Wilcoxon tests and the exact configurations are on the "
     "[documentation page](https://cagritemel.com/neural-trees/benchmarks.html)."
 )
+
+ui.footer()

@@ -23,7 +23,7 @@ import streamlit as st  # noqa: E402
 
 from playground import ui  # noqa: E402
 
-st.set_page_config(page_title="neural-trees playground", page_icon="🌳", layout="wide")
+st.set_page_config(page_title="neural-trees playground", page_icon="🌳", layout="wide", initial_sidebar_state="collapsed")
 
 pages = [
     st.Page("views/start.py", title="Start here", icon="🌳", default=True),
@@ -34,13 +34,4 @@ pages = [
 ]
 nav = st.navigation(pages, position="top")
 ui.inject()
-with st.sidebar:
-    st.markdown("**neural-trees**")
-    st.caption(
-        "Tree-shaped models that train by gradient descent, scikit-learn compatible. "
-        "[GitHub](https://github.com/cgrtml/neural-trees) · "
-        "[Docs](https://cagritemel.com/neural-trees/) · "
-        "[PyPI](https://pypi.org/project/neural-trees/)"
-    )
-    st.caption("Built by [Cagri Temel](https://github.com/cgrtml)")
 nav.run()

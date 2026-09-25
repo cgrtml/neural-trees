@@ -66,6 +66,7 @@ DEFAULT_DATASET = "Iris"
 
 MODELS = {
     "Soft Decision Tree": dict(
+        tag="Smooth splits, trained like a network",
         shows="the tree printed as rules, one prediction explained gate by gate, and the boundary moving as it trains",
         try_this="Set depth to 1: the boundary becomes one soft line. Then raise epochs and watch the line sharpen.",
         group="neural-trees",
@@ -79,6 +80,7 @@ MODELS = {
         build=lambda p, s: SoftDecisionTree(depth=p.get("depth", 4), max_epochs=p.get("max_epochs", 40), random_state=s),
     ),
     "Multivariate Tree": dict(
+        tag="One diagonal cut per node",
         shows="how many oblique cuts it made and which features the first cut combines",
         try_this="Compare its boundary with CART on Circles: one diagonal line where CART draws a staircase.",
         group="neural-trees",
@@ -91,6 +93,7 @@ MODELS = {
         build=lambda p, s: MultivariateDecisionTree(max_depth=p.get("max_depth", 3), random_state=s),
     ),
     "Omnivariate Tree": dict(
+        tag="Chooses its split type per node",
         shows="which split type it chose at each node: threshold, line or small network",
         try_this="Raise max depth and see whether the extra nodes choose simpler or more complex splits.",
         group="neural-trees",
@@ -103,6 +106,7 @@ MODELS = {
         build=lambda p, s: OmnivariateDecisionTree(max_depth=p.get("max_depth", 3), random_state=s),
     ),
     "Hierarchical MoE": dict(
+        tag="Gates route data to expert nets",
         shows="the routing printed as rules: which region goes to which expert",
         try_this="Depth 1 is two experts; depth 3 is eight. Watch the boundary gain detail, and the training time grow.",
         group="neural-trees",
@@ -116,6 +120,7 @@ MODELS = {
         build=lambda p, s: HierarchicalMixtureOfExperts(depth=p.get("depth", 2), max_epochs=p.get("max_epochs", 50), random_state=s),
     ),
     "GAL Network": dict(
+        tag="Grows and prunes its own units",
         shows="every grow and prune decision it made during training, and the size it settled on",
         try_this="Lower max hidden units to 5 and the growth line flattens at the cap; raise epochs and prunes appear.",
         group="neural-trees",
@@ -129,6 +134,7 @@ MODELS = {
         build=lambda p, s: GALNetwork(max_epochs=p.get("max_epochs", 80), max_hidden=p.get("max_hidden", 30), random_state=s),
     ),
     "Weighted KNN": dict(
+        tag="Nearest examples vote",
         shows="how accuracy changes with k on this data",
         try_this="k = 1 memorises the training set; watch the boundary go jagged. k = 21 smooths it out.",
         group="neural-trees",
@@ -141,6 +147,7 @@ MODELS = {
         build=lambda p, s: WeightedKNN(k=p.get("k", 5)),
     ),
     "Naive Bayes": dict(
+        tag="Independent features per class",
         shows="the per-class feature means it classifies with",
         try_this="It has no knobs. Its boundary on Circles shows what the independence assumption cannot do.",
         group="neural-trees",
@@ -153,6 +160,7 @@ MODELS = {
         build=lambda p, s: NaiveBayesClassifier(),
     ),
     "CART (sklearn)": dict(
+        tag="One threshold per node",
         shows="the tree printed as rules",
         try_this="Depth 1 is a single threshold: one vertical or horizontal line.",
         group="baseline",
@@ -165,6 +173,7 @@ MODELS = {
         build=lambda p, s: DecisionTreeClassifier(max_depth=p.get("max_depth", 5), random_state=s),
     ),
     "Random Forest": dict(
+        tag="Hundreds of trees voting",
         shows="which features the trees relied on",
         try_this="Ten trees against three hundred: the boundary stops flickering.",
         group="baseline",
@@ -177,6 +186,7 @@ MODELS = {
         build=lambda p, s: RandomForestClassifier(n_estimators=p.get("n_estimators", 100), random_state=s),
     ),
     "SVM (RBF)": dict(
+        tag="Widest margin, RBF kernel",
         shows="how many support vectors define the boundary",
         try_this="C = 0.1 gives a wide, smooth margin; C = 10 hugs the training points.",
         group="baseline",

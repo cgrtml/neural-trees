@@ -24,7 +24,7 @@ ui.title("How a model works", lead="One model at a time: what it does, when to u
 
 st.session_state.setdefault("model_pick", "Soft Decision Tree")
 st.session_state.setdefault("model_data", "Moons")
-name = st.selectbox("Model", LIBRARY_MODELS + BASELINE_MODELS, key="model_pick", index=None)
+name = st.selectbox("Model", LIBRARY_MODELS + BASELINE_MODELS, key="model_pick")
 m = MODELS[name]
 st.markdown(f"## {name} &nbsp;{ui.badge(m['group'])}", unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
@@ -45,7 +45,7 @@ with left:
             params[k["param"]] = st.select_slider(k["label"], k["options"], value=k["default"], key=f"knob_{name}_{k['param']}")
     if not m["knobs"]:
         st.caption("No settings to tune; this model has none that matter here.")
-    data_name = st.radio("Data", list(DATASETS), index=None, key="model_data")
+    data_name = st.radio("Data", list(DATASETS), key="model_data")
     st.caption(DATASETS[data_name]["blurb"] + ("" if DATASETS[data_name]["two_d"] else " Shown through its first two principal components."))
 with right:
     with st.spinner(f"Fitting {name}..."):
@@ -68,7 +68,10 @@ if name == "Soft Decision Tree":
     st.markdown("**The tree as rules.** Each gate read as a hard decision (`to_hard_tree()`); the export reports how often it agrees with the soft model it came from.")
     hard = model.to_hard_tree()
     agree = float((hard.predict(X) == model.predict(X)).mean())
-    st.code(hard.export_text(feature_names=features), language=None)
+    rules = hard.export_text(feature_names=features)
+    n_lines = rules.count("\n") + 1
+    with st.expander(f"The tree as rules, {n_lines} lines", expanded=n_lines <= 16):
+        st.code(rules, language=None)
     st.caption(f"Hard export agrees with the soft tree on {agree:.1%} of the training samples.")
     st.markdown("**One prediction, explained** (`explain()`).")
     idx = st.number_input("Sample", 0, len(y) - 1, 0, key="sdt_idx")
@@ -170,3 +173,4 @@ ui.next_step(
     cmp_data=data_name, cmp_reset=[name] + BASELINE_MODELS,
 )
 glossary(["decision boundary", "standardised", "accuracy ± sd"])
+ui.footer()

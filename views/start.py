@@ -2,15 +2,7 @@
 
 import streamlit as st
 
-from playground import (
-    BASELINE_MODELS,
-    DATASETS,
-    LIBRARY_MODELS,
-    MODELS,
-    boundary_figure,
-    glossary,
-    ui,
-)
+from playground import DATASETS, MODELS, boundary_figure, glossary, ui
 
 ui.title(
     "neural-trees",
@@ -19,7 +11,7 @@ ui.title(
     eyebrow="A scikit-learn compatible library",
 )
 
-# ── the lesson ───────────────────────────────────────────────────────
+# ── the lesson: three uniform cards ──────────────────────────────────
 st.subheader("Three pictures, then you know what the library is about")
 st.markdown(
     "A classifier draws a boundary between classes. Below, the same two-class data "
@@ -27,20 +19,18 @@ st.markdown(
     "of the boundary is the model."
 )
 lesson = [
-    ("CART (sklearn)", "1 · A classic decision tree (CART)",
-     "Asks one question at a time: *is x1 above 0.3?* Each answer is a horizontal or vertical cut, so the boundary is a staircase."),
-    ("Multivariate Tree", "2 · A tree that cuts diagonally (multivariate)",
-     "Each question is about a weighted sum of the features, so one cut can be a diagonal line. Fewer cuts, same idea."),
-    ("Soft Decision Tree", "3 · A tree whose cuts are soft (soft decision tree)",
-     "Instead of yes or no, each question answers with a probability. The boundary bends, and the whole tree can be trained by gradient descent, like a neural network."),
+    ("CART (sklearn)", "1 · A classic decision tree",
+     "One question at a time, one feature per question. Each answer is a horizontal or vertical cut, so the boundary is a staircase."),
+    ("Multivariate Tree", "2 · A tree that cuts diagonally",
+     "Each question weighs several features at once, so a single cut can be a diagonal line. Fewer cuts, same idea."),
+    ("Soft Decision Tree", "3 · A tree whose cuts are soft",
+     "Each question answers with a probability instead of yes or no. The boundary bends, and the tree trains like a neural network."),
 ]
 for col, (model, heading, text) in zip(st.columns(3), lesson):
     with col, st.container(border=True):
-        fig, acc = boundary_figure("Moons", model, height=230)
+        fig, acc = boundary_figure("Moons", model, height=240)
         st.plotly_chart(fig, config={"displayModeBar": False}, key=f"lesson_{model}")
-        st.markdown(f"**{heading}**")
-        st.write(text)
-        st.caption(f"Training accuracy {acc:.2f}")
+        ui.card_text(heading, text, stat=f"training accuracy {acc:.2f}")
 
 st.markdown(
     "That third idea is what this library is built around. The soft tree keeps what a tree "
@@ -60,50 +50,36 @@ ui.next_step(
     cmp_data="Wine", cmp_reset=["CART (sklearn)", "Multivariate Tree", "Soft Decision Tree", "Random Forest"],
 )
 
-# ── what to do next ──────────────────────────────────────────────────
+# ── what to do next: three uniform cards ─────────────────────────────
 st.subheader("What you can do here")
-c1, c2, c3 = st.columns(3)
-with c1, st.container(border=True):
-    st.markdown("**Compare models on a dataset**")
-    st.write("Pick data and models, press run. You get who scored highest, who is within noise of them, and a test for whether a gap is real.")
-    st.page_link("views/compare.py", label="Compare", icon="🏁")
-with c2, st.container(border=True):
-    st.markdown("**See how one model works**")
-    st.write("What it does, when to use it, how it works, its settings on a live boundary, and what it learned: rules, a prediction explained, its growth.")
-    st.page_link("views/model.py", label="How a model works", icon="🔍")
-with c3, st.container(border=True):
-    st.markdown("**Check the claims**")
-    st.write("Four models that did not work and were fixed, the scikit-learn checks every model passes, and a 24-dataset comparison with XGBoost, LightGBM, GRANDE and NODE.")
-    st.page_link("views/verified.py", label="What was fixed and verified", icon="✅")
-    st.page_link("views/field.py", label="Against the field", icon="🏟️")
+todo = [
+    ("Compare models on a dataset", "Pick data and models, press run. Who scored highest, who is within noise of them, and a test for whether a gap is real.", "views/compare.py", "Compare", "🏁"),
+    ("See how one model works", "What it does, when to use it, its settings on a live boundary, and what it learned: rules, an explained prediction, its growth.", "views/model.py", "How a model works", "🔍"),
+    ("Check the claims", "Four models that did not work and were fixed, the scikit-learn checks every model passes, and a 24-dataset benchmark against XGBoost and friends.", "views/verified.py", "What was fixed and verified", "✅"),
+]
+for col, (title, text, page, label, icon) in zip(st.columns(3), todo):
+    with col, st.container(border=True):
+        ui.card_text(title, text)
+        st.page_link(page, label=label, icon=icon)
 
-# ── all the models ───────────────────────────────────────────────────
+# ── every model, one grid ────────────────────────────────────────────
 st.subheader("Every model in the box, on the same data")
 picked = st.radio("Data", [n for n in DATASETS if DATASETS[n]["two_d"]], horizontal=True, key="start_data", label_visibility="collapsed")
-st.caption(DATASETS[picked]["blurb"] + " Default settings for every model; the number is training accuracy.")
-for label, names in (("From neural-trees", LIBRARY_MODELS), ("Baselines they are measured against", BASELINE_MODELS)):
-    st.markdown(f"**{label}**")
-    cols = st.columns(4)
-    for i, name in enumerate(names):
-        with cols[i % 4], st.container(border=True):
+st.caption(DATASETS[picked]["blurb"] + " Default settings for every model; green is this library, blue a baseline.")
+names = list(MODELS)
+for row in range(0, len(names), 5):
+    for col, name in zip(st.columns(5), names[row:row + 5]):
+        with col, st.container(border=True):
             with st.spinner(f"Fitting {name}..."):
-                fig, acc = boundary_figure(picked, name, height=180)
-            st.markdown(f"**{name}** &nbsp;{ui.badge(MODELS[name]['group'])}", unsafe_allow_html=True)
+                fig, acc = boundary_figure(picked, name, height=170)
             st.plotly_chart(fig, config={"displayModeBar": False}, key=f"thumb_{name}")
-            st.caption(f"train accuracy {acc:.2f} · {MODELS[name]['what']}")
+            ui.card_text(name, MODELS[name]["tag"], stat=f"accuracy {acc:.2f}", group=MODELS[name]["group"])
 
 ui.next_step(
-    "Pick any model above and look inside it: what it does, its settings on a live boundary, "
-    "and what it learned.",
+    "Pick any model and look inside it: what it does, its settings on a live boundary, and what it learned.",
     "Look inside the soft decision tree",
     "views/model.py",
     model_pick="Soft Decision Tree",
 )
-
-st.divider()
-st.markdown(
-    "Everything on these pages is computed live from the data shown; nothing is typed in. "
-    "The algorithms come from Ethem Alpaydin's research group; the implementations, the fixes "
-    "and the measurements are this project's."
-)
 glossary(["decision boundary", "standardised"])
+ui.footer()

@@ -73,3 +73,5 @@ st.markdown(
     "the growth result is the subject of the accompanying paper. The README benchmark "
     "table is re-run in CI and fails when a cell drifts, which happened once."
 )
+
+ui.footer()

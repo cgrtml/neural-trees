@@ -58,9 +58,16 @@ code, pre, .stCode, [data-testid="stDataFrame"] { font-family: "IBM Plex Mono", 
 .nt-next { margin: 2rem 0 0.4rem 0; padding-top: 1rem; border-top: 1px solid rgba(21,32,43,0.12); }
 .nt-next .k { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--nt-lib); }
 .nt-next p { margin: 0.2rem 0 0.4rem 0; max-width: 62ch; font-size: 1.05rem; }
-/* quieter Streamlit chrome */
+/* quieter Streamlit chrome: no sidebar (navigation is on top), one centred column */
 #MainMenu, footer { visibility: hidden; }
-[data-testid="stSidebar"] { border-right: 1px solid rgba(0,0,0,0.06); }
+[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] { display: none !important; }
+.block-container { max-width: 1180px; padding-top: 3.2rem; padding-bottom: 3rem; margin: 0 auto; }
+/* uniform cards: the thumbnail, a title line, one tag line, one stat line */
+.nt-card-title { font-weight: 600; margin: 0.35rem 0 0.1rem 0; line-height: 1.25; }
+.nt-card-tag { font-size: 0.86rem; opacity: 0.85; margin: 0; min-height: 2.6em; line-height: 1.3; }
+.nt-card-title .nt-badge { margin-left: 0.3rem; vertical-align: 0.1em; }
+.nt-card-stat { font-family: "IBM Plex Mono", Menlo, monospace; font-size: 0.78rem; opacity: 0.7; margin: 0.3rem 0 0 0; }
+.nt-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(21,32,43,0.12); font-size: 0.85rem; opacity: 0.8; }
 div[data-testid="stPlotlyChart"] { margin-bottom: 0.2rem; }
 </style>
 """ % dict(lib=LIBRARY, base=BASELINE, warn=WARN, bad=BAD)
@@ -106,3 +113,23 @@ def next_step(text, label, page, **state):
         for k, v in state.items():
             st.session_state[k] = v
         st.switch_page(page)
+
+
+def card_text(title, tag, stat=None, group=None):
+    """The text block of a uniform card: title (with an optional badge), one tag line, one stat line."""
+    b = f" {badge(group)}" if group else ""
+    st.markdown(
+        f'<div class="nt-card-title">{title}{b}</div><p class="nt-card-tag">{tag}</p>'
+        + (f'<p class="nt-card-stat">{stat}</p>' if stat else ""),
+        unsafe_allow_html=True,
+    )
+
+
+def footer():
+    st.markdown(
+        '<div class="nt-footer">neural-trees · tree-shaped models that train by gradient descent, scikit-learn compatible · '
+        '<a href="https://github.com/cgrtml/neural-trees">GitHub</a> · <a href="https://cagritemel.com/neural-trees/">Docs</a> · '
+        '<a href="https://pypi.org/project/neural-trees/">PyPI</a> · built by <a href="https://github.com/cgrtml">Cagri Temel</a>. '
+        'Everything on these pages is computed live; nothing is typed in.</div>',
+        unsafe_allow_html=True,
+    )
