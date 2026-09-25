@@ -92,35 +92,38 @@ pipe.score(X_test, y_test)
 
 ## Interactive playground
 
-[`app.py`](app.py) is a Streamlit dashboard for comparing the models side by
-side on standard and synthetic datasets, with live decision boundaries and
-hyperparameter controls:
+[`app.py`](app.py) is a Streamlit app built around the questions a visitor
+asks, one page each:
+
+1. **Start here**: what the library is, and the boundary every model learns
+   on the same two-dimensional data, so the difference between the models is
+   seen rather than described.
+2. **Compare**: pick a dataset and models; every model is trained on the same
+   cross-validation folds, and the page says who scored highest, who is within
+   fold noise of them (paired t-test over the folds) and who is measurably
+   behind, then runs the combined 5x2cv F test on any pair.
+3. **How a model works**: one model at a time: what it does, when to use it,
+   how it works, its knobs on a live boundary, and what it learned: the soft
+   tree's rules and a per-prediction explanation, the omnivariate tree's
+   choice of split types, the GAL network's growth and pruning, the mixture's
+   routing.
+4. **What was fixed and verified**: the four models that did not work, the
+   scikit-learn checks every estimator passes, and the design choices that
+   were measured rather than assumed.
+5. **Against the field**: the nine-model, 24-dataset benchmark against
+   XGBoost, LightGBM, GRANDE and NODE.
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-It runs a default comparison as soon as it opens, then follows whatever you
-change in the sidebar. Seven tabs: a comparison table that says, for every
-selected model, its accuracy, its gap to the best and whether that gap is
-within fold noise (paired t-test over the folds); a ranking with the winner
-called out; side-by-side charts; a head-to-head panel that settles the gap
-with the combined 5x2cv F test rather than an eyeballed accuracy difference;
-decision boundaries; an explanation of any single prediction (`explain()`:
-the path, the deciding features, a verified counterfactual); and the
-nine-model benchmark against XGBoost, LightGBM, GRANDE and NODE. Sidebar
-buttons select all models, the library's models only, or the default four.
-
-The boundary tab can also **animate training**: a soft tree is fitted in stages
-with `warm_start=True` and its boundary captured after each one, which is the
-thing a differentiable tree can show and a hard one cannot.
-
-Hosted at **https://neural-trees.streamlit.app** on Streamlit Community
-Cloud's free tier, which puts an app to sleep after a few days without
-visitors; the first visit after that shows a wake-up button and takes about
-a minute. The same `requirements.txt` installs it there and locally, so the
-two run the same code, and `streamlit run app.py` is the offline option.
+The registry of models and every cached fit live in [`playground/`](playground),
+the pages in [`views/`](views). Hosted at
+**https://neural-trees.streamlit.app** on Streamlit Community Cloud's free
+tier, which puts an app to sleep after a few days without visitors; the
+first visit after that shows a wake-up button and takes about a minute. The
+same `requirements.txt` installs it there and locally.
 
 ## Benchmark
 

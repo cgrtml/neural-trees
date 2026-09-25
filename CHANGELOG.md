@@ -15,6 +15,25 @@ All notable changes to this project are documented here. This project follows
   through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
   prints one value per leaf and scores R^2. The module's docstring no
   longer lists these as missing; `explain()` still is.
+- The Streamlit playground is rebuilt as five pages around the questions a
+  visitor asks. *Start here* shows the boundary every model learns on the
+  same 2D data; *Compare* trains the chosen models on the same folds and
+  says who is highest, who is within fold noise and who is behind, with the
+  5x2cv F test on any pair; *How a model works* explains one model, puts its
+  knobs on a live boundary and shows what it learned (rules, an explained
+  prediction, split types, growth and pruning, routing); *What was fixed and
+  verified* and *Against the field* carry the library's own contribution and
+  the 24-dataset benchmark. The model registry and every cached fit live in
+  `playground/`, the pages in `views/`; the contract test parses all of
+  them. The hosted app installs neural-trees 0.7.0.
+- `SoftDecisionTreeRegressor` gains what the classifier had and it lacked:
+  `growth` (`"incremental"`, `"per_leaf"`) with `growth_init`,
+  `growth_jitter` and `growth_budget`, deciding on held-out squared error
+  and splitting along the leaf's residual; `to_numpy()`, a `NumpySoftTree`
+  of kind `"regressor"` that predicts in target units and round-trips
+  through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
+  prints one value per leaf and scores R^2. The module's docstring no
+  longer lists these as missing; `explain()` still is.
 - The Streamlit playground opens on a comparison table: every selected
   model's accuracy, its gap to the best and whether that gap is within fold
   noise (paired t-test over the folds), with a plain-language summary and a
