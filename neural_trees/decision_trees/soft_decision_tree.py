@@ -232,7 +232,8 @@ class _SoftTreeModule(nn.Module):
         send close to half the mass each way.
         """
         n_features = self.gates.weight.shape[1]
-        deeper = _SoftTreeModule(
+        # type(self), so the regression module deepens into a regression module.
+        deeper = type(self)(
             n_features=n_features,
             n_classes=n_classes,
             depth=self.depth + 1,

@@ -153,7 +153,7 @@ rule: a sigmoid exceeds one half exactly when its argument is positive, so
 it is ``"gate"``. The script is ``benchmarks/hard_rules.py``.
 
 *Reference:* İrsoy, O., Yıldız, O. T. and Alpaydın, E. (2012). Soft Decision
-Trees. *ICPR*, 1819–1822.
+Trees. *ICPR*, 1819-1822.
 
 Shipping the tree without PyTorch
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -188,9 +188,22 @@ weighted squared error. It accepts multi-output targets (``y`` of shape
 ``(n, k)``), ``sample_weight`` and early stopping, and passes the scikit-learn
 regressor checks except the one no mini-batch learner can pass. Targets are
 centred and scaled internally and leaves start at the target mean, so an
-untrained tree predicts the mean. Growth during training and the hard-tree
-export are not available for the regressor yet and raise or are absent
-rather than silently missing.
+untrained tree predicts the mean.
+
+Growth works as on the classifier: ``growth="incremental"`` adds a level at
+a time and keeps it only if held-out squared error improves,
+``growth="per_leaf"`` splits the leaf carrying the most weighted squared
+error, and ``growth_init`` pushes a split's two children apart along the
+leaf's residual (``y`` minus prediction) or at random, because identical
+children would leave the new gate with a zero gradient here exactly as they
+do for the classifier. Both exports exist too: ``to_numpy()`` is the same
+model in numpy with a JSON round trip, ``to_hard_tree()`` a
+:class:`~neural_trees.HardRegressionTree` that prints ``value = ...`` at
+each leaf. The hard reading of a regressor can sit further from the soft
+model than the classifier's does, because soft leaves compensate for gates
+that share mass and the hard walk lands on those attenuated values; measure
+``score`` on held-out data before relying on it. ``explain()`` is not
+available for regression yet.
 
 .. code-block:: python
 
@@ -199,6 +212,12 @@ rather than silently missing.
    reg = SoftDecisionTreeRegressor(depth=3, max_epochs=100, random_state=0).fit(X_train, y_train)
    reg.score(X_test, y_test)      # R^2
    reg.get_leaf_values()          # in target units
+
+   grown = SoftDecisionTreeRegressor(depth=5, max_epochs=150, growth="per_leaf", random_state=0)
+   grown.fit(X_train, y_train)
+   grown.growth_, grown.tree_depth_
+   print(grown.to_hard_tree().export_text(feature_names=feature_names))
+   grown.to_numpy().to_json("reg.json")
 
 Multivariate and omnivariate trees
 ----------------------------------
@@ -225,7 +244,7 @@ and otherwise keeps the simpler one. The second option is opt-in for a reason;
 see :doc:`design_decisions`.
 
 *Reference:* Yıldız, O. T. and Alpaydın, E. (2001). Omnivariate Decision Trees.
-*IEEE Transactions on Neural Networks*, 12(6), 1539–1546.
+*IEEE Transactions on Neural Networks*, 12(6), 1539-1546.
 
 Hierarchical mixture of experts
 -------------------------------
@@ -255,7 +274,7 @@ keeps falling and it correctly does not stop.
 exports a soft tree.
 
 *Reference:* İrsoy, O. and Alpaydın, E. (2021). Dropout Regularization in
-Hierarchical Mixture of Experts. *Neurocomputing*, 419, 148–156.
+Hierarchical Mixture of Experts. *Neurocomputing*, 419, 148-156.
 
 Constructive networks
 ---------------------
@@ -280,7 +299,7 @@ on Digits it is significantly less accurate than ``"random"``. The measurements
 are in :doc:`design_decisions`.
 
 *Reference:* Alpaydın, E. (1994). GAL: Networks that grow when they learn and
-shrink when they forget. *IJPRAI*, 8(1), 391–414.
+shrink when they forget. *IJPRAI*, 8(1), 391-414.
 
 Classical baselines
 -------------------

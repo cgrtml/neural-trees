@@ -31,7 +31,7 @@ differences are not independent.
    )
 
 *Reference:* Alpaydın, E. (1999). Combined 5x2cv F test for comparing supervised
-classification learning algorithms. *Neural Computation*, 11(8), 1885–1892.
+classification learning algorithms. *Neural Computation*, 11(8), 1885-1892.
 
 McNemar's test
 --------------

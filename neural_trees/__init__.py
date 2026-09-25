@@ -39,6 +39,7 @@ _LAZY = {
     "SoftDecisionTree": "neural_trees.decision_trees.soft_decision_tree",
     "SoftDecisionTreeRegressor": "neural_trees.decision_trees.soft_decision_tree_regressor",
     "NumpySoftTree": "neural_trees.decision_trees.numpy_soft_tree",
+    "HardRegressionTree": "neural_trees.decision_trees.hard_tree",
 }
 
 if TYPE_CHECKING:  # so type checkers and IDEs still see them
@@ -72,6 +73,7 @@ __all__ = [
     "GALNetwork",
     "GateStep",
     "HardDecisionTree",
+    "HardRegressionTree",
     "HardRoutedExperts",
     "HierarchicalMixtureOfExperts",
     "MultivariateDecisionTree",

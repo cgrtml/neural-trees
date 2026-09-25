@@ -7,6 +7,14 @@ All notable changes to this project are documented here. This project follows
 
 ### Added
 
+- `SoftDecisionTreeRegressor` gains what the classifier had and it lacked:
+  `growth` (`"incremental"`, `"per_leaf"`) with `growth_init`,
+  `growth_jitter` and `growth_budget`, deciding on held-out squared error
+  and splitting along the leaf's residual; `to_numpy()`, a `NumpySoftTree`
+  of kind `"regressor"` that predicts in target units and round-trips
+  through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
+  prints one value per leaf and scores R^2. The module's docstring no
+  longer lists these as missing; `explain()` still is.
 - Two tabs in the Streamlit playground. "Explain a prediction" runs
   `SoftDecisionTree.explain()` on any sample of the chosen dataset: the leaf
   it reached, every gate on the path with the deciding features, the

@@ -161,6 +161,11 @@ class HardDecisionTree:
         """Mean accuracy on the given data."""
         return float(np.mean(self.predict(X) == np.asarray(y)))
 
+    def _leaf_line(self, node: int, decimals: int) -> str:
+        distribution = self.node_distributions_[node]
+        winner = self.classes_[int(np.argmax(distribution))]
+        return f"predict {winner!r} (p={distribution.max():.{decimals}f})"
+
     def export_text(self, feature_names=None, max_features=3, decimals=3) -> str:
         """
         Render the tree as readable rules.
@@ -203,12 +208,7 @@ class HardDecisionTree:
 
         def walk(node: int, indent: str, branch: str):
             if node >= n_internal or not self.is_split_[node]:
-                distribution = self.node_distributions_[node]
-                winner = self.classes_[int(np.argmax(distribution))]
-                lines.append(
-                    f"{indent}{branch}predict {winner!r} "
-                    f"(p={distribution.max():.{decimals}f})"
-                )
+                lines.append(f"{indent}{branch}{self._leaf_line(node, decimals)}")
                 return
             lines.append(f"{indent}{branch}if {describe_split(node)}:")
             walk(2 * node + 2, indent + "    ", "yes -> ")
@@ -216,3 +216,56 @@ class HardDecisionTree:
 
         walk(0, "", "")
         return "\n".join(lines)
+
+
+class HardRegressionTree(HardDecisionTree):
+    """
+    A trained :class:`~neural_trees.SoftDecisionTreeRegressor` with its gates
+    read as hard decisions and one value per leaf, in target units.
+
+    Built by ``SoftDecisionTreeRegressor.to_hard_tree()``. The walk is the
+    parent class's; only the leaves differ: ``node_values_`` of shape
+    ``(n_nodes, n_outputs)`` replaces the class distributions, ``predict``
+    returns values and ``score`` is R^2. Like the classifier's export it is a
+    different model from the soft tree, not a re-encoding: it reports its
+    agreement rather than assuming it.
+    """
+
+    def __init__(self, weights, biases, node_values, n_features_in, is_split=None, log_beta=None,
+                 single_output=True):
+        super().__init__(
+            weights, biases, np.asarray(node_values, dtype=np.float64), classes=[],
+            n_features_in=n_features_in, is_split=is_split, log_beta=log_beta, rule="gate",
+        )
+        self.node_values_ = self.node_distributions_
+        self.n_outputs_ = self.node_values_.shape[1]
+        self.single_output_ = bool(single_output)
+
+    def predict_proba(self, X):  # pragma: no cover - not a classifier
+        raise AttributeError("HardRegressionTree has no predict_proba; use predict")
+
+    def predict(self, X) -> np.ndarray:
+        """Leaf value of the reached leaf, shape (n_samples,) or (n_samples, n_outputs)."""
+        X = check_array(X)
+        if X.shape[1] != self.n_features_in_:
+            raise ValueError(
+                f"X has {X.shape[1]} features, but HardRegressionTree is expecting "
+                f"{self.n_features_in_} features as input."
+            )
+        out = self.node_values_[self._leaf_index(X)]
+        return out[:, 0] if self.single_output_ else out
+
+    def score(self, X, y) -> float:
+        """R^2 on the given data, uniform average over outputs."""
+        y = np.asarray(y, dtype=np.float64)
+        pred = self.predict(X)
+        y2 = y.reshape(len(y), -1)
+        p2 = np.asarray(pred).reshape(len(y), -1)
+        ss_res = ((y2 - p2) ** 2).sum(axis=0)
+        ss_tot = ((y2 - y2.mean(axis=0)) ** 2).sum(axis=0)
+        return float(np.mean(1.0 - ss_res / np.where(ss_tot > 0, ss_tot, 1.0)))
+
+    def _leaf_line(self, node: int, decimals: int) -> str:
+        v = self.node_values_[node]
+        shown = f"{v[0]:.{decimals}f}" if self.single_output_ else "[" + ", ".join(f"{x:.{decimals}f}" for x in v) + "]"
+        return f"value = {shown}"

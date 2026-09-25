@@ -102,18 +102,22 @@ streamlit run app.py
 ```
 
 It runs a default comparison as soon as it opens, then follows whatever you
-change in the sidebar. Four tabs: a ranking of every selected model with the
+change in the sidebar. Six tabs: a ranking of every selected model with the
 winner called out, side-by-side charts, a head-to-head panel that settles the
 gap with the combined 5x2cv F test rather than an eyeballed accuracy
-difference, and decision boundaries.
+difference, decision boundaries, an explanation of any single prediction
+(`explain()`: the path, the deciding features, a verified counterfactual),
+and the nine-model benchmark against XGBoost, LightGBM, GRANDE and NODE.
 
 The boundary tab can also **animate training**: a soft tree is fitted in stages
 with `warm_start=True` and its boundary captured after each one, which is the
 thing a differentiable tree can show and a hard one cannot.
 
-Hosted at **https://neural-trees.streamlit.app**. The same
-`requirements.txt` installs it there and locally, so the two run the same
-code.
+Hosted at **https://neural-trees.streamlit.app** on Streamlit Community
+Cloud's free tier, which puts an app to sleep after a few days without
+visitors; the first visit after that shows a wake-up button and takes about
+a minute. The same `requirements.txt` installs it there and locally, so the
+two run the same code, and `streamlit run app.py` is the offline option.
 
 ## Benchmark
 
