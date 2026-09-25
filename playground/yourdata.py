@@ -166,6 +166,18 @@ tree.to_numpy().to_json("model.json")          # the same model, no torch needed
 '''
 
 
+def read_table(raw: bytes, filename: str = "") -> pd.DataFrame:
+    """An uploaded CSV or Excel file as a DataFrame; Excel takes the first sheet."""
+    import io
+
+    if filename.lower().endswith((".xlsx", ".xls")) or raw[:4] == b"PK\x03\x04":
+        df = pd.read_excel(io.BytesIO(raw), sheet_name=0)
+        if df.shape[1] < 2 or len(df) < 10:
+            raise ValueError(f"the first sheet has {df.shape[1]} columns and {len(df)} rows; at least 2 columns and 10 rows are needed")
+        return df
+    return read_csv(raw)
+
+
 def read_csv(raw: bytes) -> pd.DataFrame:
     """
     Read an uploaded CSV without asking about separators or encodings: the

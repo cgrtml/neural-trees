@@ -32,22 +32,22 @@ from playground.yourdata import (
     guess_target,
     prepare,
     preprocessor,
-    read_csv,
+    read_table,
 )
 
 ui.title(
     "Try it on your data",
-    lead="Upload a table, pick the column to predict, and run the same flow as Compare on it: "
+    lead="Upload a table (CSV or Excel), pick the column to predict, and run the same flow as Compare on it: "
          "who scores highest, whether the gap is real, what the soft tree learned, and a model "
          "file you can take away. Nothing is stored; the table lives in this browser session only.",
     eyebrow="Your CSV, the same four steps",
 )
 
 # ── step 1: the table ────────────────────────────────────────────────
-ui.step(1, "Get a table", f"A CSV with one row per example and one column that holds the class to predict. Files up to 25 MB; a larger table is subsampled to {MAX_ROWS} rows, keeping class proportions, and at most {MAX_COLS} columns are used. Comma, semicolon and tab separators are detected.")
+ui.step(1, "Get a table", f"A CSV or Excel file with one row per example and one column that holds the class to predict. Files up to 25 MB; a larger table is subsampled to {MAX_ROWS} rows, keeping class proportions, and at most {MAX_COLS} columns are used. Comma, semicolon and tab separators are detected.")
 u1, u2 = st.columns([2, 1])
 with u1:
-    up = st.file_uploader("CSV file", type=["csv"], label_visibility="collapsed")
+    up = st.file_uploader("CSV or Excel file", type=["csv", "xlsx", "xls"], label_visibility="collapsed")
 with u2:
     st.markdown("**No file at hand?**")
     s1, s2 = st.columns(2)
@@ -64,11 +64,11 @@ with u2:
 if up is not None:
     try:
         with st.spinner(f"Reading {up.name} ({up.size / 1e6:.1f} MB)..."):
-            df = read_csv(up.getvalue())
+            df = read_table(up.getvalue(), up.name)
         st.session_state.yd = (up.name, df)
         st.session_state.pop("yd_results", None)
     except Exception as e:  # noqa: BLE001 - the user needs the reason
-        st.error(f"Could not read that file as CSV: {e}")
+        st.error(f"Could not read that file: {e}")
 
 if "yd" not in st.session_state:
     st.info("Upload a CSV or load a sample to continue.")

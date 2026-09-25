@@ -14,3 +14,5 @@ plotly>=5.0
 
 # Lets Streamlit reload changed modules (playground/, views/) without a reboot.
 watchdog>=3.0
+# Excel uploads on the Try it on your data page.
+openpyxl>=3.1
