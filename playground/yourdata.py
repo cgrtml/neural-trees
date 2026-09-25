@@ -11,9 +11,14 @@ stated to the user on the page.
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
+from sklearn.linear_model import Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.tree import DecisionTreeRegressor
+
+from neural_trees import SoftDecisionTreeRegressor
 
 MAX_ROWS = 5000
 MAX_COLS = 200
@@ -21,17 +26,36 @@ MAX_CLASSES = 20
 
 
 def guess_target(df: pd.DataFrame) -> str:
-    """The last column unless a column is named like a label."""
+    """A column named like a label, else the last column: that is where targets usually sit."""
     names = ("target", "label", "class", "y", "outcome", "diagnosis", "species", "survived", "churn",
-             "default", "fraud", "result", "status", "category", "type")
+             "default", "fraud", "result", "price", "saleprice", "amount", "score")
     for c in df.columns:
         if str(c).strip().lower() in names:
             return c
-    # otherwise the last column with 2 to MAX_CLASSES distinct values, else the last column
-    for c in reversed(df.columns):
-        if 2 <= df[c].nunique(dropna=True) <= MAX_CLASSES:
-            return c
     return df.columns[-1]
+
+
+def task_for(df: pd.DataFrame, target: str) -> str:
+    """'classification' for a label-like column, 'regression' for a numeric one with many values."""
+    s = df[target].dropna()
+    if pd.api.types.is_numeric_dtype(s) and s.nunique() > MAX_CLASSES:
+        return "regression"
+    return "classification"
+
+
+REGRESSORS = {
+    "Soft Tree Regressor": dict(
+        group="neural-trees", tag="The soft tree with a value per leaf",
+        build=lambda: SoftDecisionTreeRegressor(depth=4, max_epochs=60, learning_rate=0.05, random_state=0),
+        line="SoftDecisionTreeRegressor(depth=4, max_epochs=60, learning_rate=0.05, random_state=0)",
+    ),
+    "CART Regressor": dict(group="baseline", tag="One threshold per node, mean per leaf",
+                           build=lambda: DecisionTreeRegressor(max_depth=5, random_state=0), line="DecisionTreeRegressor(max_depth=5)"),
+    "Random Forest Regressor": dict(group="baseline", tag="Hundreds of trees averaging",
+                                    build=lambda: RandomForestRegressor(n_estimators=200, random_state=0, n_jobs=1), line="RandomForestRegressor(n_estimators=200)"),
+    "Ridge": dict(group="baseline", tag="A straight line through every feature",
+                  build=lambda: Ridge(alpha=1.0), line="Ridge(alpha=1.0)"),
+}
 
 
 def describe(df: pd.DataFrame, target: str):
@@ -59,14 +83,17 @@ def describe(df: pd.DataFrame, target: str):
 
 
 def check_target(df: pd.DataFrame, target: str):
-    """Return (ok, message) for using `target` as the classification label."""
+    """Return (ok, message) for using `target` as the label or the value to predict."""
     y = df[target].dropna()
     n = y.nunique()
+    if task_for(df, target) == "regression":
+        return True, (f"Regression: a number to predict. {n} distinct values, from {y.min():,.4g} to {y.max():,.4g}, "
+                      f"median {y.median():,.4g}. Models are scored by R^2 (1 is perfect, 0 is predicting the mean).")
     if n < 2:
         return False, "The target has a single value; there is nothing to classify."
     if n > MAX_CLASSES:
-        return False, (f"The target has {n} distinct values. Above {MAX_CLASSES} this is a regression "
-                       "problem or an identifier, and this page does classification only.")
+        return False, (f"The target has {n} distinct text values. Above {MAX_CLASSES} classes this looks like an "
+                       "identifier or free text, not something to predict.")
     counts = y.value_counts()
     if counts.min() < 5:
         return False, (f"The rarest class ({counts.idxmin()!r}) has {counts.min()} rows; five-fold "
@@ -83,13 +110,21 @@ def prepare(df: pd.DataFrame, target: str, seed: int = 0):
     data = df.dropna(subset=[target]).copy()
     notes = []
     if len(data) > MAX_ROWS:
-        data = data.groupby(target, group_keys=False).apply(
-            lambda g: g.sample(frac=MAX_ROWS / len(df), random_state=seed)
-        )
-        notes.append(f"Subsampled to {len(data)} rows (the hosted app caps at {MAX_ROWS}), keeping class proportions.")
-    y_raw = data[target].astype(str)
-    classes = sorted(y_raw.unique())
-    y = np.array([classes.index(v) for v in y_raw])
+        if task_for(df, target) == "regression":
+            data = data.sample(n=MAX_ROWS, random_state=seed)
+            notes.append(f"Subsampled to {len(data)} rows (the hosted app caps at {MAX_ROWS}).")
+        else:
+            data = data.groupby(target, group_keys=False).apply(
+                lambda g: g.sample(frac=MAX_ROWS / len(df), random_state=seed)
+            )
+            notes.append(f"Subsampled to {len(data)} rows (the hosted app caps at {MAX_ROWS}), keeping class proportions.")
+    if task_for(df, target) == "regression":
+        y = data[target].to_numpy(dtype=float)
+        classes = []
+    else:
+        y_raw = data[target].astype(str)
+        classes = sorted(y_raw.unique())
+        y = np.array([classes.index(v) for v in y_raw])
     numeric, categorical, dropped = [], [], []
     for c in data.columns:
         if c == target:
@@ -138,31 +173,52 @@ def feature_names_after(pre: ColumnTransformer):
     return names
 
 
-def code_snippet(target: str, numeric, categorical, model_line: str) -> str:
-    """The same pipeline as plain Python, for the user to take away."""
-    return f'''import pandas as pd
+def code_snippet(target: str, numeric, categorical, model_line: str, task: str = "classification", filename: str = "your_file.csv") -> str:
+    """The same run as plain Python, commented line by line, for the user to take away."""
+    cls = "SoftDecisionTree" if task == "classification" else "SoftDecisionTreeRegressor"
+    step = "softdecisiontree" if task == "classification" else "softdecisiontreeregressor"
+    y_line = f'df["{target}"].astype(str)' if task == "classification" else f'df["{target}"].astype(float)'
+    reader = "pd.read_excel" if filename.lower().endswith((".xlsx", ".xls")) else "pd.read_csv"
+    tail = (
+        '# 5. Explain one row: the leaf it reached, the gates on the way, the smallest change that flips it.\n'
+        'print(tree.explain(pre.transform(X.iloc[:1]))[0].to_text())\n'
+        if task == "classification" else
+        '# 5. Read the tree as rules with one value per leaf.\n'
+        'print(tree.to_hard_tree().export_text())\n'
+    )
+    return f'''# pip install neural-trees scikit-learn pandas
+# The same run as this page, on your own machine.
+import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from neural_trees import SoftDecisionTree, combined_5x2cv_f_test
+from neural_trees import {cls}
 
-df = pd.read_csv("your_file.csv")
-X, y = df.drop(columns=["{target}"]), df["{target}"].astype(str)
+# 1. Your table, and the column to predict.
+df = {reader}("{filename}")
+X, y = df.drop(columns=["{target}"]), {y_line}
+
+# 2. The same preprocessing this page used: medians and scaling for numbers,
+#    most-frequent value and one-hot encoding for categories, all fitted inside each fold.
 numeric = {list(map(str, numeric))}
 categorical = {list(map(str, categorical))}
 pre = ColumnTransformer([
     ("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), numeric),
     ("cat", make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore", sparse_output=False)), categorical),
 ])
+
+# 3. The model, scored with 5-fold cross-validation ({"accuracy" if task == "classification" else "R^2"}).
 model = make_pipeline(pre, {model_line})
 print(cross_val_score(model, X, y, cv=5).mean())
 
+# 4. Fit on everything and keep the tree.
 model.fit(X, y)
-tree = model.named_steps["softdecisiontree"]
-print(tree.explain(pre.transform(X.iloc[:1]), feature_names=None)[0].to_text())
-tree.to_numpy().to_json("model.json")          # the same model, no torch needed to predict
+tree = model.named_steps["{step}"]
+{tail}
+# 6. Save it: model.json predicts with numpy alone, no torch needed where it is served.
+tree.to_numpy().to_json("model.json")
 '''
 
 
