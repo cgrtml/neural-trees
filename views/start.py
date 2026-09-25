@@ -22,15 +22,15 @@ lesson = [
     ("CART (sklearn)", "1 · A classic decision tree",
      "One question at a time, one feature per question. Each answer is a horizontal or vertical cut, so the boundary is a staircase."),
     ("Multivariate Tree", "2 · A tree that cuts diagonally",
-     "Each question weighs several features at once, so a single cut can be a diagonal line. Fewer cuts, same idea."),
+     "Each question weighs several features at once, so one cut can be a diagonal line. Fewer cuts for the same idea, and a smaller tree."),
     ("Soft Decision Tree", "3 · A tree whose cuts are soft",
-     "Each question answers with a probability instead of yes or no. The boundary bends, and the tree trains like a neural network."),
+     "Each question answers with a probability rather than yes or no. The boundary bends, and the whole tree trains like a neural network."),
 ]
 for col, (model, heading, text) in zip(st.columns(3), lesson):
     with col, st.container(border=True):
         fig, acc = boundary_figure("Moons", model, height=240)
         st.plotly_chart(fig, config={"displayModeBar": False}, key=f"lesson_{model}")
-        ui.card_text(heading, text, stat=f"training accuracy {acc:.2f}")
+        ui.card_text(heading, text, stat=f"training accuracy {acc:.2f}", lines=4, badge_line=False)
 
 st.markdown(
     "That third idea is what this library is built around. The soft tree keeps what a tree "
@@ -53,13 +53,13 @@ ui.next_step(
 # ── what to do next: three uniform cards ─────────────────────────────
 st.subheader("What you can do here")
 todo = [
-    ("Compare models on a dataset", "Pick data and models, press run. Who scored highest, who is within noise of them, and a test for whether a gap is real.", "views/compare.py", "Compare", "🏁"),
-    ("See how one model works", "What it does, when to use it, its settings on a live boundary, and what it learned: rules, an explained prediction, its growth.", "views/model.py", "How a model works", "🔍"),
-    ("Check the claims", "Four models that did not work and were fixed, the scikit-learn checks every model passes, and a 24-dataset benchmark against XGBoost and friends.", "views/verified.py", "What was fixed and verified", "✅"),
+    ("Compare models on a dataset", "Pick data and models, press run. Who scored highest, who is within noise of them, and whether a gap is real.", "views/compare.py", "Compare", "🏁"),
+    ("See how one model works", "What it does, when to use it, its settings on a live boundary, and what it learned: rules, growth, an explained prediction.", "views/model.py", "How a model works", "🔍"),
+    ("Check the claims", "The four models that were fixed, the scikit-learn checks every model passes, and the 24-dataset benchmark against XGBoost.", "views/verified.py", "What was fixed and verified", "✅"),
 ]
 for col, (title, text, page, label, icon) in zip(st.columns(3), todo):
     with col, st.container(border=True):
-        ui.card_text(title, text)
+        ui.card_text(title, text, lines=4, badge_line=False)
         st.page_link(page, label=label, icon=icon)
 
 # ── every model, one grid ────────────────────────────────────────────

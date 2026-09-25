@@ -64,8 +64,10 @@ code, pre, .stCode, [data-testid="stDataFrame"] { font-family: "IBM Plex Mono", 
 .block-container { max-width: 1180px; padding-top: 3.2rem; padding-bottom: 3rem; margin: 0 auto; }
 /* uniform cards: the thumbnail, a title line, one tag line, one stat line */
 .nt-card-title { font-weight: 600; margin: 0.35rem 0 0.1rem 0; line-height: 1.25; }
-.nt-card-tag { font-size: 0.86rem; opacity: 0.85; margin: 0; min-height: 2.6em; line-height: 1.3; }
-.nt-card-title .nt-badge { margin-left: 0.3rem; vertical-align: 0.1em; }
+.nt-card-tag { font-size: 0.86rem; opacity: 0.85; margin: 0; line-height: 1.3; }
+.nt-card-tag.l2 { min-height: 2.6em; } .nt-card-tag.l3 { min-height: 3.9em; } .nt-card-tag.l4 { min-height: 5.2em; } .nt-card-tag.l5 { min-height: 6.5em; }
+.nt-card-title .nt-badge { display: block; width: max-content; margin: 0.25rem 0 0 0; }
+.nt-card-title { min-height: 1.3em; }
 .nt-card-stat { font-family: "IBM Plex Mono", Menlo, monospace; font-size: 0.78rem; opacity: 0.7; margin: 0.3rem 0 0 0; }
 .nt-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgba(21,32,43,0.12); font-size: 0.85rem; opacity: 0.8; }
 div[data-testid="stPlotlyChart"] { margin-bottom: 0.2rem; }
@@ -115,11 +117,15 @@ def next_step(text, label, page, **state):
         st.switch_page(page)
 
 
-def card_text(title, tag, stat=None, group=None):
-    """The text block of a uniform card: title (with an optional badge), one tag line, one stat line."""
-    b = f" {badge(group)}" if group else ""
+def card_text(title, tag, stat=None, group=None, lines=2, badge_line=True):
+    """
+    The text block of a uniform card: a title, the group badge on its own line
+    (rendered as an empty line when the card has no group, so neighbours line
+    up), a tag reserved to `lines` lines, and one stat line.
+    """
+    b = badge(group) if group else ('<span class="nt-badge" style="visibility:hidden">x</span>' if badge_line else "")
     st.markdown(
-        f'<div class="nt-card-title">{title}{b}</div><p class="nt-card-tag">{tag}</p>'
+        f'<div class="nt-card-title">{title}{b}</div><p class="nt-card-tag l{lines}">{tag}</p>'
         + (f'<p class="nt-card-stat">{stat}</p>' if stat else ""),
         unsafe_allow_html=True,
     )

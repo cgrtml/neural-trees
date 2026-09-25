@@ -20,7 +20,8 @@ from playground import (
     ui,
 )
 
-ui.title("How a model works", lead="One model at a time: what it does, when to use it, how it works, what its settings do to the boundary, and what it learned from the data.", eyebrow="Look inside")
+ui.title("How a model works", lead="One model at a time, in three steps: what it is, what its settings do to the boundary, and what it learned from the data.", eyebrow="Look inside")
+ui.step(1, "Choose a model", "Pick one; the three columns say what it does, when to use it and how it works.")
 
 st.session_state.setdefault("model_pick", "Soft Decision Tree")
 st.session_state.setdefault("model_data", "Moons")
@@ -33,7 +34,7 @@ c2.markdown(f"**When to use it**\n\n{m['when']}")
 c3.markdown(f"**How it works**\n\n{m['how']}")
 st.caption(f"Source: {m['ref']}. Verification: {m['verified']}")
 
-st.divider()
+ui.step(2, "Turn its knobs", "Change a setting on the left and the boundary on the right refits. Change the data to see the same model on a different problem.")
 left, right = st.columns([1, 2])
 with left:
     st.markdown("**Knobs**")
@@ -57,9 +58,7 @@ with right:
     )
     st.info(f"**Try this:** {m['try_this']}")
 
-st.divider()
-st.subheader("What it learned")
-st.caption(f"Fitted once on all of {data_name}. Below: {m['shows']}.")
+ui.step(3, "See what it learned", f"Fitted once on all of {data_name}. Below: {m['shows']}.")
 X, y, features, targets = dataset(data_name)
 with st.spinner("Fitting on the full dataset..."):
     model = fitted(data_name, name, params_key(params))
