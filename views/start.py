@@ -51,6 +51,15 @@ st.markdown(
     "statistical test that says whether one model is really better than another."
 )
 
+ui.next_step(
+    "Now test that on real data: run these three trees against a random forest on Wine, "
+    "the same folds for all four, and see whether the soft tree's smooth boundary buys "
+    "anything there.",
+    "Try it: compare the three trees on Wine",
+    "views/compare.py",
+    cmp_data="Wine", cmp_reset=["CART (sklearn)", "Multivariate Tree", "Soft Decision Tree", "Random Forest"],
+)
+
 # ── what to do next ──────────────────────────────────────────────────
 st.subheader("What you can do here")
 c1, c2, c3 = st.columns(3)
@@ -82,6 +91,14 @@ for label, names in (("From neural-trees", LIBRARY_MODELS), ("Baselines they are
             st.markdown(f"**{name}** &nbsp;{ui.badge(MODELS[name]['group'])}", unsafe_allow_html=True)
             st.plotly_chart(fig, config={"displayModeBar": False}, key=f"thumb_{name}")
             st.caption(f"train accuracy {acc:.2f} · {MODELS[name]['what']}")
+
+ui.next_step(
+    "Pick any model above and look inside it: what it does, its settings on a live boundary, "
+    "and what it learned.",
+    "Look inside the soft decision tree",
+    "views/model.py",
+    model_pick="Soft Decision Tree",
+)
 
 st.divider()
 st.markdown(

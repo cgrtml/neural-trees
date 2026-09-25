@@ -20,7 +20,14 @@ _CSS = """
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root { --nt-lib: %(lib)s; --nt-base: %(base)s; --nt-warn: %(warn)s; --nt-bad: %(bad)s; }
-html, body, .stApp, [class*="st-"], .stMarkdown, .stCaption, p, li, label { font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
+/* Text only. Streamlit renders its icons as a ligature font, so a broad
+   font-family override turns every arrow into the word "arrow_right". */
+.stMarkdown, .stMarkdown p, .stMarkdown li, .stCaption, .stCaption p, .stText, .stButton button p,
+[data-testid="stWidgetLabel"] p, [data-testid="stMetricLabel"] p, [data-testid="stExpander"] summary p,
+[data-testid="stCheckbox"] p, [data-testid="stRadio"] p, [data-testid="stAlert"] p, .stSelectbox label p {
+  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+}
+[data-testid="stIconMaterial"], .material-symbols-rounded, span[translate="no"] { font-family: "Material Symbols Rounded" !important; }
 h1, h2, h3, .nt-display { font-family: "Bricolage Grotesque", "IBM Plex Sans", Georgia, serif !important; letter-spacing: -0.01em; text-wrap: balance; }
 h1 { font-size: 2.6rem !important; font-weight: 700 !important; line-height: 1.05 !important; margin-bottom: 0.2em !important; }
 h2 { font-size: 1.7rem !important; font-weight: 700 !important; margin-top: 1.6em !important; }
@@ -47,6 +54,10 @@ code, pre, .stCode, [data-testid="stDataFrame"] { font-family: "IBM Plex Mono", 
 .nt-badge { display: inline-block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px; color: white; }
 .nt-badge.lib { background: var(--nt-lib); }
 .nt-badge.base { background: var(--nt-base); }
+/* next-step block */
+.nt-next { margin: 2rem 0 0.4rem 0; padding-top: 1rem; border-top: 1px solid rgba(21,32,43,0.12); }
+.nt-next .k { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--nt-lib); }
+.nt-next p { margin: 0.2rem 0 0.4rem 0; max-width: 62ch; font-size: 1.05rem; }
 /* quieter Streamlit chrome */
 #MainMenu, footer { visibility: hidden; }
 [data-testid="stSidebar"] { border-right: 1px solid rgba(0,0,0,0.06); }
@@ -86,3 +97,12 @@ def badge(group):
     cls = "lib" if group == "neural-trees" else "base"
     label = "neural-trees" if group == "neural-trees" else "baseline"
     return f'<span class="nt-badge {cls}">{label}</span>'
+
+
+def next_step(text, label, page, **state):
+    """A single primary action that carries the reader to the next page with its state set."""
+    st.markdown(f'<div class="nt-next"><div class="k">Next</div><p>{text}</p></div>', unsafe_allow_html=True)
+    if st.button(label, type="primary", key=f"next_{page}_{label}"):
+        for k, v in state.items():
+            st.session_state[k] = v
+        st.switch_page(page)

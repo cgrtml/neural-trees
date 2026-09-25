@@ -22,7 +22,9 @@ from playground import (
 
 ui.title("How a model works", lead="One model at a time: what it does, when to use it, how it works, what its settings do to the boundary, and what it learned from the data.", eyebrow="Look inside")
 
-name = st.selectbox("Model", LIBRARY_MODELS + BASELINE_MODELS, key="model_pick")
+st.session_state.setdefault("model_pick", "Soft Decision Tree")
+st.session_state.setdefault("model_data", "Moons")
+name = st.selectbox("Model", LIBRARY_MODELS + BASELINE_MODELS, key="model_pick", index=None)
 m = MODELS[name]
 st.markdown(f"## {name} &nbsp;{ui.badge(m['group'])}", unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
@@ -43,7 +45,7 @@ with left:
             params[k["param"]] = st.select_slider(k["label"], k["options"], value=k["default"], key=f"knob_{name}_{k['param']}")
     if not m["knobs"]:
         st.caption("No settings to tune; this model has none that matter here.")
-    data_name = st.radio("Data", list(DATASETS), index=0, key="model_data")
+    data_name = st.radio("Data", list(DATASETS), index=None, key="model_data")
     st.caption(DATASETS[data_name]["blurb"] + ("" if DATASETS[data_name]["two_d"] else " Shown through its first two principal components."))
 with right:
     with st.spinner(f"Fitting {name}..."):
@@ -161,4 +163,10 @@ elif name == "Random Forest":
 elif name == "SVM (RBF)":
     st.markdown(f"**{int(model.n_support_.sum())} support vectors** out of {len(y)} samples define the boundary; the rest of the data could be deleted without changing it.")
 
+ui.next_step(
+    f"Put {name} up against the three baselines on {data_name}, same folds for all, and see whether it holds up.",
+    f"Compare {name} with the baselines",
+    "views/compare.py",
+    cmp_data=data_name, cmp_reset=[name] + BASELINE_MODELS,
+)
 glossary(["decision boundary", "standardised", "accuracy ± sd"])

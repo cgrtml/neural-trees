@@ -58,6 +58,9 @@ def _pick(names):
         st.session_state[f"cmp_{m}"] = m in names
 
 
+if "cmp_reset" in st.session_state:  # another page asked for a specific selection
+    _pick(st.session_state.pop("cmp_reset"))
+    st.session_state.pop("cmp_last", None)
 for m in MODELS:
     st.session_state.setdefault(f"cmp_{m}", m in DEFAULT_MODELS)
 b1, b2, b3, _ = st.columns([1, 1, 1, 3])
@@ -200,3 +203,10 @@ if len(order) >= 2:
             st.info(f"No evidence that **{a}** and **{b}** differ on {res_data} (p = {p:.4f}). The one that scored higher today may not tomorrow.")
 
 glossary()
+
+ui.next_step(
+    f"See why {best} came out on top: what it does, what its settings change, and what it learned on {res_data}.",
+    f"Look inside {best}",
+    "views/model.py",
+    model_pick=best, model_data=res_data,
+)
