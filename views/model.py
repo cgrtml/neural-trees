@@ -17,13 +17,14 @@ from playground import (
     glossary,
     params_key,
     two_d,
+    ui,
 )
 
-st.title("How a model works")
+ui.title("How a model works", lead="One model at a time: what it does, when to use it, how it works, what its settings do to the boundary, and what it learned from the data.", eyebrow="Look inside")
 
 name = st.selectbox("Model", LIBRARY_MODELS + BASELINE_MODELS, key="model_pick")
 m = MODELS[name]
-st.subheader(name)
+st.markdown(f"## {name} &nbsp;{ui.badge(m['group'])}", unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
 c1.markdown(f"**What it does**\n\n{m['what']}")
 c2.markdown(f"**When to use it**\n\n{m['when']}")

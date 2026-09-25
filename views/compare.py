@@ -21,18 +21,19 @@ from playground import (
     f_test,
     glossary,
     params_key,
+    ui,
 )
 
-st.title("Compare")
-st.markdown(
-    "Three steps. Pick the data, pick the models, run. Every model is trained and "
-    "tested on the **same cross-validation folds**, so what you get is a difference "
-    "between models, not between splits, and the page says whether that difference "
-    "is real or fold noise."
+ui.title(
+    "Compare",
+    lead="Pick the data, pick the models, run. Every model is trained and tested on the same "
+         "cross-validation folds, so a difference is a difference between models, not between "
+         "splits; the result says whether it is real or fold noise.",
+    eyebrow="Three steps",
 )
 
 # ── step 1: data ─────────────────────────────────────────────────────
-st.subheader("Step 1 · Choose the data")
+ui.step(1, "Choose the data", "Five datasets. The two synthetic ones are drawn as they are; the three real ones through their first two principal components.")
 st.session_state.setdefault("cmp_data", DEFAULT_DATASET)
 cols = st.columns(len(DATASETS))
 for col, (name, info) in zip(cols, DATASETS.items()):
@@ -49,7 +50,7 @@ for col, (name, info) in zip(cols, DATASETS.items()):
 dataset_name = st.session_state.cmp_data
 
 # ── step 2: models ───────────────────────────────────────────────────
-st.subheader("Step 2 · Choose the models")
+ui.step(2, "Choose the models", "Tick the ones to compare. Green badges are this library's models, blue ones the baselines they are measured against.")
 
 
 def _pick(names):
@@ -70,12 +71,13 @@ for label, names in (("From neural-trees", LIBRARY_MODELS), ("Baselines to beat"
     for i, m in enumerate(names):
         with cols[i % 4], st.container(border=True):
             st.checkbox(f"**{m}**", key=f"cmp_{m}")
+            st.markdown(ui.badge(MODELS[m]["group"]), unsafe_allow_html=True)
             st.caption(MODELS[m]["what"])
             st.caption(f"On the model page you can see {MODELS[m]['shows']}.")
 selected = [m for m in MODELS if st.session_state.get(f"cmp_{m}")]
 
 # ── step 3: run ──────────────────────────────────────────────────────
-st.subheader("Step 3 · Run")
+ui.step(3, "Run", "Read what will happen, then press the button. It takes a few seconds per model.")
 folds = st.slider("Folds", 3, 10, 5, help="How many parts the data is cut into; each is held out once.")
 st.session_state.setdefault("split_seed", 0)
 X, y, _, _ = dataset(dataset_name)
@@ -144,13 +146,12 @@ within = [r["model"] for r in rows if r["reading"].startswith("within")]
 behind = [r["model"] for r in rows if r["reading"].startswith("behind")]
 
 st.divider()
-st.subheader(f"Result · {best} scored highest on {res_data}")
-st.markdown(
-    f"{ok[best].mean():.3f} ± {ok[best].std():.3f} over {res_folds} folds. "
-    + (f"Within fold noise of it: **{', '.join(within)}** (a paired t-test over the folds cannot separate them at 5%). " if within else "")
-    + (f"Measurably behind: **{', '.join(behind)}**. " if behind else "")
-    + "The t-test is the quick reading and it is optimistic, because the folds of one split are not independent; "
-    "the F test below is the one to trust."
+ui.verdict(
+    f"Result on {res_data}, {res_folds} folds",
+    f"{best} scored highest: {ok[best].mean():.3f} ± {ok[best].std():.3f}",
+    (f"Within fold noise of it: <b>{', '.join(within)}</b>; a paired t-test over the folds cannot separate them at 5%. " if within else "")
+    + (f"Measurably behind: <b>{', '.join(behind)}</b>. " if behind else "")
+    + "The t-test is the quick reading and it is optimistic; the F test below is the one to trust.",
 )
 if failed:
     st.warning("Did not run: " + ", ".join(f"**{n}** ({e[:60]})" for n, e in failed.items()))
@@ -161,8 +162,10 @@ with t1:
 with t2:
     fig = go.Figure(go.Bar(
         x=[ok[n].mean() for n in order], y=order, orientation="h",
-        error_x=dict(type="data", array=[ok[n].std() for n in order], visible=True),
-        marker_color=[COLORS[n] for n in order], text=[f"{ok[n].mean():.3f}" for n in order], textposition="outside",
+        error_x=dict(type="data", array=[ok[n].std() for n in order], visible=True, thickness=1, width=4, color="rgba(21,32,43,0.55)"),
+        marker_color=[ui.LIBRARY if MODELS[n]["group"] == "neural-trees" else ui.BASELINE for n in order],
+        text=[f"{ok[n].mean():.3f}" for n in order], textposition="inside", insidetextanchor="start",
+        textfont=dict(color="white", family="IBM Plex Mono, Menlo, monospace"),
     ))
     lo = max(0.0, min(ok[n].mean() - ok[n].std() for n in order) - 0.05)
     fig.update_layout(height=60 + 40 * len(order), margin=dict(t=10, b=10, l=10, r=40), xaxis=dict(range=[lo, 1.02], title="accuracy, mean ± sd over folds"),
@@ -173,7 +176,7 @@ with st.expander("Why these results, model by model"):
     for name in order:
         st.markdown(f"**{name}** ({ok[name].mean():.3f}): {MODELS[name]['what']} {MODELS[name]['when']}")
 
-st.subheader("Is the gap real?")
+ui.step(4, "Is the gap real?", "Optional. Pick two models and run the test this library recommends.")
 if len(order) >= 2:
     st.markdown(
         "The combined 5x2cv F test (Alpaydin, 1999) refits two models on five different 2-fold "

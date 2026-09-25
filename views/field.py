@@ -7,13 +7,14 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-st.title("Against the field")
-st.markdown(
-    "Nine models on **24 datasets** (Iris, Wine, Breast Cancer, Digits and twenty from "
-    "OpenML CC-18, capped at 5 000 rows), three seeds of stratified five-fold "
-    "cross-validation, **nothing tuned**: one fixed configuration per model everywhere. "
-    "This takes hours, so it is measured offline by `benchmarks/rakipler.py` and this "
-    "page reads its output."
+from playground import ui
+
+ui.title(
+    "Against the field",
+    lead="Nine models on 24 datasets, three seeds of five-fold cross-validation, nothing tuned: "
+         "one fixed configuration per model everywhere. Measured offline, because it takes hours; "
+         "this page reads the output.",
+    eyebrow="XGBoost, LightGBM, GRANDE, NODE",
 )
 
 

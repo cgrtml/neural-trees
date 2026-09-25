@@ -13,6 +13,8 @@ in `views/` only render.
 
 import streamlit as st
 
+from playground import ui
+
 st.set_page_config(page_title="neural-trees playground", page_icon="🌳", layout="wide")
 
 pages = [
@@ -23,6 +25,7 @@ pages = [
     st.Page("views/field.py", title="Against the field", icon="🏟️"),
 ]
 nav = st.navigation(pages, position="top")
+ui.inject()
 with st.sidebar:
     st.markdown("**neural-trees**")
     st.caption(

@@ -3,12 +3,14 @@
 import pandas as pd
 import streamlit as st
 
-st.title("What was fixed, and how it was checked")
-st.markdown(
-    "The algorithms come from published papers. What this library adds is the part "
-    "that makes them trustworthy: four models that did not work were found and fixed, "
-    "every estimator is held to scikit-learn's contract, and every design choice the "
-    "papers leave open was measured rather than assumed."
+from playground import ui
+
+ui.title(
+    "What was fixed, and how it was checked",
+    lead="The algorithms come from published papers. What this library adds is the part that makes "
+         "them trustworthy: four models that did not work were found and fixed, every estimator is "
+         "held to scikit-learn's contract, and every design choice the papers leave open was measured.",
+    eyebrow="The library's own contribution",
 )
 
 st.subheader("Four models that did not work")
