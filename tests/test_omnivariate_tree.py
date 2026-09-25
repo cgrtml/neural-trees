@@ -110,11 +110,13 @@ def test_test_based_selection_prefers_simpler_splits(wine_split):
     """
     X_train, _, y_train, _ = wine_split
 
-    by_accuracy = OmnivariateDecisionTree(max_depth=3, selection="accuracy").fit(
+    # Seeded since #96 gave the tree a random_state: unseeded, the two trees
+    # draw different class groupings and the count can go either way.
+    by_accuracy = OmnivariateDecisionTree(max_depth=3, selection="accuracy", random_state=0).fit(
         X_train, y_train
     )
     by_test = OmnivariateDecisionTree(
-        max_depth=3, selection="test", min_samples_test=2
+        max_depth=3, selection="test", min_samples_test=2, random_state=0
     ).fit(X_train, y_train)
 
     simple_accuracy = by_accuracy.get_split_type_distribution()["univariate"]
