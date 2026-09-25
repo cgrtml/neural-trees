@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from scipy.stats import ttest_rel
 from plotly.subplots import make_subplots
+from scipy.stats import ttest_rel
 from sklearn.datasets import (
     load_breast_cancer,
     load_iris,
@@ -186,7 +186,7 @@ def _accent(name: str) -> str:
 
 
 # ──────────────────────────────────────────────
-# Sidebar — Configuration
+# Sidebar: Configuration
 # ──────────────────────────────────────────────
 st.sidebar.header("⚙️ Configuration")
 
@@ -233,7 +233,7 @@ selected_models = [n for n in MODEL_NAMES if n in selected_models]
 cv_folds = st.sidebar.slider("🔄 CV Folds", 3, 10, 5)
 
 # ──────────────────────────────────────────────
-# Sidebar — Hyperparameters
+# Sidebar: Hyperparameters
 # ──────────────────────────────────────────────
 st.sidebar.divider()
 st.sidebar.header("🎛️ Hyperparameters")
@@ -743,7 +743,7 @@ with tab_h2h:
 
         # Statistical test
         st.subheader("📐 Statistical Significance")
-        st.caption("Alpaydin's Combined 5×2cv F Test — the gold standard for classifier comparison")
+        st.caption("Alpaydin's Combined 5×2cv F Test: the gold standard for classifier comparison")
         if st.button("Run 5×2cv F Test"):
             with st.spinner("Running 5 repetitions of 2-fold CV..."):
                 try:
