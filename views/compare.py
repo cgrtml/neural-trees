@@ -14,11 +14,12 @@ from playground import (
     DEFAULT_MODELS,
     LIBRARY_MODELS,
     MODELS,
-    cv_scores,
     dataset,
     dataset_figure,
     defaults,
+    estimate_seconds,
     f_test,
+    fold_score,
     glossary,
     params_key,
     ui,
@@ -87,12 +88,14 @@ X, y, _, _ = dataset(dataset_name)
 if len(selected) < 2:
     st.info("Pick at least two models.")
     st.stop()
+laptop_s, hosted_s = estimate_seconds(selected, folds, len(y))
 st.markdown(
     f"**What will happen:** {len(selected)} models ({', '.join(selected)}) will each be trained "
     f"{folds} times on **{dataset_name}** ({len(y)} samples, {X.shape[1]} features standardised "
     f"on each training fold, {len(np.unique(y))} classes), once per fold, with their default "
     "settings. You get: who scored highest, who is within fold noise of them, who is measurably "
-    "behind, and a test for any pair."
+    f"behind, and a test for any pair. **Expect about {max(1, round(hosted_s))} seconds** on the hosted "
+    f"app ({max(1, round(laptop_s))} on a laptop); results are cached, so the same run is instant the second time."
 )
 run_key = (dataset_name, tuple(selected), folds, st.session_state.split_seed)
 r1, r2, _ = st.columns([1, 1, 3])
@@ -103,14 +106,29 @@ if r2.button("Reshuffle the folds", width="stretch", help="Same data, a differen
     go_ = True
 first_visit = "cmp_last" not in st.session_state
 if go_ or first_visit:
+    import time
+
     results = {}
-    bar = st.progress(0, text="Training...")
-    for i, name in enumerate(selected):
-        bar.progress((i + 1) / len(selected), text=f"Training {name} on {folds} folds...")
-        try:
-            results[name] = cv_scores(dataset_name, name, params_key(defaults(name)), folds, st.session_state.split_seed)
-        except Exception as e:  # noqa: BLE001 - shown to the user, not hidden
-            results[name] = str(e)
+    total = len(selected) * folds
+    done = 0
+    t_start = time.time()
+    bar = st.progress(0, text="Starting...")
+    with st.status(f"Training {len(selected)} models on {folds} folds", expanded=True) as status:
+        for name in selected:
+            t0 = time.time()
+            scores = []
+            try:
+                for k in range(folds):
+                    bar.progress(done / total, text=f"{name}: fold {k + 1} of {folds} · {done} of {total} fits done · {time.time() - t_start:.0f} s elapsed")
+                    scores.append(fold_score(dataset_name, name, params_key(defaults(name)), folds, st.session_state.split_seed, k))
+                    done += 1
+                results[name] = np.array(scores)
+                st.write(f"✓ {name}: {np.mean(scores):.3f} in {time.time() - t0:.1f} s")
+            except Exception as e:  # noqa: BLE001 - shown to the user, not hidden
+                results[name] = str(e)
+                done += folds - len(scores)
+                st.write(f"✗ {name} failed: {str(e)[:80]}")
+        status.update(label=f"Done: {len(selected)} models, {total} fits, {time.time() - t_start:.0f} s", state="complete", expanded=False)
     bar.empty()
     st.session_state.cmp_last = (run_key, results)
 

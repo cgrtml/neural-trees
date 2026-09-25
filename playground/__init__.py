@@ -12,6 +12,7 @@ import json
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+import torch
 from sklearn.datasets import (
     load_breast_cancer,
     load_iris,
@@ -36,6 +37,8 @@ from neural_trees import (
     WeightedKNN,
     combined_5x2cv_f_test,
 )
+
+torch.set_num_threads(1)  # see app.py: one thread is the fast path on the hosted machine
 
 # ── datasets ─────────────────────────────────────────────────────────
 
@@ -234,6 +237,32 @@ def cv_scores(dataset_name, model_name, params_json, folds, split_seed):
     X, y, _, _ = dataset(dataset_name)
     splitter = StratifiedKFold(n_splits=folds, shuffle=True, random_state=split_seed)
     return cross_val_score(build(model_name, json.loads(params_json), 0), X, y, cv=splitter, scoring="accuracy")
+
+
+@st.cache_data(show_spinner=False, max_entries=8192, ttl=24 * 3600)
+def fold_score(dataset_name, model_name, params_json, folds, split_seed, fold_index):
+    """One fold of the same split `cv_scores` uses, so a caller can report progress fold by fold."""
+    X, y, _, _ = dataset(dataset_name)
+    splitter = StratifiedKFold(n_splits=folds, shuffle=True, random_state=split_seed)
+    train, test = list(splitter.split(X, y))[fold_index]
+    model = build(model_name, json.loads(params_json), 0).fit(X[train], y[train])
+    return float((model.predict(X[test]) == y[test]).mean())
+
+
+# Seconds per fold on 500 rows with one thread, measured on a laptop; the
+# hosted app is a few times slower, which the estimate says.
+SECONDS_PER_FOLD = {
+    "Soft Decision Tree": 0.55, "Multivariate Tree": 0.02, "Omnivariate Tree": 0.45,
+    "Hierarchical MoE": 0.35, "GAL Network": 0.5, "Weighted KNN": 0.02, "Naive Bayes": 0.01,
+    "CART (sklearn)": 0.01, "Random Forest": 0.1, "SVM (RBF)": 0.02,
+}
+HOSTED_SLOWDOWN = 4.0
+
+
+def estimate_seconds(model_names, folds, n_rows):
+    scale = max(n_rows / 500.0, 0.3)
+    laptop = sum(SECONDS_PER_FOLD.get(m, 0.3) for m in model_names) * folds * scale
+    return laptop, laptop * HOSTED_SLOWDOWN
 
 
 @st.cache_data(show_spinner=False, max_entries=64, ttl=24 * 3600)

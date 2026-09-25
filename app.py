@@ -11,9 +11,17 @@ The registry of models and every cached fit live in `playground/`; the pages
 in `views/` only render.
 """
 
-import streamlit as st
+import os
 
-from playground import ui
+# One thread each. The hosted app has one or two vCPUs, and torch and
+# scikit-learn's OpenMP pools fighting over them made a 15-second run take
+# minutes; the models here are small enough that one thread is the fast path.
+for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
+    os.environ.setdefault(_var, "1")
+
+import streamlit as st  # noqa: E402
+
+from playground import ui  # noqa: E402
 
 st.set_page_config(page_title="neural-trees playground", page_icon="🌳", layout="wide")
 
