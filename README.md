@@ -102,15 +102,20 @@ asks, one page each:
    cross-validation folds, and the page says who scored highest, who is within
    fold noise of them (paired t-test over the folds) and who is measurably
    behind, then runs the combined 5x2cv F test on any pair.
-3. **How a model works**: one model at a time: what it does, when to use it,
+3. **Try it on your data**: upload a CSV, pick the column to predict, and
+   run the same flow on it with imputation, scaling and one-hot encoding
+   fitted inside every fold; then the soft tree's rules, one row explained
+   with its counterfactual, a `model.json` that predicts with numpy alone,
+   and the Python that reproduces the page.
+4. **How a model works**: one model at a time: what it does, when to use it,
    how it works, its knobs on a live boundary, and what it learned: the soft
    tree's rules and a per-prediction explanation, the omnivariate tree's
    choice of split types, the GAL network's growth and pruning, the mixture's
    routing.
-4. **What was fixed and verified**: the four models that did not work, the
+5. **What was fixed and verified**: the four models that did not work, the
    scikit-learn checks every estimator passes, and the design choices that
    were measured rather than assumed.
-5. **Against the field**: the nine-model, 24-dataset benchmark against
+6. **Against the field**: the nine-model, 24-dataset benchmark against
    XGBoost, LightGBM, GRANDE and NODE.
 
 ```bash

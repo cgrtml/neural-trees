@@ -28,6 +28,7 @@ st.set_page_config(page_title="neural-trees playground", page_icon="🌳", layou
 pages = [
     st.Page("views/start.py", title="Start here", icon="🌳", default=True),
     st.Page("views/compare.py", title="Compare", icon="🏁"),
+    st.Page("views/yourdata.py", title="Try it on your data", icon="📄"),
     st.Page("views/model.py", title="How a model works", icon="🔍"),
     st.Page("views/verified.py", title="What was fixed and verified", icon="✅"),
     st.Page("views/field.py", title="Against the field", icon="🏟️"),

@@ -54,10 +54,11 @@ ui.next_step(
 st.subheader("What you can do here")
 todo = [
     ("Compare models on a dataset", "Pick data and models, press run. Who scored highest, who is within noise of them, and whether a gap is real.", "views/compare.py", "Compare", "🏁"),
+    ("Try it on your own data", "Upload a CSV, pick the column to predict, run the same flow, read the soft tree's rules and take the model away as a file.", "views/yourdata.py", "Try it on your data", "📄"),
     ("See how one model works", "What it does, when to use it, its settings on a live boundary, and what it learned: rules, growth, an explained prediction.", "views/model.py", "How a model works", "🔍"),
     ("Check the claims", "The four models that were fixed, the scikit-learn checks every model passes, and the 24-dataset benchmark against XGBoost.", "views/verified.py", "What was fixed and verified", "✅"),
 ]
-for col, (title, text, page, label, icon) in zip(st.columns(3), todo):
+for col, (title, text, page, label, icon) in zip(st.columns(4), todo):
     with col, st.container(border=True):
         ui.card_text(title, text, lines=4, badge_line=False)
         st.page_link(page, label=label, icon=icon)

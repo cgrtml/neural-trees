@@ -15,7 +15,14 @@ All notable changes to this project are documented here. This project follows
   through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
   prints one value per leaf and scores R^2. The module's docstring no
   longer lists these as missing; `explain()` still is.
-- The Streamlit playground is rebuilt as five pages around the questions a
+- A "Try it on your data" page in the playground: upload a CSV, pick the
+  column to predict, and run the same comparison on it, with imputation,
+  scaling and one-hot encoding fitted inside every fold. It reports the
+  majority-class floor next to the models, prints the soft tree's rules,
+  explains any row with its counterfactual, and hands back a `model.json`
+  that predicts with numpy alone plus the Python that reproduces the run.
+  Tables are used in the session only; the hosted app caps at 5 000 rows.
+- The Streamlit playground is rebuilt as pages around the questions a
   visitor asks. *Start here* shows the boundary every model learns on the
   same 2D data; *Compare* trains the chosen models on the same folds and
   says who is highest, who is within fold noise and who is behind, with the

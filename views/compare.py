@@ -190,11 +190,10 @@ with st.expander("Why these results, model by model"):
 
 # ── step 4: the test ─────────────────────────────────────────────────
 ui.step(4, "Is the gap real?", "Optional. The combined 5x2cv F test (Alpaydin, 1999) refits two models on five different 2-fold splits and asks whether the difference survives all of them.")
-a_col, b_col, go_col = st.columns([2, 2, 1])
+a_col, b_col = st.columns(2)
 a = a_col.selectbox("Model A", order, index=0, key="fa")
 b = b_col.selectbox("Model B", [n for n in order if n != a], index=0, key="fb")
-go_col.markdown("<div style='height:1.75rem'></div>", unsafe_allow_html=True)
-if go_col.button("Run the F test", width="stretch"):
+if st.button(f"Run the 5x2cv F test: {a} vs {b}", type="primary", width="stretch"):
     with st.spinner("Ten fits of each model..."):
         F, p, reject = f_test(res_data, a, params_key(defaults(a)), b, params_key(defaults(b)))
     m1, m2, m3 = st.columns(3)
@@ -212,5 +211,6 @@ ui.next_step(
     "views/model.py",
     model_pick=best, model_data=res_data,
 )
+st.page_link("views/yourdata.py", label="Or run the same comparison on your own CSV", icon="📄")
 glossary()
 ui.footer()
