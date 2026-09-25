@@ -171,7 +171,7 @@ def _fit_all(df, target, model_name):
     return pipe.fit(X, y)
 
 
-scale = max(len(y) / 500.0, 0.3) * (1 + X.shape[1] / 50.0)
+scale = max(len(y) / 500.0, 0.3) * (1 + X.shape[1] / 250.0)  # a real run: 1 460 rows x 79 columns, 4 models, 8 folds took 82 s hosted
 hosted_s = sum(SECONDS_PER_FOLD.get(m, 0.4) for m in selected) * folds * scale * HOSTED_SLOWDOWN
 with st.container(border=True):
     what = f"{len(classes)} classes" if task == "classification" else "a number to predict"
