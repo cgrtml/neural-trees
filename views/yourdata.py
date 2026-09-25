@@ -1,6 +1,5 @@
 """Try it on your data: the whole flow on a table you upload, ending with a model you can take away."""
 
-import io
 import time
 
 import numpy as np
@@ -24,6 +23,7 @@ from playground import (
     ui,
 )
 from playground.yourdata import (
+    MAX_COLS,
     MAX_ROWS,
     check_target,
     code_snippet,
@@ -32,6 +32,7 @@ from playground.yourdata import (
     guess_target,
     prepare,
     preprocessor,
+    read_csv,
 )
 
 ui.title(
@@ -43,7 +44,7 @@ ui.title(
 )
 
 # ── step 1: the table ────────────────────────────────────────────────
-ui.step(1, "Get a table", f"A CSV with one row per example and one column that holds the class to predict. Up to {MAX_ROWS} rows are used on the hosted app.")
+ui.step(1, "Get a table", f"A CSV with one row per example and one column that holds the class to predict. Files up to 25 MB; a larger table is subsampled to {MAX_ROWS} rows, keeping class proportions, and at most {MAX_COLS} columns are used. Comma, semicolon and tab separators are detected.")
 u1, u2 = st.columns([2, 1])
 with u1:
     up = st.file_uploader("CSV file", type=["csv"], label_visibility="collapsed")
@@ -62,8 +63,10 @@ with u2:
         st.session_state.yd = ("Wine sample", df)
 if up is not None:
     try:
-        df = pd.read_csv(io.BytesIO(up.getvalue()))
+        with st.spinner(f"Reading {up.name} ({up.size / 1e6:.1f} MB)..."):
+            df = read_csv(up.getvalue())
         st.session_state.yd = (up.name, df)
+        st.session_state.pop("yd_results", None)
     except Exception as e:  # noqa: BLE001 - the user needs the reason
         st.error(f"Could not read that file as CSV: {e}")
 
@@ -222,12 +225,17 @@ else:
     st.caption(f"The hard reading agrees with the soft tree on {agree:.1%} of the rows.")
     i = st.number_input("Row to explain", 0, len(X) - 1, 0, key="yd_row")
     ex = tree.explain(Xt[i:i + 1], feature_names=fnames)[0]
-    st.markdown(f"Row {i}: actual **{classes[int(y[i])]}**, predicted **{classes[int(ex.predicted_class)]}** with p = {ex.probabilities[ex.predicted_class]:.3f}.")
+    st.markdown(f"Row {i}: actual **{r_target} = {classes[int(y[i])]}**, predicted **{classes[int(ex.predicted_class)]}** with p = {ex.probabilities[ex.predicted_class]:.3f}.")
     with st.expander("The explanation, gate by gate", expanded=True):
         st.code(ex.to_text(), language=None)
     if ex.counterfactual is not None:
         cf = ex.counterfactual
-        st.markdown(f"**What would flip it:** move **{cf.feature}** from {cf.from_value:.2f} to {cf.to_value:.2f} (standardised units) and the prediction becomes **{classes[int(cf.new_class)]}** (p = {cf.new_probability:.3f}), verified by re-predicting.")
+        if "=" in cf.feature:  # a one-hot column: the change is turning that category on or off
+            col, val = cf.feature.split("=", 1)
+            change = f"if **{col}** were {'not ' if cf.to_value < cf.from_value else ''}**{val}**"
+        else:
+            change = f"if **{cf.feature}** moved from {cf.from_value:.2f} to {cf.to_value:.2f} (standardised units)"
+        st.markdown(f"**What would flip it:** {change}, the prediction would become **{r_target} = {classes[int(cf.new_class)]}** (p = {cf.new_probability:.3f}), verified by re-predicting.")
 
     # ── step 5: take it away ─────────────────────────────────────────
     ui.step(5, "Take it with you", "The fitted tree as a JSON file that predicts with numpy alone, and the Python that reproduces this page.")

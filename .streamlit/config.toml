@@ -7,3 +7,8 @@ textColor = "#15202B"
 
 [browser]
 gatherUsageStats = false
+
+[server]
+# The hosted app has about 1 GB of memory; a 25 MB CSV is roughly 200 000 rows
+# of 15 columns, far more than the 5 000 rows a run uses.
+maxUploadSize = 25

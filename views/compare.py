@@ -211,6 +211,11 @@ ui.next_step(
     "views/model.py",
     model_pick=best, model_data=res_data,
 )
-st.page_link("views/yourdata.py", label="Or run the same comparison on your own CSV", icon="📄")
+ui.next_step(
+    "Or run exactly this comparison on your own table: upload a CSV, pick the column to predict, "
+    "and get the verdict, the soft tree's rules and a model file for your data.",
+    "Try it on your data",
+    "views/yourdata.py",
+)
 glossary()
 ui.footer()

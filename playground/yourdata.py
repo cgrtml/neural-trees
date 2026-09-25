@@ -22,8 +22,14 @@ MAX_CLASSES = 20
 
 def guess_target(df: pd.DataFrame) -> str:
     """The last column unless a column is named like a label."""
+    names = ("target", "label", "class", "y", "outcome", "diagnosis", "species", "survived", "churn",
+             "default", "fraud", "result", "status", "category", "type")
     for c in df.columns:
-        if str(c).strip().lower() in ("target", "label", "class", "y", "outcome", "diagnosis", "species"):
+        if str(c).strip().lower() in names:
+            return c
+    # otherwise the last column with 2 to MAX_CLASSES distinct values, else the last column
+    for c in reversed(df.columns):
+        if 2 <= df[c].nunique(dropna=True) <= MAX_CLASSES:
             return c
     return df.columns[-1]
 
@@ -36,7 +42,12 @@ def describe(df: pd.DataFrame, target: str):
             continue
         s = df[c]
         if pd.api.types.is_numeric_dtype(s):
-            kind, action = "numeric", "standardised on each training fold; missing values filled with the median"
+            if s.nunique(dropna=True) == len(s.dropna()) and len(s) > 20 and pd.api.types.is_integer_dtype(s):
+                kind, action = "integer id", "dropped: a different value on every row, so it identifies rows rather than describing them"
+            elif s.nunique(dropna=True) <= 1:
+                kind, action = "constant", "dropped: the same value on every row"
+            else:
+                kind, action = "numeric", "standardised on each training fold; missing values filled with the median"
         else:
             n = s.nunique(dropna=True)
             if n > 50:
@@ -85,7 +96,9 @@ def prepare(df: pd.DataFrame, target: str, seed: int = 0):
             continue
         s = data[c]
         if pd.api.types.is_numeric_dtype(s):
-            if s.nunique(dropna=True) > 1:
+            n = s.nunique(dropna=True)
+            is_id = n == len(s.dropna()) and len(s) > 20 and pd.api.types.is_integer_dtype(s)
+            if n > 1 and not is_id:
                 numeric.append(c)
             else:
                 dropped.append(c)
@@ -97,7 +110,7 @@ def prepare(df: pd.DataFrame, target: str, seed: int = 0):
         numeric = numeric[: max(0, MAX_COLS - len(categorical))]
         notes.append(f"Kept the first {MAX_COLS} usable columns.")
     if dropped:
-        notes.append("Dropped: " + ", ".join(str(c) for c in dropped[:8]) + (" ..." if len(dropped) > 8 else "") + " (constant, or text with too many distinct values).")
+        notes.append("Dropped: " + ", ".join(str(c) for c in dropped[:8]) + (" ..." if len(dropped) > 8 else "") + " (constant, an integer id, or text with too many distinct values).")
     X = data[numeric + categorical]
     return X, y, classes, numeric, categorical, notes
 
@@ -151,3 +164,32 @@ tree = model.named_steps["softdecisiontree"]
 print(tree.explain(pre.transform(X.iloc[:1]), feature_names=None)[0].to_text())
 tree.to_numpy().to_json("model.json")          # the same model, no torch needed to predict
 '''
+
+
+def read_csv(raw: bytes) -> pd.DataFrame:
+    """
+    Read an uploaded CSV without asking about separators or encodings: the
+    separator is sniffed, UTF-8 is tried first and Latin-1 second, and a file
+    that parses to a single column is reported rather than accepted.
+    """
+    import io
+
+    head = raw[:4096]
+    printable = sum(b in b"\r\n\t" or 32 <= b < 127 or b >= 128 for b in head) / max(1, len(head))
+    if printable < 0.95 or b"\x00" in head:
+        raise ValueError("this does not look like a text file")
+    last = None
+    for enc in ("utf-8", "utf-8-sig", "latin-1"):
+        try:
+            df = pd.read_csv(io.BytesIO(raw), sep=None, engine="python", encoding=enc)
+        except Exception as e:  # noqa: BLE001 - reported to the user
+            last = e
+            continue
+        if df.shape[1] < 2:
+            last = ValueError("the file parsed to a single column; is it comma, semicolon or tab separated?")
+            continue
+        if len(df) < 10:
+            last = ValueError(f"only {len(df)} rows; five-fold cross-validation needs at least 10")
+            continue
+        return df
+    raise ValueError(str(last))
