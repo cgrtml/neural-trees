@@ -11,3 +11,6 @@
 neural-trees==0.7.0
 streamlit>=1.40
 plotly>=5.0
+
+# Lets Streamlit reload changed modules (playground/, views/) without a reboot.
+watchdog>=3.0
