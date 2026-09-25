@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from scipy.stats import ttest_rel
 from plotly.subplots import make_subplots
 from sklearn.datasets import (
     load_breast_cancer,
@@ -42,10 +43,15 @@ from neural_trees.classical.naive_bayes import NaiveBayesClassifier
 st.set_page_config(page_title="ML Playground", page_icon="🧠", layout="wide")
 
 st.title("🧠 ML Playground")
-st.caption(
-    "Choose algorithms, tune hyperparameters, watch decision boundaries update live. "
-    "Powered by [neural-trees](https://github.com/cgrtml/neural-trees), "
-    "sklearn-compatible implementations of classic ML research."
+st.markdown(
+    "**What this page does.** It takes the models implemented in "
+    "[neural-trees](https://github.com/cgrtml/neural-trees) (soft decision trees, "
+    "multivariate and omnivariate trees, a mixture of experts, a growing network, "
+    "and two classical baselines) and puts them next to the models people usually "
+    "reach for (CART, Random Forest, SVM) on one dataset, with the same "
+    "cross-validation folds for every model. The first tab is the comparison; the "
+    "others show *why* the numbers come out as they do, and whether a difference "
+    "is real or fold noise."
 )
 
 # ──────────────────────────────────────────────
@@ -190,13 +196,27 @@ st.sidebar.caption(DATASET_INFO[dataset_name])
 st.sidebar.markdown("**🤖 Models**")
 
 
+def _select(names):
+    """Tick exactly `names`. Runs as a button callback, before the checkboxes render."""
+    for model_name in MODEL_NAMES:
+        st.session_state[f"pick_{model_name}"] = model_name in names
+
+
+b1, b2, b3 = st.sidebar.columns(3)
+b1.button("All", on_click=_select, args=(MODEL_NAMES,), help="Every model, library and baselines", width="stretch")
+b2.button("Library", on_click=_select, args=(LIBRARY_MODELS,), help="Only the neural-trees models", width="stretch")
+b3.button("Default", on_click=_select, args=(DEFAULT_MODELS,), help="The four the page opens with", width="stretch")
+
+
 def _model_checkboxes(names):
     """One checkbox per model, with what it is for on hover."""
     chosen = []
     for model_name in names:
+        # The default lives in session state, not in `value=`, so the quick
+        # select buttons can set it without Streamlit's double-default warning.
+        st.session_state.setdefault(f"pick_{model_name}", model_name in DEFAULT_MODELS)
         if st.sidebar.checkbox(
             model_name,
-            value=model_name in DEFAULT_MODELS,
             key=f"pick_{model_name}",
             help=MODEL_PURPOSE[model_name],
         ):
@@ -490,13 +510,79 @@ st.divider()
 # ──────────────────────────────────────────────
 # Tabs
 # ──────────────────────────────────────────────
-tab_rank, tab_chart, tab_h2h, tab_boundary, tab_explain, tab_field = st.tabs([
-    "📋 Ranking", "📊 Charts", "⚔️ Head-to-Head", "🗺️ Decision Boundaries",
+tab_compare, tab_rank, tab_chart, tab_h2h, tab_boundary, tab_explain, tab_field = st.tabs([
+    "🏁 Comparison", "📋 Ranking", "📊 Charts", "⚔️ Head-to-Head", "🗺️ Decision Boundaries",
     "🔍 Explain a prediction", "🏟️ Against the field",
 ])
 
+# ── TAB 0: Comparison ──
+with tab_compare:
+    if not valid_results:
+        st.warning("No model produced a result.")
+    else:
+        best_name, best_r = valid_results[0]
+        rows = []
+        for rank, (name, r) in enumerate(valid_results, 1):
+            gap = (r["mean"] - best_r["mean"]) * 100
+            if name == best_name:
+                verdict, p = "best on these folds", np.nan
+            else:
+                p = float(ttest_rel(best_r["scores"], r["scores"]).pvalue) if np.ptp(best_r["scores"] - r["scores"]) > 0 else 1.0
+                verdict = "within fold noise of the best" if p >= 0.05 else "behind the best (p < 0.05)"
+            rows.append({
+                "rank": rank,
+                "model": name,
+                "group": "neural-trees" if name in LIBRARY_MODELS else "baseline",
+                "accuracy": f"{r['mean']:.3f} ± {r['std']:.3f}",
+                "gap to best (points)": f"{gap:+.1f}",
+                "p vs best": "" if np.isnan(p) else f"{p:.3f}",
+                "reading": verdict,
+                "what it is": MODEL_PURPOSE[name],
+            })
+        table = pd.DataFrame(rows).set_index("rank")
+        st.dataframe(table, width="stretch", height=48 + 37 * len(rows))
+        within = [r["model"] for r in rows if r["reading"].startswith("within")]
+        behind = [r["model"] for r in rows if r["reading"].startswith("behind")]
+        st.markdown(
+            f"**{best_name}** scored highest on **{dataset_name}** with {cv_folds}-fold "
+            f"cross-validation ({best_r['mean']:.3f} ± {best_r['std']:.3f}). "
+            + (f"Within fold noise of it: **{', '.join(within)}**; a paired t-test over the "
+               f"{cv_folds} folds cannot tell them apart at 5%. " if within else "")
+            + (f"Measurably behind: **{', '.join(behind)}**. " if behind else "")
+            + "The paired t-test over folds is the quick reading; the Head-to-Head tab runs "
+            "the combined 5x2cv F test, which is the one this library recommends, because "
+            "folds of the same split are not independent and the t-test is optimistic."
+        )
+        failed = [n for n, r in results.items() if "error" in r]
+        if failed:
+            st.warning("Did not run here: " + ", ".join(f"**{n}** ({results[n]['error'][:60]})" for n in failed))
+        with st.expander("What neural-trees changed, and how that was checked"):
+            st.markdown(
+                "- **Four models that did not work in 0.1.x were fixed:** the mixture of "
+                "experts could not take a gradient step, the omnivariate tree sent every "
+                "sample to the same leaf, the GAL network scored at chance, and condensed "
+                "nearest neighbour built an inconsistent prototype set. Each has a "
+                "regression test that fails against the old code.\n"
+                "- **Every classifier passes scikit-learn's estimator checks** (55 checks; "
+                "63 for the ones that accept `sample_weight`), apart from the single "
+                "check that requires weighting a row to be identical to repeating it, "
+                "where the model's weighting is not row repetition; the docstrings say "
+                "which and why. 373 tests in total.\n"
+                "- **Design choices the papers do not make are measured, not assumed:** "
+                "how a soft tree grows (and the proof that the obvious way cannot learn), "
+                "residual-fitted units for GAL, per-leaf growth, the export rules. The "
+                "[design decisions](https://cagritemel.com/neural-trees/design_decisions.html) "
+                "page has the numbers and the "
+                "[Against the field](https://cagritemel.com/neural-trees/benchmarks.html) "
+                "page has the 24-dataset comparison with XGBoost, LightGBM, GRANDE and NODE.\n"
+                "- **Every number on this page is computed live** from the folds you see; "
+                "nothing is typed in. *Reshuffle the splits* in the sidebar shows how much "
+                "they move when only the fold assignment changes."
+            )
+
 # ── TAB 1: Ranking ──
 with tab_rank:
+    st.caption("The same result as the comparison table, one card per model, with the bar showing accuracy relative to the best.")
     best_acc = valid_results[0][1]["mean"] if valid_results else 1.0
     for rank, (name, r) in enumerate(sorted_results, 1):
         medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(rank, f"#{rank}")

@@ -15,7 +15,12 @@ All notable changes to this project are documented here. This project follows
   through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
   prints one value per leaf and scores R^2. The module's docstring no
   longer lists these as missing; `explain()` still is.
-- Two tabs in the Streamlit playground. "Explain a prediction" runs
+- The Streamlit playground opens on a comparison table: every selected
+  model's accuracy, its gap to the best and whether that gap is within fold
+  noise (paired t-test over the folds), with a plain-language summary and a
+  panel on what the library changed and how that was checked. Sidebar
+  buttons select all models, the library's only, or the default four.
+- Two more tabs in the playground. "Explain a prediction" runs
   `SoftDecisionTree.explain()` on any sample of the chosen dataset: the leaf
   it reached, every gate on the path with the deciding features, the
   contribution chart and the verified single-feature counterfactual.

@@ -102,12 +102,15 @@ streamlit run app.py
 ```
 
 It runs a default comparison as soon as it opens, then follows whatever you
-change in the sidebar. Six tabs: a ranking of every selected model with the
-winner called out, side-by-side charts, a head-to-head panel that settles the
-gap with the combined 5x2cv F test rather than an eyeballed accuracy
-difference, decision boundaries, an explanation of any single prediction
-(`explain()`: the path, the deciding features, a verified counterfactual),
-and the nine-model benchmark against XGBoost, LightGBM, GRANDE and NODE.
+change in the sidebar. Seven tabs: a comparison table that says, for every
+selected model, its accuracy, its gap to the best and whether that gap is
+within fold noise (paired t-test over the folds); a ranking with the winner
+called out; side-by-side charts; a head-to-head panel that settles the gap
+with the combined 5x2cv F test rather than an eyeballed accuracy difference;
+decision boundaries; an explanation of any single prediction (`explain()`:
+the path, the deciding features, a verified counterfactual); and the
+nine-model benchmark against XGBoost, LightGBM, GRANDE and NODE. Sidebar
+buttons select all models, the library's models only, or the default four.
 
 The boundary tab can also **animate training**: a soft tree is fitted in stages
 with `warm_start=True` and its boundary captured after each one, which is the
