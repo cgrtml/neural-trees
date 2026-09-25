@@ -1,11 +1,13 @@
 """
-ML Playground — Interactive model comparison dashboard.
+ML Playground: interactive model comparison dashboard.
 Run: streamlit run app.py
 """
 
 import json
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
@@ -473,7 +475,7 @@ valid_results = [(n, r) for n, r in sorted_results if "error" not in r]
 # ──────────────────────────────────────────────
 # Top metrics
 # ──────────────────────────────────────────────
-st.header(f"📊 Results — {dataset_name}")
+st.header(f"📊 Results: {dataset_name}")
 
 if valid_results:
     best_name, best_r = valid_results[0]
@@ -488,8 +490,9 @@ st.divider()
 # ──────────────────────────────────────────────
 # Tabs
 # ──────────────────────────────────────────────
-tab_rank, tab_chart, tab_h2h, tab_boundary = st.tabs([
-    "📋 Ranking", "📊 Charts", "⚔️ Head-to-Head", "🗺️ Decision Boundaries"
+tab_rank, tab_chart, tab_h2h, tab_boundary, tab_explain, tab_field = st.tabs([
+    "📋 Ranking", "📊 Charts", "⚔️ Head-to-Head", "🗺️ Decision Boundaries",
+    "🔍 Explain a prediction", "🏟️ Against the field",
 ])
 
 # ── TAB 1: Ranking ──
@@ -841,6 +844,145 @@ with tab_boundary:
                 f"Final: {titles[-1]}. The same run in code is "
                 "`SoftDecisionTree(warm_start=True)` called repeatedly."
             )
+
+# ── TAB 5: Explain a prediction ──
+@st.cache_resource(show_spinner=False, max_entries=64, ttl=24 * 3600)
+def _fitted_soft_tree(dataset_name, params_json):
+    """One soft tree on the whole (scaled) dataset, for explanations."""
+    X_scaled, y = _scaled_dataset(dataset_name)
+    model = build_model("Soft Decision Tree", json.loads(params_json))
+    model.random_state = 0
+    return model.fit(X_scaled, y)
+
+
+with tab_explain:
+    st.caption(
+        "A soft tree can say why: the leaf that received the sample, every gate on "
+        "the way there with the features that decided it, and the smallest change "
+        "to one feature that would flip the class, checked by re-predicting. "
+        "This is `SoftDecisionTree.explain()`."
+    )
+    if "Soft Decision Tree" not in selected_models:
+        st.info("Select **Soft Decision Tree** in the sidebar to explain its predictions.")
+    else:
+        feature_names = [str(f) for f in getattr(data, "feature_names", [f"x{i}" for i in range(X.shape[1])])]
+        target_names = [str(t) for t in getattr(data, "target_names", np.unique(y))]
+        params_json = json.dumps(hp.get("Soft Decision Tree", {}), sort_keys=True, default=str)
+        with st.spinner("Fitting the tree on the whole dataset..."):
+            tree = _fitted_soft_tree(dataset_name, params_json)
+        pick_col, truth_col = st.columns([2, 3])
+        idx = pick_col.number_input("Sample index", 0, len(y) - 1, 0, key="explain_idx")
+        truth_col.metric("True class", target_names[int(y[idx])])
+        ex = tree.explain(X_scaled[idx:idx + 1], feature_names=feature_names)[0]
+        pred_label = target_names[int(ex.predicted_class)]
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Predicted", pred_label, f"p = {ex.probabilities[ex.predicted_class]:.3f}", delta_color="off")
+        c2.metric("Dominant leaf", f"#{ex.leaf}", f"received {ex.leaf_probability:.3f} of the mass", delta_color="off")
+        c3.metric("Gates on the path", len(ex.path))
+
+        st.subheader("The path")
+        for step in ex.path:
+            terms = ", ".join(f"{t['feature']} ({t['contribution']:+.2f})" for t in step.terms)
+            st.markdown(
+                f"gate **{step.node}** went **{step.went}** with probability "
+                f"{step.probability:.3f}; decided by {terms}"
+            )
+
+        st.subheader("Feature contributions along the path")
+        attr = sorted(ex.attributions.items(), key=lambda kv: abs(kv[1]), reverse=True)[:12]
+        fig_attr = go.Figure(go.Bar(
+            x=[v for _, v in attr][::-1], y=[k for k, _ in attr][::-1], orientation="h",
+            marker_color=["#2ca02c" if v > 0 else "#d62728" for _, v in attr][::-1],
+        ))
+        fig_attr.update_layout(
+            height=max(260, 28 * len(attr) + 80), margin=dict(t=10, b=30, l=10, r=10),
+            plot_bgcolor="white", paper_bgcolor="white", xaxis=dict(gridcolor="#eee", title="contribution (linear gates, not SHAP)"),
+        )
+        st.plotly_chart(fig_attr)
+
+        st.subheader("What would flip it")
+        if ex.counterfactual is None:
+            st.write("No single-feature change on the path flips the class for this sample.")
+        else:
+            cf = ex.counterfactual
+            st.write(
+                f"Set **{cf.feature}** from {cf.from_value:.3f} to {cf.to_value:.3f} "
+                f"(standardised units) and the tree predicts **{target_names[int(cf.new_class)]}** "
+                f"with probability {cf.new_probability:.3f}. Verified by re-predicting."
+            )
+        with st.expander("Plain-text version, as `to_text()` prints it"):
+            st.code(ex.to_text(), language=None)
+
+
+# ── TAB 6: Against the field ──
+@st.cache_data(show_spinner=False)
+def _field_results():
+    """The competitor benchmark shipped with the repository (benchmarks/rakipler.py)."""
+    path = Path(__file__).parent / "benchmarks" / "rakipler-sonuc.json"
+    S = json.loads(path.read_text(encoding="utf-8"))
+    models = S["_modeller"]
+    rows = []
+    for name, R in S.items():
+        if name.startswith("_"):
+            continue
+        row = {"dataset": name, "n": R["n"], "K": R["K"]}
+        for m in models:
+            row[m] = R[m]["acc"] if "acc" in R[m] else np.nan
+        rows.append(row)
+    return models, pd.DataFrame(rows)
+
+
+with tab_field:
+    st.caption(
+        "Nine models on 24 datasets (the four above plus twenty from OpenML CC-18, "
+        "capped at 5 000 rows), three seeds of stratified five-fold cross-validation, "
+        "**nothing tuned**: one fixed configuration per model everywhere. Measured "
+        "offline by `benchmarks/rakipler.py`; this tab reads its output."
+    )
+    field_models, field = _field_results()
+    subset = st.radio(
+        "Datasets", ["all", "n ≤ 1000", "n > 1000", "binary", "multi-class"],
+        horizontal=True, key="field_subset",
+    )
+    mask = {
+        "all": field["n"] > 0,
+        "n ≤ 1000": field["n"] <= 1000,
+        "n > 1000": field["n"] > 1000,
+        "binary": field["K"] == 2,
+        "multi-class": field["K"] > 2,
+    }[subset]
+    sub = field[mask].reset_index(drop=True)
+    acc = sub[field_models]
+    ranks = acc.rank(axis=1, ascending=False)
+    summary = pd.DataFrame({
+        "mean accuracy": acc.mean().round(3),
+        "mean rank": ranks.mean().round(2),
+        "vs XGBoost (points)": ((acc.sub(acc["XGBoost"], axis=0)) * 100).mean().round(2),
+        "wins / ties / losses vs XGBoost": [
+            f"{int((d > 0.5).sum())} / {int((d.abs() <= 0.5).sum())} / {int((d < -0.5).sum())}"
+            for d in [(acc[m] - acc["XGBoost"]) * 100 for m in field_models]
+        ],
+    }).sort_values("mean rank")
+    st.markdown(f"**{len(sub)} datasets.** Summary, best rank first:")
+    st.dataframe(summary, width="stretch")
+
+    st.markdown("Accuracy per dataset (best in bold):")
+    shown = sub.set_index("dataset")
+    st.dataframe(
+        shown.style.highlight_max(axis=1, subset=field_models, props="font-weight: bold; background-color: #fff6d5;").format({m: "{:.3f}" for m in field_models}),
+        width="stretch", height=min(60 + 36 * len(shown), 900),
+    )
+    st.info(
+        "Over all 24 datasets the boosted ensembles, Random Forest and an MLP lead "
+        "and the soft models sit a point or two behind. Switch to **n ≤ 1000**: "
+        "GAL beats untuned XGBoost on every one of the eight small datasets and the "
+        "per-leaf soft tree on seven. The MLP wins there too, so the finding is that "
+        "smooth gradient-trained models beat untuned boosting on small tables; what "
+        "the soft tree adds is the previous tab. The 1 000-row split was chosen after "
+        "seeing the data, and the numbers in the summary are means over datasets, "
+        "not a hypothesis test. Full tables with the Wilcoxon tests are in the "
+        "[documentation](https://cagritemel.com/neural-trees/benchmarks.html)."
+    )
 
 # ──────────────────────────────────────────────
 # Footer

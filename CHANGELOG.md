@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Two tabs in the Streamlit playground. "Explain a prediction" runs
+  `SoftDecisionTree.explain()` on any sample of the chosen dataset: the leaf
+  it reached, every gate on the path with the deciding features, the
+  contribution chart and the verified single-feature counterfactual.
+  "Against the field" reads `benchmarks/rakipler-sonuc.json` and shows the
+  nine-model, 24-dataset comparison with a subset switch (all, small, large,
+  binary, multi-class) and the same caveats as the documentation page. The
+  hosted app now installs neural-trees 0.7.0.
+
 ## [0.7.0] - 2026-09-23
 
 ### Added

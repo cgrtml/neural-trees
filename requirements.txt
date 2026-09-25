@@ -8,6 +8,6 @@
 # prefers them when this index is available.
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-neural-trees==0.6.0
+neural-trees==0.7.0
 streamlit>=1.40
 plotly>=5.0
