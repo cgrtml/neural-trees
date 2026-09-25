@@ -14,6 +14,7 @@ from playground import (
     dataset,
     defaults,
     fitted,
+    glossary,
     params_key,
     two_d,
 )
@@ -47,10 +48,15 @@ with right:
     with st.spinner(f"Fitting {name}..."):
         fig, acc = boundary_figure(data_name, name, params, height=380, title=f"{name} on {data_name}")
     st.plotly_chart(fig, config={"displayModeBar": False})
-    st.caption(f"Training accuracy on this 2D view: {acc:.3f}. Move a knob and the boundary refits.")
+    st.caption(
+        f"Every point of the plane coloured by the class {name} predicts there, with the data on top; "
+        f"training accuracy on this view {acc:.3f}. Move a knob on the left and the boundary refits."
+    )
+    st.info(f"**Try this:** {m['try_this']}")
 
 st.divider()
 st.subheader("What it learned")
+st.caption(f"Fitted once on all of {data_name}. Below: {m['shows']}.")
 X, y, features, targets = dataset(data_name)
 with st.spinner("Fitting on the full dataset..."):
     model = fitted(data_name, name, params_key(params))
@@ -153,3 +159,5 @@ elif name == "Random Forest":
 
 elif name == "SVM (RBF)":
     st.markdown(f"**{int(model.n_support_.sum())} support vectors** out of {len(y)} samples define the boundary; the rest of the data could be deleted without changing it.")
+
+glossary(["decision boundary", "standardised", "accuracy ± sd"])

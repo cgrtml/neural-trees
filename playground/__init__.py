@@ -63,6 +63,8 @@ DEFAULT_DATASET = "Iris"
 
 MODELS = {
     "Soft Decision Tree": dict(
+        shows="the tree printed as rules, one prediction explained gate by gate, and the boundary moving as it trains",
+        try_this="Set depth to 1: the boundary becomes one soft line. Then raise epochs and watch the line sharpen.",
         group="neural-trees",
         what="A decision tree whose splits are smooth. Every sample reaches every leaf with some probability, so the boundary bends instead of stepping.",
         when="You want a tree you can read but a boundary that is not a staircase, and you want to explain single predictions.",
@@ -74,6 +76,8 @@ MODELS = {
         build=lambda p, s: SoftDecisionTree(depth=p.get("depth", 4), max_epochs=p.get("max_epochs", 40), random_state=s),
     ),
     "Multivariate Tree": dict(
+        shows="how many oblique cuts it made and which features the first cut combines",
+        try_this="Compare its boundary with CART on Circles: one diagonal line where CART draws a staircase.",
         group="neural-trees",
         what="A hard decision tree whose splits are lines through many features at once, not thresholds on one.",
         when="Features are correlated and a single oblique cut does what CART needs a staircase of cuts to do.",
@@ -84,6 +88,8 @@ MODELS = {
         build=lambda p, s: MultivariateDecisionTree(max_depth=p.get("max_depth", 3), random_state=s),
     ),
     "Omnivariate Tree": dict(
+        shows="which split type it chose at each node: threshold, line or small network",
+        try_this="Raise max depth and see whether the extra nodes choose simpler or more complex splits.",
         group="neural-trees",
         what="A tree that picks, at every node, whether a single-feature split, a linear split or a small network split fits that node's data best.",
         when="You do not know the shape of the boundary in advance and want the tree to decide, node by node.",
@@ -94,6 +100,8 @@ MODELS = {
         build=lambda p, s: OmnivariateDecisionTree(max_depth=p.get("max_depth", 3), random_state=s),
     ),
     "Hierarchical MoE": dict(
+        shows="the routing printed as rules: which region goes to which expert",
+        try_this="Depth 1 is two experts; depth 3 is eight. Watch the boundary gain detail, and the training time grow.",
         group="neural-trees",
         what="A tree of gates that route regions of the input to specialist networks, trained end to end.",
         when="The data has distinct regimes, each better served by its own model, and a single global rule underfits.",
@@ -105,6 +113,8 @@ MODELS = {
         build=lambda p, s: HierarchicalMixtureOfExperts(depth=p.get("depth", 2), max_epochs=p.get("max_epochs", 50), random_state=s),
     ),
     "GAL Network": dict(
+        shows="every grow and prune decision it made during training, and the size it settled on",
+        try_this="Lower max hidden units to 5 and the growth line flattens at the cap; raise epochs and prunes appear.",
         group="neural-trees",
         what="A neural network that starts tiny, adds hidden units while it trains and prunes the ones that stop earning their place.",
         when="You do not know how big the network should be and would rather the data decide than a grid search.",
@@ -116,6 +126,8 @@ MODELS = {
         build=lambda p, s: GALNetwork(max_epochs=p.get("max_epochs", 80), max_hidden=p.get("max_hidden", 30), random_state=s),
     ),
     "Weighted KNN": dict(
+        shows="how accuracy changes with k on this data",
+        try_this="k = 1 memorises the training set; watch the boundary go jagged. k = 21 smooths it out.",
         group="neural-trees",
         what="No training: a prediction is the vote of the nearest stored examples, closer ones counting more.",
         when="Small, clean data where similar inputs really do have similar labels.",
@@ -126,6 +138,8 @@ MODELS = {
         build=lambda p, s: WeightedKNN(k=p.get("k", 5)),
     ),
     "Naive Bayes": dict(
+        shows="the per-class feature means it classifies with",
+        try_this="It has no knobs. Its boundary on Circles shows what the independence assumption cannot do.",
         group="neural-trees",
         what="A probabilistic baseline that assumes the features are independent given the class.",
         when="A fast, hard-to-break reference point; often strong on high-dimensional counts such as text.",
@@ -136,6 +150,8 @@ MODELS = {
         build=lambda p, s: NaiveBayesClassifier(),
     ),
     "CART (sklearn)": dict(
+        shows="the tree printed as rules",
+        try_this="Depth 1 is a single threshold: one vertical or horizontal line.",
         group="baseline",
         what="The standard decision tree: one feature, one threshold per node.",
         when="The reference every tree above is trying to improve on.",
@@ -146,6 +162,8 @@ MODELS = {
         build=lambda p, s: DecisionTreeClassifier(max_depth=p.get("max_depth", 5), random_state=s),
     ),
     "Random Forest": dict(
+        shows="which features the trees relied on",
+        try_this="Ten trees against three hundred: the boundary stops flickering.",
         group="baseline",
         what="Hundreds of decision trees, each on a bootstrap sample and a random subset of features, voting.",
         when="The accuracy bar a single model has to clear on tabular data.",
@@ -156,6 +174,8 @@ MODELS = {
         build=lambda p, s: RandomForestClassifier(n_estimators=p.get("n_estimators", 100), random_state=s),
     ),
     "SVM (RBF)": dict(
+        shows="how many support vectors define the boundary",
+        try_this="C = 0.1 gives a wide, smooth margin; C = 10 hugs the training points.",
         group="baseline",
         what="A kernel method: the other kind of answer to the same question, not a tree at all.",
         when="Medium-sized data where a smooth, maximum-margin boundary is what you want.",
@@ -166,6 +186,16 @@ MODELS = {
         build=lambda p, s: SVC(kernel="rbf", C=p.get("C", 1.0), random_state=s),
     ),
 }
+GLOSSARY = {
+    "fold": "Cross-validation cuts the data into k parts; each part is held out once while the model trains on the rest. Every model here sees the same cuts.",
+    "accuracy ± sd": "Mean accuracy over the folds, and how much it varied between them. A gap smaller than the sd is usually fold noise.",
+    "fold noise": "The same model on a different fold assignment scores differently. Reshuffle the folds to see how much.",
+    "p-value": "How often a gap at least this large would appear if the two models were equally good. Below 0.05 is the usual line for calling it real.",
+    "5x2cv F test": "Repeats a 2-fold split five times and tests the ten differences together. Slower than a t-test over folds, but its variance estimate is honest; it is what this library recommends.",
+    "decision boundary": "The map of which class the model predicts at every point of the plane. On datasets with more than two features it is drawn on the first two principal components.",
+    "standardised": "Each feature scaled to mean 0 and sd 1 on the training fold, so no feature dominates by its units.",
+}
+
 LIBRARY_MODELS = [n for n, m in MODELS.items() if m["group"] == "neural-trees"]
 BASELINE_MODELS = [n for n, m in MODELS.items() if m["group"] == "baseline"]
 DEFAULT_MODELS = ["Soft Decision Tree", "Multivariate Tree", "CART (sklearn)", "Random Forest"]
@@ -265,3 +295,24 @@ def boundary_figure(dataset_name, model_name, params=None, height=340, title=Non
     fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
     fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
     return fig, acc
+
+
+def dataset_figure(dataset_name, height=150):
+    """A small scatter of the 2D view of a dataset, for a picker card."""
+    X2, y, _ = two_d(dataset_name)
+    fig = go.Figure()
+    for c in np.unique(y):
+        m = y == c
+        fig.add_trace(go.Scatter(x=X2[m, 0], y=X2[m, 1], mode="markers", marker=dict(size=4, color=CLASS_COLORS[int(c) % len(CLASS_COLORS)]), hoverinfo="skip"))
+    fig.update_layout(height=height, margin=dict(t=0, b=0, l=0, r=0), showlegend=False, plot_bgcolor="white", paper_bgcolor="white")
+    fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False)
+    fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False)
+    return fig
+
+
+def glossary(keys=None):
+    """An expander that defines the terms a page uses."""
+    with st.expander("Terms used on this page"):
+        for k, v in GLOSSARY.items():
+            if keys is None or k in keys:
+                st.markdown(f"**{k}**: {v}")

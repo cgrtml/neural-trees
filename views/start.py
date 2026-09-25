@@ -8,6 +8,7 @@ from playground import (
     LIBRARY_MODELS,
     MODELS,
     boundary_figure,
+    glossary,
 )
 
 st.title("neural-trees")
@@ -20,10 +21,24 @@ st.markdown(
     "measurements are this project's."
 )
 
-c1, c2, c3 = st.columns(3)
-c1.markdown("**1. See what each model does**\n\nBelow: the boundary every model learns on the same two-dimensional data. The shape is the model.")
-c2.markdown("**2. Compare them on real data**\n\n*Compare* runs your selection on one dataset with the same folds for every model and says whether the gaps are real or fold noise.")
-c3.markdown("**3. Look inside one**\n\n*How a model works* explains one model, lets you turn its knobs, and shows what it learned: rules, gates, growth.")
+st.markdown("**How to use this site**")
+c1, c2, c3, c4 = st.columns(4)
+with c1, st.container(border=True):
+    st.markdown("**1 · See what each model does**")
+    st.caption("Below on this page: the boundary every model learns on the same data. The shape is the model.")
+with c2, st.container(border=True):
+    st.markdown("**2 · Compare them**")
+    st.caption("Choose data and models, run, and read who wins and whether the gap is fold noise.")
+    st.page_link("views/compare.py", label="Go to Compare", icon="🏁")
+with c3, st.container(border=True):
+    st.markdown("**3 · Look inside one**")
+    st.caption("One model: what it does, when to use it, its knobs on a live boundary, what it learned.")
+    st.page_link("views/model.py", label="Go to How a model works", icon="🔍")
+with c4, st.container(border=True):
+    st.markdown("**4 · Check the claims**")
+    st.caption("What this library fixed and verified, and how it stands against XGBoost and friends.")
+    st.page_link("views/verified.py", label="What was fixed", icon="✅")
+    st.page_link("views/field.py", label="Against the field", icon="🏟️")
 
 st.divider()
 st.subheader("The same problem, ten models")
@@ -48,3 +63,4 @@ st.markdown(
     "in. The larger comparison with XGBoost, LightGBM, GRANDE and NODE on 24 datasets, "
     "which takes hours, is on *Against the field*."
 )
+glossary(["decision boundary", "standardised"])
