@@ -210,6 +210,8 @@ references as the lineage of an idea, not as a claim of exact reproduction.
 
 ## Use Cases
 
+**An auditable model package.** [`cases/german-credit`](cases/german-credit/report.md) is a complete example on the public German Credit data: a soft tree measured against logistic regression, CART, random forest, XGBoost and LightGBM on identical folds with the dataset's cost matrix, then calibration, the rules, three explained decisions with counterfactuals a real applicant could reach, slices by age, sex and residency, refit stability, and the JSON and ONNX model files with an agreement check, all written into a model document from the numbers. Result: the soft tree ties logistic regression on accuracy, AUC and cost and adds the rules and the per-decision paths; the untuned boosters lose on cost because their probabilities are not calibrated. If you have a table of a few hundred to a few thousand rows where every decision must be explained, open an issue and I will run the same package on it.
+
 **Research.** Reproduce or extend results from the original papers with a clean, tested codebase.
 
 **Statistical model comparison.** Compare classifiers with proper hypothesis tests instead of ad hoc accuracy diffs:

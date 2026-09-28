@@ -1,0 +1,1265 @@
+{
+ "library": "0.7.0",
+ "data": {
+  "source": "OpenML 31 (UCI Statlog German Credit)",
+  "n": 1000,
+  "n_bad": 300,
+  "n_good": 700,
+  "numeric": [
+   "duration",
+   "credit_amount",
+   "installment_commitment",
+   "residence_since",
+   "age",
+   "existing_credits",
+   "num_dependents"
+  ],
+  "categorical": [
+   "checking_status",
+   "credit_history",
+   "purpose",
+   "savings_status",
+   "employment",
+   "personal_status",
+   "other_parties",
+   "property_magnitude",
+   "other_payment_plans",
+   "housing",
+   "job",
+   "own_telephone",
+   "foreign_worker"
+  ],
+  "cost_matrix": {
+   "bad_called_good": 5.0,
+   "good_called_bad": 1.0
+  },
+  "bayes_threshold_on_p_bad": 0.16666666666666666
+ },
+ "protocol": {
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "folds": 5,
+  "fits_per_model": 15,
+  "preprocessing": "median impute + standardise numerics, one-hot categoricals, fitted inside each training fold"
+ },
+ "summary": {
+  "Soft tree, per-leaf": {
+   "accuracy": {
+    "mean": 0.7473333333333332,
+    "sd": 0.020690462491090883
+   },
+   "balanced_accuracy": {
+    "mean": 0.667142857142857,
+    "sd": 0.029638519749333805
+   },
+   "auc": {
+    "mean": 0.7855238095238094,
+    "sd": 0.03204573383989233
+   },
+   "brier": {
+    "mean": 0.16812580227851867,
+    "sd": 0.014155492417544234
+   },
+   "log_loss": {
+    "mean": 0.5072986364364624,
+    "sd": 0.03546880497009699
+   },
+   "cost_at_0.5": {
+    "mean": 0.8926666666666668,
+    "sd": 0.0993526667027734
+   },
+   "cost_at_bayes": {
+    "mean": 0.5479999999999999,
+    "sd": 0.06932841099742999
+   },
+   "refusal_rate_at_bayes": {
+    "mean": 0.5939999999999999,
+    "sd": 0.07431112202855546
+   }
+  },
+  "Soft tree, depth 4": {
+   "accuracy": {
+    "mean": 0.7096666666666667,
+    "sd": 0.024088131833707963
+   },
+   "balanced_accuracy": {
+    "mean": 0.6424603174603174,
+    "sd": 0.03332624641216611
+   },
+   "auc": {
+    "mean": 0.7305714285714286,
+    "sd": 0.03597451114184937
+   },
+   "brier": {
+    "mean": 0.22773778637250264,
+    "sd": 0.02160837229532904
+   },
+   "log_loss": {
+    "mean": 0.8812905788421631,
+    "sd": 0.09291287875005674
+   },
+   "cost_at_0.5": {
+    "mean": 0.9209999999999999,
+    "sd": 0.09968163607921256
+   },
+   "cost_at_bayes": {
+    "mean": 0.7606666666666667,
+    "sd": 0.09554106571571847
+   },
+   "refusal_rate_at_bayes": {
+    "mean": 0.3946666666666666,
+    "sd": 0.03259418586774262
+   }
+  },
+  "Logistic regression": {
+   "accuracy": {
+    "mean": 0.7466666666666665,
+    "sd": 0.021015867021530837
+   },
+   "balanced_accuracy": {
+    "mean": 0.666984126984127,
+    "sd": 0.030835948811752913
+   },
+   "auc": {
+    "mean": 0.786547619047619,
+    "sd": 0.03355839955596837
+   },
+   "brier": {
+    "mean": 0.16618312696615856,
+    "sd": 0.013696549454184396
+   },
+   "log_loss": {
+    "mean": 0.5032069583733877,
+    "sd": 0.037699323719759224
+   },
+   "cost_at_0.5": {
+    "mean": 0.892,
+    "sd": 0.09837610046579984
+   },
+   "cost_at_bayes": {
+    "mean": 0.536,
+    "sd": 0.0836916107760253
+   },
+   "refusal_rate_at_bayes": {
+    "mean": 0.5820000000000001,
+    "sd": 0.0298089152531827
+   }
+  },
+  "CART": {
+   "accuracy": {
+    "mean": 0.6773333333333333,
+    "sd": 0.02624518096355068
+   },
+   "balanced_accuracy": {
+    "mean": 0.6190476190476192,
+    "sd": 0.02660083589588065
+   },
+   "auc": {
+    "mean": 0.6190476190476192,
+    "sd": 0.026600835895880647
+   },
+   "brier": {
+    "mean": 0.3226666666666666,
+    "sd": 0.02624518096355069
+   },
+   "log_loss": {
+    "mean": 4.4578054173654085,
+    "sd": 0.3625905484517316
+   },
+   "cost_at_0.5": {
+    "mean": 0.9546666666666667,
+    "sd": 0.0777924589318699
+   },
+   "cost_at_bayes": {
+    "mean": 0.9546666666666667,
+    "sd": 0.0777924589318699
+   },
+   "refusal_rate_at_bayes": {
+    "mean": 0.3066666666666667,
+    "sd": 0.041042950789676534
+   }
+  },
+  "Random forest": {
+   "accuracy": {
+    "mean": 0.7629999999999999,
+    "sd": 0.023130067012440775
+   },
+   "balanced_accuracy": {
+    "mean": 0.6561111111111111,
+    "sd": 0.033632244170804036
+   },
+   "auc": {
+    "mean": 0.7937817460317459,
+    "sd": 0.03061876119546671
+   },
+   "brier": {
+    "mean": 0.16282872222222222,
+    "sd": 0.008328152462345235
+   },
+   "log_loss": {
+    "mean": 0.4937154241006521,
+    "sd": 0.02019885382087037
+   },
+   "cost_at_0.5": {
+    "mean": 0.9703333333333332,
+    "sd": 0.09936345021231517
+   },
+   "cost_at_bayes": {
+    "mean": 0.5443333333333332,
+    "sd": 0.04689908111598572
+   },
+   "refusal_rate_at_bayes": {
+    "mean": 0.7143333333333334,
+    "sd": 0.029992062441983033
+   }
+  },
+  "XGBoost": {
+   "accuracy": {
+    "mean": 0.7486666666666666,
+    "sd": 0.031817934445544295
+   },
+   "balanced_accuracy": {
+    "mean": 0.6734920634920635,
+    "sd": 0.040504858461805626
+   },
+   "auc": {
+    "mean": 0.7751190476190476,
+    "sd": 0.03440611536070948
+   },
+   "brier": {
+    "mean": 0.18625681698322297,
+    "sd": 0.019994860210314446
+   },
+   "log_loss": {
+    "mean": 0.644160803159078,
+    "sd": 0.08192458553821813
+   },
+   "cost_at_0.5": {
+    "mean": 0.8686666666666666,
+    "sd": 0.1110898392336238
+   },
+   "cost_at_bayes": {
+    "mean": 0.6246666666666667,
+    "sd": 0.1020585732849151
+   },
+   "refusal_rate_at_bayes": {
+    "mean": 0.42466666666666664,
+    "sd": 0.03743883901333837
+   }
+  },
+  "LightGBM": {
+   "accuracy": {
+    "mean": 0.7463333333333335,
+    "sd": 0.02924445409369263
+   },
+   "balanced_accuracy": {
+    "mean": 0.6756349206349207,
+    "sd": 0.03904499189215347
+   },
+   "auc": {
+    "mean": 0.7749047619047619,
+    "sd": 0.034619068672854754
+   },
+   "brier": {
+    "mean": 0.2062103621408133,
+    "sd": 0.0249144556067259
+   },
+   "log_loss": {
+    "mean": 0.9329322788353724,
+    "sd": 0.15267299768113135
+   },
+   "cost_at_0.5": {
+    "mean": 0.855,
+    "sd": 0.11090536506409415
+   },
+   "cost_at_bayes": {
+    "mean": 0.7099999999999999,
+    "sd": 0.11443962850091995
+   },
+   "refusal_rate_at_bayes": {
+    "mean": 0.346,
+    "sd": 0.034754239206996634
+   }
+  }
+ },
+ "tests_vs_soft_per_leaf": {
+  "Soft tree, depth 4": {
+   "accuracy": {
+    "diff_mean": -0.03766666666666669,
+    "p_t": 7.048308011842543e-05,
+    "p_wilcoxon": 0.001867696898270307
+   },
+   "auc": {
+    "diff_mean": -0.05495238095238096,
+    "p_t": 8.171969586058909e-06,
+    "p_wilcoxon": 0.0001220703125
+   },
+   "cost_at_bayes": {
+    "diff_mean": 0.21266666666666667,
+    "p_t": 9.504829235244454e-08,
+    "p_wilcoxon": 6.103515625e-05
+   }
+  },
+  "Logistic regression": {
+   "accuracy": {
+    "diff_mean": -0.0006666666666666673,
+    "p_t": 0.8093151976775882,
+    "p_wilcoxon": 0.7577758537595436
+   },
+   "auc": {
+    "diff_mean": 0.0010238095238095158,
+    "p_t": 0.697618133823442,
+    "p_wilcoxon": 0.954698429734882
+   },
+   "cost_at_bayes": {
+    "diff_mean": -0.01200000000000001,
+    "p_t": 0.3396270589723068,
+    "p_wilcoxon": 0.3782898621111326
+   }
+  },
+  "CART": {
+   "accuracy": {
+    "diff_mean": -0.06999999999999999,
+    "p_t": 1.2593863665987334e-07,
+    "p_wilcoxon": 0.0006533107814151373
+   },
+   "auc": {
+    "diff_mean": -0.1664761904761905,
+    "p_t": 2.8562661235461787e-10,
+    "p_wilcoxon": 6.103515625e-05
+   },
+   "cost_at_bayes": {
+    "diff_mean": 0.4066666666666666,
+    "p_t": 8.861814721519135e-10,
+    "p_wilcoxon": 6.103515625e-05
+   }
+  },
+  "Random forest": {
+   "accuracy": {
+    "diff_mean": 0.01566666666666668,
+    "p_t": 0.011449665905674929,
+    "p_wilcoxon": 0.011076807562088835
+   },
+   "auc": {
+    "diff_mean": 0.008257936507936492,
+    "p_t": 0.07787136054379952,
+    "p_wilcoxon": 0.10699462890625
+   },
+   "cost_at_bayes": {
+    "diff_mean": -0.003666666666666666,
+    "p_t": 0.7744383692935772,
+    "p_wilcoxon": 0.5131455306542712
+   }
+  },
+  "XGBoost": {
+   "accuracy": {
+    "diff_mean": 0.0013333333333333346,
+    "p_t": 0.870412719011985,
+    "p_wilcoxon": 0.8887055908352302
+   },
+   "auc": {
+    "diff_mean": -0.010404761904761932,
+    "p_t": 0.06308908423422976,
+    "p_wilcoxon": 0.072998046875
+   },
+   "cost_at_bayes": {
+    "diff_mean": 0.07666666666666665,
+    "p_t": 0.0031710339805183963,
+    "p_wilcoxon": 0.004505955590264732
+   }
+  },
+  "LightGBM": {
+   "accuracy": {
+    "diff_mean": -0.0009999999999999935,
+    "p_t": 0.885180009091195,
+    "p_wilcoxon": 0.8867468258473518
+   },
+   "auc": {
+    "diff_mean": -0.010619047619047632,
+    "p_t": 0.05270648029598775,
+    "p_wilcoxon": 0.083251953125
+   },
+   "cost_at_bayes": {
+    "diff_mean": 0.162,
+    "p_t": 1.6411416154657715e-06,
+    "p_wilcoxon": 0.0001220703125
+   }
+  }
+ },
+ "seconds_per_fit": {
+  "Soft tree, per-leaf": 1.081406291325887,
+  "Soft tree, depth 4": 1.2930707613627115,
+  "Logistic regression": 0.0040793259938557945,
+  "CART": 0.003039375940958659,
+  "Random forest": 0.20186697642008464,
+  "XGBoost": 0.04818159739176432,
+  "LightGBM": 0.0611697514851888
+ },
+ "calibration_seed0_oof": {
+  "Soft tree, per-leaf": {
+   "bins": [
+    {
+     "bin": "0.0-0.1",
+     "n": 279,
+     "mean_predicted": 0.0598391508716943,
+     "observed_bad_rate": 0.07885304659498207
+    },
+    {
+     "bin": "0.1-0.2",
+     "n": 180,
+     "mean_predicted": 0.1470972730467717,
+     "observed_bad_rate": 0.2
+    },
+    {
+     "bin": "0.2-0.3",
+     "n": 126,
+     "mean_predicted": 0.24519780893174428,
+     "observed_bad_rate": 0.23015873015873015
+    },
+    {
+     "bin": "0.3-0.4",
+     "n": 97,
+     "mean_predicted": 0.34904471654252905,
+     "observed_bad_rate": 0.38144329896907214
+    },
+    {
+     "bin": "0.4-0.5",
+     "n": 90,
+     "mean_predicted": 0.4477631284130944,
+     "observed_bad_rate": 0.37777777777777777
+    },
+    {
+     "bin": "0.5-0.6",
+     "n": 92,
+     "mean_predicted": 0.5479557391094125,
+     "observed_bad_rate": 0.5543478260869565
+    },
+    {
+     "bin": "0.6-0.7",
+     "n": 84,
+     "mean_predicted": 0.6498046176774162,
+     "observed_bad_rate": 0.5952380952380952
+    },
+    {
+     "bin": "0.7-0.8",
+     "n": 28,
+     "mean_predicted": 0.7471944604601178,
+     "observed_bad_rate": 0.75
+    },
+    {
+     "bin": "0.8-0.9",
+     "n": 22,
+     "mean_predicted": 0.839415807615627,
+     "observed_bad_rate": 0.8181818181818182
+    },
+    {
+     "bin": "0.9-1.0",
+     "n": 2,
+     "mean_predicted": 0.9241511821746826,
+     "observed_bad_rate": 1.0
+    }
+   ],
+   "ece": 0.03203269613347948
+  },
+  "Soft tree, depth 4": {
+   "bins": [
+    {
+     "bin": "0.0-0.1",
+     "n": 563,
+     "mean_predicted": 0.018241589522004942,
+     "observed_bad_rate": 0.17229129662522202
+    },
+    {
+     "bin": "0.1-0.2",
+     "n": 50,
+     "mean_predicted": 0.14079697400331498,
+     "observed_bad_rate": 0.32
+    },
+    {
+     "bin": "0.2-0.3",
+     "n": 34,
+     "mean_predicted": 0.2501557561404565,
+     "observed_bad_rate": 0.38235294117647056
+    },
+    {
+     "bin": "0.3-0.4",
+     "n": 40,
+     "mean_predicted": 0.3499690264463425,
+     "observed_bad_rate": 0.35
+    },
+    {
+     "bin": "0.4-0.5",
+     "n": 29,
+     "mean_predicted": 0.4502277620907488,
+     "observed_bad_rate": 0.3793103448275862
+    },
+    {
+     "bin": "0.5-0.6",
+     "n": 31,
+     "mean_predicted": 0.5469224299153974,
+     "observed_bad_rate": 0.41935483870967744
+    },
+    {
+     "bin": "0.6-0.7",
+     "n": 37,
+     "mean_predicted": 0.6486697905772442,
+     "observed_bad_rate": 0.43243243243243246
+    },
+    {
+     "bin": "0.7-0.8",
+     "n": 38,
+     "mean_predicted": 0.743159714498018,
+     "observed_bad_rate": 0.3157894736842105
+    },
+    {
+     "bin": "0.8-0.9",
+     "n": 38,
+     "mean_predicted": 0.8476821576294146,
+     "observed_bad_rate": 0.39473684210526316
+    },
+    {
+     "bin": "0.9-1.0",
+     "n": 140,
+     "mean_predicted": 0.9681919421468462,
+     "observed_bad_rate": 0.6642857142857143
+    }
+   ],
+   "ece": 0.19019692535308425
+  },
+  "Logistic regression": {
+   "bins": [
+    {
+     "bin": "0.0-0.1",
+     "n": 290,
+     "mean_predicted": 0.05068550294843213,
+     "observed_bad_rate": 0.06896551724137931
+    },
+    {
+     "bin": "0.1-0.2",
+     "n": 181,
+     "mean_predicted": 0.1476996745193861,
+     "observed_bad_rate": 0.17679558011049723
+    },
+    {
+     "bin": "0.2-0.3",
+     "n": 111,
+     "mean_predicted": 0.2523890642432479,
+     "observed_bad_rate": 0.2702702702702703
+    },
+    {
+     "bin": "0.3-0.4",
+     "n": 108,
+     "mean_predicted": 0.3532462517420451,
+     "observed_bad_rate": 0.37037037037037035
+    },
+    {
+     "bin": "0.4-0.5",
+     "n": 90,
+     "mean_predicted": 0.4495108743508657,
+     "observed_bad_rate": 0.4777777777777778
+    },
+    {
+     "bin": "0.5-0.6",
+     "n": 60,
+     "mean_predicted": 0.5539812286694844,
+     "observed_bad_rate": 0.43333333333333335
+    },
+    {
+     "bin": "0.6-0.7",
+     "n": 70,
+     "mean_predicted": 0.6499008442674364,
+     "observed_bad_rate": 0.5714285714285714
+    },
+    {
+     "bin": "0.7-0.8",
+     "n": 49,
+     "mean_predicted": 0.7417736248094209,
+     "observed_bad_rate": 0.7346938775510204
+    },
+    {
+     "bin": "0.8-0.9",
+     "n": 29,
+     "mean_predicted": 0.8420067224009283,
+     "observed_bad_rate": 0.8275862068965517
+    },
+    {
+     "bin": "0.9-1.0",
+     "n": 12,
+     "mean_predicted": 0.9320038010676702,
+     "observed_bad_rate": 0.75
+    }
+   ],
+   "ece": 0.0326268840432167
+  },
+  "CART": {
+   "bins": [
+    {
+     "bin": "0.0-0.1",
+     "n": 701,
+     "mean_predicted": 0.0,
+     "observed_bad_rate": 0.2296718972895863
+    },
+    {
+     "bin": "0.9-1.0",
+     "n": 299,
+     "mean_predicted": 1.0,
+     "observed_bad_rate": 0.46488294314381273
+    }
+   ],
+   "ece": 0.32099999999999995
+  },
+  "Random forest": {
+   "bins": [
+    {
+     "bin": "0.0-0.1",
+     "n": 149,
+     "mean_predicted": 0.05727069351230425,
+     "observed_bad_rate": 0.053691275167785234
+    },
+    {
+     "bin": "0.1-0.2",
+     "n": 186,
+     "mean_predicted": 0.14557347670250897,
+     "observed_bad_rate": 0.0913978494623656
+    },
+    {
+     "bin": "0.2-0.3",
+     "n": 181,
+     "mean_predicted": 0.24972375690607732,
+     "observed_bad_rate": 0.2265193370165746
+    },
+    {
+     "bin": "0.3-0.4",
+     "n": 168,
+     "mean_predicted": 0.34621031746031744,
+     "observed_bad_rate": 0.32142857142857145
+    },
+    {
+     "bin": "0.4-0.5",
+     "n": 144,
+     "mean_predicted": 0.44951388888888894,
+     "observed_bad_rate": 0.4305555555555556
+    },
+    {
+     "bin": "0.5-0.6",
+     "n": 104,
+     "mean_predicted": 0.5466666666666666,
+     "observed_bad_rate": 0.6057692307692307
+    },
+    {
+     "bin": "0.6-0.7",
+     "n": 46,
+     "mean_predicted": 0.6421739130434783,
+     "observed_bad_rate": 0.7608695652173914
+    },
+    {
+     "bin": "0.7-0.8",
+     "n": 22,
+     "mean_predicted": 0.741060606060606,
+     "observed_bad_rate": 0.9090909090909091
+    }
+   ],
+   "ece": 0.03700666666666666
+  },
+  "XGBoost": {
+   "bins": [
+    {
+     "bin": "0.0-0.1",
+     "n": 505,
+     "mean_predicted": 0.02355004605957976,
+     "observed_bad_rate": 0.1306930693069307
+    },
+    {
+     "bin": "0.1-0.2",
+     "n": 97,
+     "mean_predicted": 0.14764073206899092,
+     "observed_bad_rate": 0.29896907216494845
+    },
+    {
+     "bin": "0.2-0.3",
+     "n": 64,
+     "mean_predicted": 0.242147482233122,
+     "observed_bad_rate": 0.34375
+    },
+    {
+     "bin": "0.3-0.4",
+     "n": 51,
+     "mean_predicted": 0.34316611991209145,
+     "observed_bad_rate": 0.39215686274509803
+    },
+    {
+     "bin": "0.4-0.5",
+     "n": 38,
+     "mean_predicted": 0.4433021412083977,
+     "observed_bad_rate": 0.42105263157894735
+    },
+    {
+     "bin": "0.5-0.6",
+     "n": 39,
+     "mean_predicted": 0.5502243699171604,
+     "observed_bad_rate": 0.5128205128205128
+    },
+    {
+     "bin": "0.6-0.7",
+     "n": 42,
+     "mean_predicted": 0.6574808983575731,
+     "observed_bad_rate": 0.38095238095238093
+    },
+    {
+     "bin": "0.7-0.8",
+     "n": 32,
+     "mean_predicted": 0.7404373791068792,
+     "observed_bad_rate": 0.53125
+    },
+    {
+     "bin": "0.8-0.9",
+     "n": 41,
+     "mean_predicted": 0.8494376380269121,
+     "observed_bad_rate": 0.5609756097560976
+    },
+    {
+     "bin": "0.9-1.0",
+     "n": 91,
+     "mean_predicted": 0.9571635349766239,
+     "observed_bad_rate": 0.7802197802197802
+    }
+   ],
+   "ece": 0.12632841524788635
+  },
+  "LightGBM": {
+   "bins": [
+    {
+     "bin": "0.0-0.1",
+     "n": 604,
+     "mean_predicted": 0.011368834367752618,
+     "observed_bad_rate": 0.16390728476821192
+    },
+    {
+     "bin": "0.1-0.2",
+     "n": 59,
+     "mean_predicted": 0.14745397629326484,
+     "observed_bad_rate": 0.1864406779661017
+    },
+    {
+     "bin": "0.2-0.3",
+     "n": 34,
+     "mean_predicted": 0.25035521330608035,
+     "observed_bad_rate": 0.35294117647058826
+    },
+    {
+     "bin": "0.3-0.4",
+     "n": 23,
+     "mean_predicted": 0.3502119613829187,
+     "observed_bad_rate": 0.391304347826087
+    },
+    {
+     "bin": "0.4-0.5",
+     "n": 30,
+     "mean_predicted": 0.4509915932794122,
+     "observed_bad_rate": 0.5
+    },
+    {
+     "bin": "0.5-0.6",
+     "n": 20,
+     "mean_predicted": 0.5572491920814346,
+     "observed_bad_rate": 0.4
+    },
+    {
+     "bin": "0.6-0.7",
+     "n": 30,
+     "mean_predicted": 0.6426084837325838,
+     "observed_bad_rate": 0.5333333333333333
+    },
+    {
+     "bin": "0.7-0.8",
+     "n": 16,
+     "mean_predicted": 0.7665571079984663,
+     "observed_bad_rate": 0.5
+    },
+    {
+     "bin": "0.8-0.9",
+     "n": 49,
+     "mean_predicted": 0.8611063326980617,
+     "observed_bad_rate": 0.5102040816326531
+    },
+    {
+     "bin": "0.9-1.0",
+     "n": 135,
+     "mean_predicted": 0.9747112341647987,
+     "observed_bad_rate": 0.7185185185185186
+    }
+   ],
+   "ece": 0.16280511827401306
+  }
+ },
+ "slices_soft_per_leaf_seed0_oof": {
+  "age < 25": {
+   "n": 149,
+   "actual_bad_rate": 0.40939597315436244,
+   "refusal_rate": 0.7718120805369127,
+   "accuracy": 0.6442953020134228,
+   "bad_missed_rate": 0.08196721311475409,
+   "good_refused_rate": 0.6704545454545454
+  },
+  "age >= 25": {
+   "n": 851,
+   "actual_bad_rate": 0.2808460634547591,
+   "refusal_rate": 0.5605170387779084,
+   "accuracy": 0.7755581668625147,
+   "bad_missed_rate": 0.14644351464435146,
+   "good_refused_rate": 0.44607843137254904
+  },
+  "female": {
+   "n": 310,
+   "actual_bad_rate": 0.35161290322580646,
+   "refusal_rate": 0.6451612903225806,
+   "accuracy": 0.7419354838709677,
+   "bad_missed_rate": 0.11009174311926606,
+   "good_refused_rate": 0.5124378109452736
+  },
+  "male": {
+   "n": 690,
+   "actual_bad_rate": 0.2768115942028985,
+   "refusal_rate": 0.5681159420289855,
+   "accuracy": 0.7623188405797101,
+   "bad_missed_rate": 0.14659685863874344,
+   "good_refused_rate": 0.4589178356713427
+  },
+  "foreign worker": {
+   "n": 963,
+   "actual_bad_rate": 0.3073727933541018,
+   "refusal_rate": 0.6033229491173416,
+   "accuracy": 0.7518172377985463,
+   "bad_missed_rate": 0.13175675675675674,
+   "good_refused_rate": 0.48575712143928035
+  },
+  "not a foreign worker": {
+   "n": 37,
+   "actual_bad_rate": 0.10810810810810811,
+   "refusal_rate": 0.2972972972972973,
+   "accuracy": 0.8648648648648649,
+   "bad_missed_rate": 0.25,
+   "good_refused_rate": 0.24242424242424243
+  }
+ },
+ "slices_logistic_seed0_oof": {
+  "age < 25": {
+   "n": 149,
+   "actual_bad_rate": 0.40939597315436244,
+   "refusal_rate": 0.7583892617449665,
+   "accuracy": 0.6308724832214765,
+   "bad_missed_rate": 0.04918032786885246,
+   "good_refused_rate": 0.625
+  },
+  "age >= 25": {
+   "n": 851,
+   "actual_bad_rate": 0.2808460634547591,
+   "refusal_rate": 0.5499412455934195,
+   "accuracy": 0.7708578143360753,
+   "bad_missed_rate": 0.1589958158995816,
+   "good_refused_rate": 0.4362745098039216
+  },
+  "female": {
+   "n": 310,
+   "actual_bad_rate": 0.35161290322580646,
+   "refusal_rate": 0.6451612903225806,
+   "accuracy": 0.7225806451612903,
+   "bad_missed_rate": 0.10091743119266056,
+   "good_refused_rate": 0.5074626865671642
+  },
+  "male": {
+   "n": 690,
+   "actual_bad_rate": 0.2768115942028985,
+   "refusal_rate": 0.5521739130434783,
+   "accuracy": 0.7623188405797101,
+   "bad_missed_rate": 0.15706806282722513,
+   "good_refused_rate": 0.4408817635270541
+  },
+  "foreign worker": {
+   "n": 963,
+   "actual_bad_rate": 0.3073727933541018,
+   "refusal_rate": 0.592938733125649,
+   "accuracy": 0.7435098650051921,
+   "bad_missed_rate": 0.13513513513513514,
+   "good_refused_rate": 0.47226386806596704
+  },
+  "not a foreign worker": {
+   "n": 37,
+   "actual_bad_rate": 0.10810810810810811,
+   "refusal_rate": 0.2702702702702703,
+   "accuracy": 0.918918918918919,
+   "bad_missed_rate": 0.25,
+   "good_refused_rate": 0.21212121212121213
+  }
+ },
+ "structure_per_fit": [
+  {
+   "seed": 0,
+   "fold": 0,
+   "n_splits": 3,
+   "root_top_features": [
+    "checking_status=no checking",
+    "duration",
+    "other_payment_plans=none"
+   ],
+   "hard_agreement": 0.985
+  },
+  {
+   "seed": 0,
+   "fold": 1,
+   "n_splits": 1,
+   "root_top_features": [
+    "duration",
+    "checking_status=no checking",
+    "installment_commitment"
+   ],
+   "hard_agreement": 0.885
+  },
+  {
+   "seed": 0,
+   "fold": 2,
+   "n_splits": 3,
+   "root_top_features": [
+    "checking_status=no checking",
+    "duration",
+    "other_payment_plans=none"
+   ],
+   "hard_agreement": 0.94
+  },
+  {
+   "seed": 0,
+   "fold": 3,
+   "n_splits": 2,
+   "root_top_features": [
+    "duration",
+    "checking_status=no checking",
+    "other_payment_plans=none"
+   ],
+   "hard_agreement": 0.91
+  },
+  {
+   "seed": 0,
+   "fold": 4,
+   "n_splits": 1,
+   "root_top_features": [
+    "installment_commitment",
+    "checking_status=no checking",
+    "duration"
+   ],
+   "hard_agreement": 0.895
+  },
+  {
+   "seed": 1,
+   "fold": 0,
+   "n_splits": 4,
+   "root_top_features": [
+    "checking_status=no checking",
+    "duration",
+    "installment_commitment"
+   ],
+   "hard_agreement": 0.975
+  },
+  {
+   "seed": 1,
+   "fold": 1,
+   "n_splits": 1,
+   "root_top_features": [
+    "duration",
+    "credit_amount",
+    "installment_commitment"
+   ],
+   "hard_agreement": 0.805
+  },
+  {
+   "seed": 1,
+   "fold": 2,
+   "n_splits": 1,
+   "root_top_features": [
+    "checking_status=no checking",
+    "duration",
+    "installment_commitment"
+   ],
+   "hard_agreement": 0.92
+  },
+  {
+   "seed": 1,
+   "fold": 3,
+   "n_splits": 2,
+   "root_top_features": [
+    "checking_status=no checking",
+    "duration",
+    "credit_amount"
+   ],
+   "hard_agreement": 0.95
+  },
+  {
+   "seed": 1,
+   "fold": 4,
+   "n_splits": 3,
+   "root_top_features": [
+    "checking_status=no checking",
+    "installment_commitment",
+    "other_payment_plans=none"
+   ],
+   "hard_agreement": 0.965
+  },
+  {
+   "seed": 2,
+   "fold": 0,
+   "n_splits": 1,
+   "root_top_features": [
+    "duration",
+    "checking_status=no checking",
+    "savings_status=<100"
+   ],
+   "hard_agreement": 0.885
+  },
+  {
+   "seed": 2,
+   "fold": 1,
+   "n_splits": 4,
+   "root_top_features": [
+    "checking_status=no checking",
+    "credit_amount",
+    "duration"
+   ],
+   "hard_agreement": 0.97
+  },
+  {
+   "seed": 2,
+   "fold": 2,
+   "n_splits": 1,
+   "root_top_features": [
+    "checking_status=no checking",
+    "duration",
+    "other_payment_plans=none"
+   ],
+   "hard_agreement": 0.895
+  },
+  {
+   "seed": 2,
+   "fold": 3,
+   "n_splits": 1,
+   "root_top_features": [
+    "checking_status=no checking",
+    "duration",
+    "installment_commitment"
+   ],
+   "hard_agreement": 0.875
+  },
+  {
+   "seed": 2,
+   "fold": 4,
+   "n_splits": 2,
+   "root_top_features": [
+    "installment_commitment",
+    "checking_status=no checking",
+    "personal_status=male single"
+   ],
+   "hard_agreement": 0.945
+  }
+ ],
+ "explanations": [
+  {
+   "case": "clearly refused (highest P(bad))",
+   "row_index": 973,
+   "actual": "bad",
+   "p_bad": 0.9298713207244873,
+   "applicant": {
+    "checking_status": "<0",
+    "duration": 60,
+    "credit_history": "existing paid",
+    "purpose": "business",
+    "credit_amount": 7297,
+    "savings_status": "<100",
+    "employment": ">=7",
+    "installment_commitment": 4,
+    "personal_status": "male single",
+    "other_parties": "co applicant",
+    "residence_since": 4,
+    "property_magnitude": "no known property",
+    "age": 36,
+    "other_payment_plans": "none",
+    "housing": "rent",
+    "existing_credits": 1,
+    "job": "skilled",
+    "num_dependents": 1,
+    "own_telephone": "none",
+    "foreign_worker": "yes"
+   },
+   "text": "predicted 'bad' with probability 0.930\ndominant leaf 6 received 0.936 of the sample's mass; its distribution is 'bad': 0.971, 'good': 0.029\npath:\n  gate 0: went right with p=0.986  (+1.831[duration] +1.025[checking_status=<0] +0.729[credit_amount])\n  gate 2: went right with p=0.949  (+1.186[employment=>=7] +0.781[residence_since] +0.752[installment_commitment])\nlargest contributions: duration 1.842, employment=>=7 1.366, checking_status=<0 1.211, other_payment_plans=none 1.021, credit_amount 0.893\ncounterfactual: no single-feature change on this path flips the class",
+   "counterfactual_in_words": null,
+   "reachable_flips": [],
+   "reachable_tried": 81
+  },
+  {
+   "case": "clearly accepted (lowest P(bad))",
+   "row_index": 851,
+   "actual": "good",
+   "p_bad": 0.02398788183927536,
+   "applicant": {
+    "checking_status": "no checking",
+    "duration": 24,
+    "credit_history": "critical/other existing credit",
+    "purpose": "used car",
+    "credit_amount": 4042,
+    "savings_status": "no known savings",
+    "employment": "4<=X<7",
+    "installment_commitment": 3,
+    "personal_status": "male single",
+    "other_parties": "none",
+    "residence_since": 4,
+    "property_magnitude": "life insurance",
+    "age": 43,
+    "other_payment_plans": "none",
+    "housing": "own",
+    "existing_credits": 2,
+    "job": "skilled",
+    "num_dependents": 1,
+    "own_telephone": "yes",
+    "foreign_worker": "yes"
+   },
+   "text": "predicted 'good' with probability 0.976\ndominant leaf 4 received 0.799 of the sample's mass; its distribution is 'bad': 0.015, 'good': 0.985\npath:\n  gate 0: went left with p=0.998  (-1.188[credit_history=critical/other existing credit] -1.154[purpose=used car] -1.139[checking_status=no checking])\n  gate 1: went right with p=0.801  (+0.430[purpose=used car] +0.375[checking_status=no checking] -0.210[existing_credits])\nlargest contributions: purpose=used car 1.583, checking_status=no checking 1.513, credit_history=critical/other existing credit 1.369, employment=4<=X<7 1.174, savings_status=no known savings 0.583\ncounterfactual: no single-feature change on this path flips the class",
+   "counterfactual_in_words": null,
+   "reachable_flips": [],
+   "reachable_tried": 85
+  },
+  {
+   "case": "borderline (P(bad) nearest the 1/6 threshold)",
+   "row_index": 970,
+   "actual": "good",
+   "p_bad": 0.16570478677749634,
+   "applicant": {
+    "checking_status": "0<=X<200",
+    "duration": 15,
+    "credit_history": "existing paid",
+    "purpose": "repairs",
+    "credit_amount": 1514,
+    "savings_status": "100<=X<500",
+    "employment": "1<=X<4",
+    "installment_commitment": 4,
+    "personal_status": "male single",
+    "other_parties": "guarantor",
+    "residence_since": 2,
+    "property_magnitude": "real estate",
+    "age": 22,
+    "other_payment_plans": "none",
+    "housing": "own",
+    "existing_credits": 1,
+    "job": "skilled",
+    "num_dependents": 1,
+    "own_telephone": "none",
+    "foreign_worker": "yes"
+   },
+   "text": "predicted 'good' with probability 0.834\ndominant leaf 4 received 0.433 of the sample's mass; its distribution is 'bad': 0.015, 'good': 0.985\npath:\n  gate 0: went left with p=0.848  (-1.325[other_parties=guarantor] +0.689[purpose=repairs] -0.500[other_payment_plans=none])\n  gate 1: went right with p=0.511  (-0.189[purpose=repairs] +0.164[savings_status=100<=X<500] +0.163[property_magnitude=real estate])\nlargest contributions: other_parties=guarantor 1.335, purpose=repairs 0.849, other_payment_plans=none 0.515, checking_status=0<=X<200 0.399, property_magnitude=real estate 0.391\ncounterfactual: no single-feature change on this path flips the class",
+   "counterfactual_in_words": null,
+   "reachable_flips": [
+    {
+     "column": "job",
+     "from": "skilled",
+     "to": "unskilled resident",
+     "p_bad": 0.1670854091644287,
+     "size": 0.0
+    },
+    {
+     "column": "job",
+     "from": "skilled",
+     "to": "high qualif/self emp/mgmt",
+     "p_bad": 0.17054110765457153,
+     "size": 0.0
+    },
+    {
+     "column": "property_magnitude",
+     "from": "real estate",
+     "to": "car",
+     "p_bad": 0.17447204887866974,
+     "size": 0.0
+    },
+    {
+     "column": "employment",
+     "from": "1<=X<4",
+     "to": ">=7",
+     "p_bad": 0.17915400862693787,
+     "size": 0.0
+    },
+    {
+     "column": "property_magnitude",
+     "from": "real estate",
+     "to": "no known property",
+     "p_bad": 0.19048412144184113,
+     "size": 0.0
+    }
+   ],
+   "reachable_tried": 82
+  }
+ ],
+ "final_model": {
+  "n_splits": 2,
+  "n_leaves": 3,
+  "n_features_after_encoding": 61,
+  "onnx_max_abs_diff": 2.384185791015625e-07,
+  "onnx_label_agreement": 1.0,
+  "onnx_microseconds_per_row": 6.184577941894531,
+  "onnx_bytes": 18143,
+  "json_bytes": 86704,
+  "hard_agreement_in_sample": 0.93,
+  "training_accuracy": 0.78,
+  "rules_lines": 5,
+  "gate_contributions": [
+   {
+    "gate": 0,
+    "inputs": [
+     [
+      "checking_status=no checking",
+      0.07854308933019638
+     ],
+     [
+      "duration",
+      0.06502899527549744
+     ],
+     [
+      "installment_commitment",
+      0.056601494550704956
+     ],
+     [
+      "credit_amount",
+      0.05635099112987518
+     ],
+     [
+      "other_payment_plans=none",
+      0.05628829821944237
+     ]
+    ]
+   },
+   {
+    "gate": 1,
+    "inputs": [
+     [
+      "installment_commitment",
+      0.14112721383571625
+     ],
+     [
+      "residence_since",
+      0.12954917550086975
+     ],
+     [
+      "num_dependents",
+      0.06149836257100105
+     ],
+     [
+      "other_payment_plans=none",
+      0.059209536761045456
+     ],
+     [
+      "existing_credits",
+      0.057416532188653946
+     ]
+    ]
+   }
+  ]
+ },
+ "total_seconds": 43.64812397956848
+}

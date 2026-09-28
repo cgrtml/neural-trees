@@ -50,6 +50,13 @@ the class actually changes. If no single-feature change on the path flips the
 class, the field is ``None`` rather than a guess. All values are in the
 model's input units: if you fitted on standardised features, so are these.
 
+The search knows nothing about what values a feature can take, so on a
+one-hot column it may propose "set ``purpose=used car`` to 2.2". Pass
+``feature_bounds=(lower, upper)`` to keep every proposed value inside a
+range: ``(0, 1)`` for one-hot columns, the training minimum and maximum
+for the rest. The candidate is clipped into the range and reported only if
+the clipped value still flips the class; otherwise the search moves on.
+
 Cost
 ----
 

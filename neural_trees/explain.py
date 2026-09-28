@@ -113,12 +113,16 @@ def explain_soft_tree(
     feature_names: Optional[Sequence[str]] = None,
     max_terms: int = 3,
     counterfactual: bool = True,
+    feature_bounds=None,
 ) -> List[Explanation]:
     """
     Build an :class:`Explanation` for every row of `X`.
 
     `model` is a fitted :class:`~neural_trees.SoftDecisionTree`; `X` has
-    already been validated and cast by the caller.
+    already been validated and cast by the caller. `feature_bounds`, if
+    given, is ``(lower, upper)``, each of length ``n_features``: a
+    counterfactual value is clipped into that range before it is tried, so
+    a one-hot input bounded by ``(0, 1)`` is never "set to 2.2".
     """
     import torch
     import torch.nn.functional as F
@@ -132,6 +136,11 @@ def explain_soft_tree(
         raise ValueError(
             f"feature_names has {len(feature_names)} entries, expected {n_features}")
     classes = list(model.classes_)
+    bounds = None
+    if feature_bounds is not None:
+        bounds = np.asarray(feature_bounds, dtype=np.float64)
+        if bounds.shape != (2, n_features):
+            raise ValueError(f"feature_bounds must have shape (2, {n_features}), got {bounds.shape}")
 
     m.eval()
     X_t = torch.as_tensor(np.asarray(X, dtype=np.float32), device=model.device_)
@@ -192,8 +201,10 @@ def explain_soft_tree(
                         continue
                     # move feature j just past the gate's zero crossing
                     new_val = x[j] - z / w[j] - np.sign(w[j]) * np.sign(z) * 1e-3
+                    if bounds is not None:
+                        new_val = float(np.clip(new_val, bounds[0, j], bounds[1, j]))
                     delta = abs(new_val - x[j])
-                    if delta >= best_delta:
+                    if delta == 0.0 or delta >= best_delta:
                         continue
                     x_cf = x.copy()
                     x_cf[j] = new_val

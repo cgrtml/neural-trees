@@ -6,6 +6,8 @@ All notable changes to this project are documented here. This project follows
 ## [Unreleased]
 
 ### Added
+- `explain(..., feature_bounds=(lower, upper))` keeps a counterfactual inside the values a feature can take, so a one-hot column is never "set to 2.2". The clipped candidate is still verified by re-predicting.
+- `cases/german-credit/`: the first auditable model package. One script measures a soft tree against logistic regression, CART, random forest, XGBoost and LightGBM on identical folds with the dataset's cost matrix, writes calibration, rules, three explained decisions with reachable counterfactuals, slices by age, sex and residency, refit stability, the JSON and ONNX model files with an agreement check, and a model document generated from the numbers.
 
 - `SoftDecisionTreeRegressor` gains what the classifier had and it lacked:
   `growth` (`"incremental"`, `"per_leaf"`) with `growth_init`,

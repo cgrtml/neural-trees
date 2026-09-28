@@ -1,0 +1,185 @@
+{
+ "input_order": [
+  "duration",
+  "credit_amount",
+  "installment_commitment",
+  "residence_since",
+  "age",
+  "existing_credits",
+  "num_dependents",
+  "checking_status=0<=X<200",
+  "checking_status=<0",
+  "checking_status=>=200",
+  "checking_status=no checking",
+  "credit_history=all paid",
+  "credit_history=critical/other existing credit",
+  "credit_history=delayed previously",
+  "credit_history=existing paid",
+  "credit_history=no credits/all paid",
+  "purpose=business",
+  "purpose=domestic appliance",
+  "purpose=education",
+  "purpose=furniture/equipment",
+  "purpose=new car",
+  "purpose=other",
+  "purpose=radio/tv",
+  "purpose=repairs",
+  "purpose=retraining",
+  "purpose=used car",
+  "savings_status=100<=X<500",
+  "savings_status=500<=X<1000",
+  "savings_status=<100",
+  "savings_status=>=1000",
+  "savings_status=no known savings",
+  "employment=1<=X<4",
+  "employment=4<=X<7",
+  "employment=<1",
+  "employment=>=7",
+  "employment=unemployed",
+  "personal_status=female div/dep/mar",
+  "personal_status=male div/sep",
+  "personal_status=male mar/wid",
+  "personal_status=male single",
+  "other_parties=co applicant",
+  "other_parties=guarantor",
+  "other_parties=none",
+  "property_magnitude=car",
+  "property_magnitude=life insurance",
+  "property_magnitude=no known property",
+  "property_magnitude=real estate",
+  "other_payment_plans=bank",
+  "other_payment_plans=none",
+  "other_payment_plans=stores",
+  "housing=for free",
+  "housing=own",
+  "housing=rent",
+  "job=high qualif/self emp/mgmt",
+  "job=skilled",
+  "job=unemp/unskilled non res",
+  "job=unskilled resident",
+  "own_telephone=none",
+  "own_telephone=yes",
+  "foreign_worker=no",
+  "foreign_worker=yes"
+ ],
+ "numeric": {
+  "duration": {
+   "impute_median": 18.0,
+   "mean": 20.903,
+   "scale": 12.052783537424043
+  },
+  "credit_amount": {
+   "impute_median": 2319.5,
+   "mean": 3271.258,
+   "scale": 2821.3251545038192
+  },
+  "installment_commitment": {
+   "impute_median": 3.0,
+   "mean": 2.973,
+   "scale": 1.1181551770662246
+  },
+  "residence_since": {
+   "impute_median": 3.0,
+   "mean": 2.845,
+   "scale": 1.1031658986752626
+  },
+  "age": {
+   "impute_median": 33.0,
+   "mean": 35.546,
+   "scale": 11.36977941738537
+  },
+  "existing_credits": {
+   "impute_median": 1.0,
+   "mean": 1.407,
+   "scale": 0.5773655687690427
+  },
+  "num_dependents": {
+   "impute_median": 1.0,
+   "mean": 1.155,
+   "scale": 0.36190468358395134
+  }
+ },
+ "categorical": {
+  "checking_status": [
+   "0<=X<200",
+   "<0",
+   ">=200",
+   "no checking"
+  ],
+  "credit_history": [
+   "all paid",
+   "critical/other existing credit",
+   "delayed previously",
+   "existing paid",
+   "no credits/all paid"
+  ],
+  "purpose": [
+   "business",
+   "domestic appliance",
+   "education",
+   "furniture/equipment",
+   "new car",
+   "other",
+   "radio/tv",
+   "repairs",
+   "retraining",
+   "used car"
+  ],
+  "savings_status": [
+   "100<=X<500",
+   "500<=X<1000",
+   "<100",
+   ">=1000",
+   "no known savings"
+  ],
+  "employment": [
+   "1<=X<4",
+   "4<=X<7",
+   "<1",
+   ">=7",
+   "unemployed"
+  ],
+  "personal_status": [
+   "female div/dep/mar",
+   "male div/sep",
+   "male mar/wid",
+   "male single"
+  ],
+  "other_parties": [
+   "co applicant",
+   "guarantor",
+   "none"
+  ],
+  "property_magnitude": [
+   "car",
+   "life insurance",
+   "no known property",
+   "real estate"
+  ],
+  "other_payment_plans": [
+   "bank",
+   "none",
+   "stores"
+  ],
+  "housing": [
+   "for free",
+   "own",
+   "rent"
+  ],
+  "job": [
+   "high qualif/self emp/mgmt",
+   "skilled",
+   "unemp/unskilled non res",
+   "unskilled resident"
+  ],
+  "own_telephone": [
+   "none",
+   "yes"
+  ],
+  "foreign_worker": [
+   "no",
+   "yes"
+  ]
+ },
+ "note": "Standardise each numeric column as (x - mean) / scale after median imputation; one-hot each categorical column in the listed order, unknown values as all zeros; concatenate numeric then categorical."
+}

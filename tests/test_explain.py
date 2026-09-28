@@ -90,3 +90,22 @@ def test_explain_works_on_an_unbalanced_per_leaf_tree():
         assert all(c is None for c in [e.counterfactual])
         assert 0 <= e.leaf < model.model_.n_internal + model.model_.n_leaves
         assert len(e.path) <= model.depth
+
+
+def test_feature_bounds_keep_the_counterfactual_inside_the_range(iris_model):
+    model, X, y = iris_model
+    lower, upper = X.min(0), X.max(0)
+    exps = model.explain(X[:60], feature_bounds=(lower, upper))
+    found = [e.counterfactual for e in exps if e.counterfactual is not None]
+    assert found
+    for c in found:
+        assert lower[c.index] - 1e-9 <= c.to_value <= upper[c.index] + 1e-9
+    for e in exps:
+        c = e.counterfactual
+        if c is None:
+            continue
+        x_cf = X[exps.index(e)].copy()
+        x_cf[c.index] = c.to_value
+        assert model.predict(x_cf.reshape(1, -1))[0] == c.new_class
+    with pytest.raises(ValueError):
+        model.explain(X[:1], feature_bounds=(lower[:2], upper[:2]))

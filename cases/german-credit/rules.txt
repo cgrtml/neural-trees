@@ -1,0 +1,5 @@
+if +1.290*foreign_worker=no -1.198*credit_history=no credits/all paid +1.156*checking_status=no checking +1.154*purpose=used car -1.042*checking_status=<0 +0.055 (+56 more) > 0:
+    yes -> predict 'good' (p=0.973)
+    no  -> if +0.346*savings_status=100<=X<500 +0.334*installment_commitment +0.317*employment=>=7 +0.299*residence_since -0.282*purpose=other +0.055 (+56 more) > 0:
+        yes -> predict 'bad' (p=0.864)
+        no  -> predict 'bad' (p=0.674)

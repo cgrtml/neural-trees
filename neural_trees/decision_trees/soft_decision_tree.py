@@ -1108,7 +1108,8 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         idx = np.argmax(proba, axis=1)
         return self.le_.inverse_transform(idx)
 
-    def explain(self, X, feature_names=None, max_terms: int = 3, counterfactual: bool = True):
+    def explain(self, X, feature_names=None, max_terms: int = 3, counterfactual: bool = True,
+                feature_bounds=None):
         """
         Explain individual predictions.
 
@@ -1134,6 +1135,13 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         counterfactual : bool, default=True
             Search for the flipping change; costs one prediction per
             candidate, so turn it off when explaining many samples.
+        feature_bounds : (lower, upper), optional
+            Two arrays of length ``n_features``. A counterfactual value is
+            clipped into ``[lower[j], upper[j]]`` before it is tried, so the
+            reported change stays inside values the feature can take: pass
+            ``(0, 1)`` for one-hot columns and the training range for the
+            rest. Without bounds the search may report a value no real row
+            has.
 
         Returns
         -------
@@ -1147,7 +1155,8 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         single = np.ndim(X) == 1
         X = check_predict_input(self, np.atleast_2d(np.asarray(X)))
         out = explain_soft_tree(self, X, feature_names=feature_names,
-                                max_terms=max_terms, counterfactual=counterfactual)
+                                max_terms=max_terms, counterfactual=counterfactual,
+                                feature_bounds=feature_bounds)
         return out[0] if single else out
 
     def get_leaf_distributions(self) -> np.ndarray:
