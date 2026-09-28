@@ -25,6 +25,7 @@ from playground import (
 from playground.yourdata import (
     MAX_COLS,
     MAX_ROWS,
+    MAX_TERMS,
     REGRESSORS,
     check_target,
     code_snippet,
@@ -47,7 +48,7 @@ ui.title(
 )
 
 # ── step 1: the table ────────────────────────────────────────────────
-ui.step(1, "Get a table", f"A CSV or Excel file with one row per example and one column to predict: a class (classification) or a number (regression). Files up to 25 MB; a larger table is subsampled to {MAX_ROWS} rows and at most {MAX_COLS} columns are used. Comma, semicolon and tab separators are detected.")
+ui.step(1, "Get a table", f"A CSV or Excel file with one row per example and one column to predict: a class (classification) or a number (regression). Numbers, categories and free-text columns are all used; a text column becomes its {MAX_TERMS} most frequent words, so the rules can name them. Files up to 25 MB; a larger table is subsampled to {MAX_ROWS} rows and at most {MAX_COLS} columns are used. Comma, semicolon and tab separators are detected.")
 u1, u2 = st.columns([2, 1])
 with u1:
     up = st.file_uploader("CSV or Excel file", type=["csv", "xlsx", "xls"], label_visibility="collapsed")
@@ -279,7 +280,12 @@ else:
             st.code(ex.to_text(), language=None)
         if ex.counterfactual is not None:
             cf = ex.counterfactual
-            if "=" in cf.feature:  # a one-hot column: the change is turning that category on or off
+            if ": '" in cf.feature and cf.feature.endswith("'"):  # a word feature from a text column
+                col, term = cf.feature.split(": '", 1)
+                term = term[:-1]
+                change = (f"if **{col}** did not contain **{term}**" if cf.to_value < cf.from_value
+                          else f"if **{col}** contained **{term}**")
+            elif "=" in cf.feature:  # a one-hot column: the change is turning that category on or off
                 col, val = cf.feature.split("=", 1)
                 change = f"if **{col}** were {'not ' if cf.to_value < cf.from_value else ''}**{val}**"
             else:

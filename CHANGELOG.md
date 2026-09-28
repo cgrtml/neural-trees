@@ -15,6 +15,15 @@ All notable changes to this project are documented here. This project follows
   through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
   prints one value per leaf and scores R^2. The module's docstring no
   longer lists these as missing; `explain()` still is.
+- Free-text columns on the "Try it on your data" page: a string column
+  whose values are sentences becomes its 500 most frequent words and word
+  pairs (TF-IDF, fitted inside each fold), so the soft tree's rules and
+  counterfactuals name words ("if message did not contain gun"). Measured
+  on four newsgroups (1 500 posts, body text only): the soft tree 0.855,
+  a random forest 0.855, naive Bayes 0.828, CART 0.605; a tuned text
+  model or an LLM will do better on nuanced text, which the page does not
+  claim otherwise. The hard rule tree prints plain class values rather
+  than numpy scalars.
 - `to_onnx()` and `save_onnx()` on `SoftDecisionTree`,
   `SoftDecisionTreeRegressor` and `NumpySoftTree`: the fitted tree as an
   ONNX graph of standard operators, with feature names and class labels as

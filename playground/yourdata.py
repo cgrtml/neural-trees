@@ -10,8 +10,10 @@ stated to the user on the page.
 
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import make_pipeline
@@ -23,6 +25,18 @@ from neural_trees import SoftDecisionTreeRegressor
 MAX_ROWS = 5000
 MAX_COLS = 200
 MAX_CLASSES = 20
+MAX_TERMS = 500      # words kept per text column, by document frequency
+TEXT_MIN_CHARS = 15  # a text column's values average at least this many characters
+
+
+def is_text(s: pd.Series) -> bool:
+    """Free text: a string column with many distinct values that are sentences, not codes."""
+    if pd.api.types.is_numeric_dtype(s):
+        return False
+    v = s.dropna().astype(str)
+    if len(v) == 0 or v.nunique() <= 50:
+        return False
+    return float(v.str.len().mean()) >= TEXT_MIN_CHARS and float(v.str.count(" ").mean()) >= 1.0
 
 
 def guess_target(df: pd.DataFrame) -> str:
@@ -72,6 +86,8 @@ def describe(df: pd.DataFrame, target: str):
                 kind, action = "constant", "dropped: the same value on every row"
             else:
                 kind, action = "numeric", "standardised on each training fold; missing values filled with the median"
+        elif is_text(s):
+            kind, action = "free text", f"the {MAX_TERMS} most frequent words and word pairs become count features (TF-IDF), so the tree's rules name words"
         else:
             n = s.nunique(dropna=True)
             if n > 50:
@@ -125,7 +141,7 @@ def prepare(df: pd.DataFrame, target: str, seed: int = 0):
         y_raw = data[target].astype(str)
         classes = sorted(y_raw.unique())
         y = np.array([classes.index(v) for v in y_raw])
-    numeric, categorical, dropped = [], [], []
+    numeric, categorical, text, dropped = [], [], [], []
     for c in data.columns:
         if c == target:
             continue
@@ -137,6 +153,8 @@ def prepare(df: pd.DataFrame, target: str, seed: int = 0):
                 numeric.append(c)
             else:
                 dropped.append(c)
+        elif is_text(s):
+            text.append(c)
         elif s.nunique(dropna=True) <= 50:
             categorical.append(c)
         else:
@@ -146,18 +164,56 @@ def prepare(df: pd.DataFrame, target: str, seed: int = 0):
         notes.append(f"Kept the first {MAX_COLS} usable columns.")
     if dropped:
         notes.append("Dropped: " + ", ".join(str(c) for c in dropped[:8]) + (" ..." if len(dropped) > 8 else "") + " (constant, an integer id, or text with too many distinct values).")
-    X = data[numeric + categorical]
-    return X, y, classes, numeric, categorical, notes
+    X = data[numeric + categorical + text]
+    return X, y, classes, numeric, categorical + [("text", c) for c in text], notes
+
+
+def split_columns(categorical):
+    """`prepare` returns text columns tagged inside the categorical list; take them apart."""
+    cats = [c for c in categorical if not (isinstance(c, tuple) and c[0] == "text")]
+    texts = [c[1] for c in categorical if isinstance(c, tuple) and c[0] == "text"]
+    return cats, texts
 
 
 def preprocessor(numeric, categorical):
-    """Median-impute and standardise numerics, one-hot categoricals; fitted inside every fold."""
+    """
+    Median-impute and standardise numerics, one-hot categoricals, TF-IDF each
+    free-text column into its most frequent words and word pairs (dense, so
+    the soft tree can take it); all fitted inside every fold.
+    """
+    cats, texts = split_columns(categorical)
     parts = []
     if numeric:
         parts.append(("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), numeric))
-    if categorical:
-        parts.append(("cat", make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore", sparse_output=False)), categorical))
-    return ColumnTransformer(parts, remainder="drop")
+    if cats:
+        parts.append(("cat", make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore", sparse_output=False)), cats))
+    for c in texts:
+        parts.append((f"text_{c}", make_pipeline(
+            _FillText(), TfidfVectorizer(max_features=MAX_TERMS, min_df=2, ngram_range=(1, 2), sublinear_tf=True), _Dense()
+        ), c))
+    return ColumnTransformer(parts, remainder="drop", sparse_threshold=0.0)
+
+
+class _FillText(TransformerMixin, BaseEstimator):
+    """Missing text becomes an empty string; a 1-d column comes out as strings."""
+
+    def fit(self, X, y=None):
+        self.fitted_ = True  # scikit-learn takes a trailing underscore as "fitted"
+        return self
+
+    def transform(self, X):
+        return pd.Series(np.asarray(X).ravel()).fillna("").astype(str).to_numpy()
+
+
+class _Dense(TransformerMixin, BaseEstimator):
+    """TF-IDF is sparse; the soft tree needs dense."""
+
+    def fit(self, X, y=None):
+        self.fitted_ = True
+        return self
+
+    def transform(self, X):
+        return X.toarray() if hasattr(X, "toarray") else np.asarray(X)
 
 
 def feature_names_after(pre: ColumnTransformer):
@@ -170,11 +226,21 @@ def feature_names_after(pre: ColumnTransformer):
             enc = trans.named_steps["onehotencoder"]
             for c, cats in zip(cols, enc.categories_):
                 names.extend(f"{c}={v}" for v in cats)
+        elif name.startswith("text_"):
+            vec = trans.named_steps["tfidfvectorizer"]
+            names.extend(f"{cols}: '{t}'" for t in vec.get_feature_names_out())
     return names
 
 
 def code_snippet(target: str, numeric, categorical, model_line: str, task: str = "classification", filename: str = "your_file.csv") -> str:
     """The same run as plain Python, commented line by line, for the user to take away."""
+    categorical, texts = split_columns(categorical)
+    text_parts = "".join(
+        f'    ("text_{c}", make_pipeline(FunctionTransformer(lambda s: s.fillna("").astype(str)), '
+        f'TfidfVectorizer(max_features={MAX_TERMS}, min_df=2, ngram_range=(1, 2), sublinear_tf=True), '
+        f'FunctionTransformer(lambda m: m.toarray())), "{c}"),\n' for c in texts
+    )
+    text_import = "from sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.preprocessing import FunctionTransformer\n" if texts else ""
     cls = "SoftDecisionTree" if task == "classification" else "SoftDecisionTreeRegressor"
     step = "softdecisiontree" if task == "classification" else "softdecisiontreeregressor"
     y_line = f'df["{target}"].astype(str)' if task == "classification" else f'df["{target}"].astype(float)'
@@ -194,7 +260,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from neural_trees import {cls}
+{text_import}from neural_trees import {cls}
 
 # 1. Your table, and the column to predict.
 df = {reader}("{filename}")
@@ -207,7 +273,7 @@ categorical = {list(map(str, categorical))}
 pre = ColumnTransformer([
     ("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), numeric),
     ("cat", make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder(handle_unknown="ignore", sparse_output=False)), categorical),
-])
+{text_parts}], sparse_threshold=0.0)
 
 # 3. The model, scored with 5-fold cross-validation ({"accuracy" if task == "classification" else "R^2"}).
 model = make_pipeline(pre, {model_line})

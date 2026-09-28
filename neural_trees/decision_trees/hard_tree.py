@@ -164,6 +164,7 @@ class HardDecisionTree:
     def _leaf_line(self, node: int, decimals: int) -> str:
         distribution = self.node_distributions_[node]
         winner = self.classes_[int(np.argmax(distribution))]
+        winner = winner.item() if hasattr(winner, "item") else winner  # a plain 0, not np.int64(0)
         return f"predict {winner!r} (p={distribution.max():.{decimals}f})"
 
     def export_text(self, feature_names=None, max_features=3, decimals=3) -> str:

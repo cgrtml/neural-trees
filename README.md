@@ -102,11 +102,13 @@ asks, one page each:
    cross-validation folds, and the page says who scored highest, who is within
    fold noise of them (paired t-test over the folds) and who is measurably
    behind, then runs the combined 5x2cv F test on any pair.
-3. **Try it on your data**: upload a CSV, pick the column to predict, and
-   run the same flow on it with imputation, scaling and one-hot encoding
-   fitted inside every fold; then the soft tree's rules, one row explained
-   with its counterfactual, a `model.json` that predicts with numpy alone,
-   and the Python that reproduces the page.
+3. **Try it on your data**: upload a CSV or Excel file, pick the column to
+   predict (a class or a number), and run the same flow on it with
+   imputation, scaling, one-hot encoding and, for free-text columns, the
+   most frequent words as features, all fitted inside every fold; then the
+   soft tree's rules (naming words where the data is text), one row
+   explained with its counterfactual, `model.json` and `model.onnx`, and
+   the Python that reproduces the page.
 4. **How a model works**: one model at a time: what it does, when to use it,
    how it works, its knobs on a live boundary, and what it learned: the soft
    tree's rules and a per-prediction explanation, the omnivariate tree's
