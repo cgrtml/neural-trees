@@ -30,6 +30,11 @@ from typing import Any, Dict, List, Optional, Sequence
 import numpy as np
 
 
+def _plain(v):
+    """A numpy scalar as the Python value it holds, so text reads `1`, not `np.int64(1)`."""
+    return v.item() if hasattr(v, "item") and getattr(v, "ndim", 0) == 0 else v
+
+
 @dataclass
 class GateStep:
     """One gate on the dominant path."""
@@ -71,11 +76,11 @@ class Explanation:
     def to_text(self, decimals: int = 3) -> str:
         f = f"{{:+.{decimals}f}}"
         lines = [
-            f"predicted {self.predicted_class!r} with probability "
+            f"predicted {_plain(self.predicted_class)!r} with probability "
             f"{self.probabilities[self.predicted_class]:.{decimals}f}",
             f"dominant leaf {self.leaf} received {self.leaf_probability:.{decimals}f} "
             f"of the sample's mass; its distribution is "
-            + ", ".join(f"{k!r}: {v:.{decimals}f}" for k, v in self.leaf_distribution.items()),
+            + ", ".join(f"{_plain(k)!r}: {v:.{decimals}f}" for k, v in self.leaf_distribution.items()),
             "path:",
         ]
         for s in self.path:
@@ -90,7 +95,7 @@ class Explanation:
             c = self.counterfactual
             lines.append(
                 f"counterfactual: set {c.feature} from {c.from_value:.{decimals}f} to "
-                f"{c.to_value:.{decimals}f} and the prediction becomes {c.new_class!r} "
+                f"{c.to_value:.{decimals}f} and the prediction becomes {_plain(c.new_class)!r} "
                 f"(p={c.new_probability:.{decimals}f})")
         return "\n".join(lines)
 

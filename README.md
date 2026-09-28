@@ -110,10 +110,11 @@ asks, one page each:
    explained with its counterfactual, `model.json` and `model.onnx`, and
    the Python that reproduces the page.
 4. **How a model works**: one model at a time: what it does, when to use it,
-   how it works, its knobs on a live boundary, and what it learned: the soft
-   tree's rules and a per-prediction explanation, the omnivariate tree's
-   choice of split types, the GAL network's growth and pruning, the mixture's
-   routing.
+   how it works, its knobs on a live boundary, a drawing of the structure it
+   learned (gates, branch probabilities and leaves for the soft tree; split
+   types for the omnivariate tree; the routing tree of the mixture; the
+   layer GAL grew to), and what it learned: rules, a per-prediction
+   explanation, growth and pruning.
 5. **What was fixed and verified**: the four models that did not work, the
    scikit-learn checks every estimator passes, and the design choices that
    were measured rather than assumed.

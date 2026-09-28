@@ -1,5 +1,6 @@
 """Start here: a short lesson for someone who has never seen a decision tree, ending at the models."""
 
+import pandas as pd
 import streamlit as st
 
 from playground import DATASETS, MODELS, boundary_figure, glossary, ui
@@ -75,6 +76,21 @@ for row in range(0, len(names), 5):
                 fig, acc = boundary_figure(picked, name, height=170)
             st.plotly_chart(fig, config={"displayModeBar": False}, key=f"thumb_{name}")
             ui.card_text(name, MODELS[name]["tag"], stat=f"accuracy {acc:.2f}", group=MODELS[name]["group"])
+
+st.subheader("At a glance")
+glance = pd.DataFrame([
+    ("Soft Decision Tree", "neural-trees", "tree, soft splits", "gradient descent", "rules, path per prediction, counterfactual", "JSON, ONNX, rules"),
+    ("Multivariate Tree", "neural-trees", "tree, oblique splits", "linear discriminant per node", "rules", "rules"),
+    ("Omnivariate Tree", "neural-trees", "tree, split type chosen per node", "cross-validation per node", "rules, split types", "rules"),
+    ("Hierarchical MoE", "neural-trees", "tree of gates and expert networks", "gradient descent", "routing as rules", "hard router"),
+    ("GAL Network", "neural-trees", "one hidden layer that grows", "gradient descent, grow and prune", "growth history", "numpy"),
+    ("Weighted KNN", "neural-trees", "nearest neighbours", "none (stores examples)", "the neighbours", "numpy"),
+    ("Naive Bayes", "neural-trees", "per-class feature statistics", "counting", "class means", "numpy"),
+    ("CART", "baseline", "tree, axis-aligned splits", "greedy impurity", "rules", "sklearn"),
+    ("Random Forest", "baseline", "many trees voting", "bagging", "feature importances", "sklearn"),
+    ("SVM (RBF)", "baseline", "kernel margin", "quadratic programme", "support vectors", "sklearn"),
+], columns=["model", "group", "shape", "trained by", "what it can show you", "exports"]).set_index("model")
+st.dataframe(glance, width="stretch", height=48 + 37 * len(glance))
 
 ui.next_step(
     "Pick any model and look inside it: what it does, its settings on a live boundary, and what it learned.",

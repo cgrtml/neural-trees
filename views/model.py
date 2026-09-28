@@ -13,6 +13,7 @@ from playground import (
     boundary_figure,
     dataset,
     defaults,
+    diagrams,
     fitted,
     glossary,
     params_key,
@@ -58,10 +59,40 @@ with right:
     )
     st.info(f"**Try this:** {m['try_this']}")
 
-ui.step(3, "See what it learned", f"Fitted once on all of {data_name}. Below: {m['shows']}.")
+ui.step(3, "See what it learned", f"Fitted once on all of {data_name}. First the structure it ended up with, then {m['shows']}.")
 X, y, features, targets = dataset(data_name)
 with st.spinner("Fitting on the full dataset..."):
     model = fitted(data_name, name, params_key(params))
+
+# ── the structure, drawn ──
+dot, structure_note = None, None
+if name == "Soft Decision Tree":
+    dot = diagrams.soft_tree_dot(model.to_numpy(), X, features, targets)
+    structure_note = ("Each box is a gate: the two features that weigh most in it and the share of the data that reaches it. "
+                      "Edge labels are the mean probability of taking that branch; every sample flows down both sides in proportion, "
+                      "which is what makes the tree soft. Leaves show the class they predict and how much of the data arrives. "
+                      "Three levels are drawn; a dashed box folds a deeper subtree, and the rules below list all of it.")
+elif name == "Multivariate Tree":
+    dot = diagrams.multivariate_dot(model, features, targets)
+    structure_note = "Each box is one oblique cut: the two heaviest features of the weighted sum and the threshold; yes goes right."
+elif name == "Omnivariate Tree":
+    dot = diagrams.omnivariate_dot(model, features, targets)
+    structure_note = "Each box says which split type that node chose: a single-feature threshold (univariate), a weighted sum (linear) or a small network (nonlinear)."
+elif name == "Hierarchical MoE":
+    dot = diagrams.hme_dot(model, X, targets)
+    structure_note = "Gates route each sample down the tree to the experts at the bottom; the share is how much of the data each expert receives when the gates are read as hard decisions."
+elif name == "GAL Network":
+    dot = diagrams.gal_dot(X.shape[1], int(model.n_hidden_final_), len(targets))
+    structure_note = "One hidden layer whose width the training chose: units were added when the error stopped falling and pruned when they stopped contributing."
+elif name == "CART (sklearn)":
+    from sklearn.tree import export_graphviz
+
+    dot = export_graphviz(model, feature_names=list(features), class_names=[str(t) for t in targets], filled=False, rounded=True, impurity=False, proportion=True, max_depth=3)
+    structure_note = "scikit-learn's own drawing of the tree, cut at three levels; one feature and one threshold per box."
+if dot is not None:
+    st.markdown("**The structure it learned**")
+    st.graphviz_chart(dot, width="stretch")
+    st.caption(structure_note)
 
 if name == "Soft Decision Tree":
     st.markdown("**The tree as rules.** Each gate read as a hard decision (`to_hard_tree()`); the export reports how often it agrees with the soft model it came from.")

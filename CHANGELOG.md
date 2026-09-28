@@ -15,6 +15,15 @@ All notable changes to this project are documented here. This project follows
   through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
   prints one value per leaf and scores R^2. The module's docstring no
   longer lists these as missing; `explain()` still is.
+- The model page draws the structure each model ended up with: for the
+  soft tree the gates with their heaviest features and the share of the
+  data reaching each, the branch probabilities and the leaves, three
+  levels deep with deeper subtrees folded into one box; the oblique cuts
+  of the multivariate tree; the split type chosen at each node of the
+  omnivariate tree; the routing tree of the mixture of experts with the
+  share each expert receives; the layer the GAL network grew to. Start
+  here gains an at-a-glance table of the ten models. `Explanation.to_text()`
+  prints plain class values rather than numpy scalars.
 - Free-text columns on the "Try it on your data" page: a string column
   whose values are sentences becomes its 500 most frequent words and word
   pairs (TF-IDF, fitted inside each fold), so the soft tree's rules and
