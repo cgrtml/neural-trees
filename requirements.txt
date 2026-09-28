@@ -16,3 +16,5 @@ plotly>=5.0
 watchdog>=3.0
 # Excel uploads on the Try it on your data page.
 openpyxl>=3.1
+# ONNX download on the Try it on your data page.
+onnx>=1.15

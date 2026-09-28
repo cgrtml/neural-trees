@@ -292,8 +292,16 @@ else:
     ui.step(5, "Take it with you", "Two things: the fitted tree as a file that predicts with numpy alone, and a Python script that repeats everything this page did, on your machine, so the result is yours and not this site's.")
     d1, d2 = st.columns([1, 2])
     with d1:
-        st.download_button("Download model.json", tree.to_numpy(feature_names=fnames).to_json(), file_name="neural-trees-model.json", mime="application/json", width="stretch")
-        st.caption("Load it with `NumpySoftTree.from_json(...)` and call `predict` on preprocessed rows (the same imputation, scaling and one-hot encoding). The script on the right shows that preprocessing exactly.")
+        numpy_tree = tree.to_numpy(feature_names=fnames)
+        st.download_button("Download model.json", numpy_tree.to_json(), file_name="neural-trees-model.json", mime="application/json", width="stretch")
+        st.caption("Loads with `NumpySoftTree.from_json(...)`; predicts with numpy alone.")
+        try:
+            onnx_bytes = numpy_tree.to_onnx().SerializeToString()
+            st.download_button("Download model.onnx", onnx_bytes, file_name="neural-trees-model.onnx", mime="application/octet-stream", width="stretch")
+            st.caption("Runs in any ONNX runtime (Python, Java, .NET, browser, phone) without torch or this library; about 11 microseconds a row.")
+        except ImportError:
+            st.caption("ONNX export needs the `onnx` package on the server.")
+        st.caption("Both expect the preprocessed features (the same imputation, scaling and one-hot encoding); the script on the right shows that preprocessing exactly, and the ONNX file carries the feature names as metadata.")
     with d2:
         st.markdown("**The script**: reads your file, builds the same preprocessing, cross-validates the same model, prints the rules or an explanation, and saves `model.json`. Paste it into a notebook.")
         line = "SoftDecisionTree(depth=4, max_epochs=40, random_state=0)" if task == "classification" else REGRESSORS[soft_name]["line"]

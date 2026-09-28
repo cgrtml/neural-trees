@@ -15,6 +15,15 @@ All notable changes to this project are documented here. This project follows
   through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
   prints one value per leaf and scores R^2. The module's docstring no
   longer lists these as missing; `explain()` still is.
+- `to_onnx()` and `save_onnx()` on `SoftDecisionTree`,
+  `SoftDecisionTreeRegressor` and `NumpySoftTree`: the fitted tree as an
+  ONNX graph of standard operators, with feature names and class labels as
+  metadata, predicting the same probabilities as the torch model to
+  float32 precision. Optional extra `neural-trees[onnx]`; the file runs in
+  any ONNX runtime without torch or this library. Measured single-row
+  latency 11 microseconds in ONNX Runtime against 90 for the torch
+  estimator, 33 for the numpy copy; the "Performance" page has the table
+  and `benchmarks/latency.py` produces it.
 - A "Try it on your data" page in the playground: upload a CSV, pick the
   column to predict, and run the same comparison on it, with imputation,
   scaling and one-hot encoding fitted inside every fold. It reports the

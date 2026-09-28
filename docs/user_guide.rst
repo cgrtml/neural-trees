@@ -178,6 +178,26 @@ handed to a service that installs only numpy.
 The JSON carries a ``format`` field (``neural-trees/soft-tree/1``) so a
 later layout change can be detected rather than misread.
 
+``to_onnx()`` is the same model again as an ONNX graph, for the places that
+run ONNX and nothing else: Java and .NET services, browsers, phones. It
+uses standard operators only (a matrix product, a sigmoid, products along
+each path, a mixture over the leaves), carries the feature names and class
+labels as metadata, and predicts the same probabilities as the torch model
+to float32 precision. ``pip install neural-trees[onnx]`` for the ``onnx``
+package; running the file needs only an ONNX runtime.
+
+.. code-block:: python
+
+   model.save_onnx("tree.onnx", feature_names=feature_names)
+
+   import onnxruntime as ort
+   sess = ort.InferenceSession("tree.onnx")
+   probabilities, labels = sess.run(None, {"X": X_new.astype("float32")})
+
+Measured single-row latency is about 11 microseconds in ONNX Runtime
+against 90 for the torch estimator; the :doc:`performance` page has the
+table. The regressor exports the same way, with ``value`` as the output.
+
 Regression
 ^^^^^^^^^^
 

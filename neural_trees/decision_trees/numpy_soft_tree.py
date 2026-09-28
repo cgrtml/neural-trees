@@ -142,6 +142,19 @@ class NumpySoftTree:
             return self.predict_values(X)
         return self.classes_[self.predict_proba(X).argmax(axis=1)]
 
+    # ── ONNX ──
+    def to_onnx(self, opset: int = 17):
+        """The same model as an ``onnx.ModelProto``; see :mod:`neural_trees.decision_trees.onnx_export`."""
+        from neural_trees.decision_trees.onnx_export import to_onnx
+
+        return to_onnx(self, opset=opset)
+
+    def save_onnx(self, path: str, opset: int = 17) -> None:
+        """Write :meth:`to_onnx` to a file."""
+        from neural_trees.decision_trees.onnx_export import save_onnx
+
+        save_onnx(self, path, opset=opset)
+
     # ── serialisation ──
     def to_dict(self) -> Dict[str, Any]:
         return {

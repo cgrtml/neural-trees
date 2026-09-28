@@ -477,6 +477,20 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             single_output=self._single_output,
         )
 
+    def to_onnx(self, feature_names=None, opset: int = 17):
+        """
+        The fitted tree as an ``onnx.ModelProto`` (``pip install neural-trees[onnx]``).
+
+        Standard operators only, so it runs wherever ONNX runs, without torch
+        or this library, and predicts the same thing as :meth:`predict` to
+        float32 precision. Input ``X`` is float32 ``(n, n_features)``.
+        """
+        return self.to_numpy(feature_names=feature_names).to_onnx(opset=opset)
+
+    def save_onnx(self, path: str, feature_names=None, opset: int = 17) -> None:
+        """Write :meth:`to_onnx` to a file."""
+        self.to_numpy(feature_names=feature_names).save_onnx(path, opset=opset)
+
     def to_hard_tree(self):
         """
         The gates read as hard decisions and one value per leaf, in target

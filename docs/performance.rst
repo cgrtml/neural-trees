@@ -66,3 +66,56 @@ Devices
 ``device="auto"`` uses CUDA, then Apple MPS, then CPU. On problems of the
 sizes above the CPU is not the bottleneck and a GPU rarely helps; it starts
 to pay at hundreds of thousands of samples or deep trees.
+
+Prediction
+----------
+
+How fast a fitted tree predicts, by export, one thread. *One row* is the
+latency a service answering single requests pays; *batch* is 10 000 rows
+at once. The torch estimator, the numpy copy (``to_numpy()``), ONNX Runtime
+on the ONNX export (``to_onnx()``) and the hard rule tree (``to_hard_tree()``)
+are the same fitted tree; the first three predict the same probabilities to
+float32 precision, the last reads each gate as a hard decision. Measured by
+``benchmarks/latency.py``, best of seven, Apple silicon.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 18 16 18 16
+
+   * - Export
+     - Breast Cancer, depth 4, 30 features
+     -
+     - Digits, depth 6, 64 features
+     -
+   * -
+     - one row
+     - batch, rows/s
+     - one row
+     - batch, rows/s
+   * - torch estimator
+     - 93 µs
+     - 2,485,509
+     - 111 µs
+     - 448,645
+   * - numpy export
+     - 33 µs
+     - 1,176,864
+     - 50 µs
+     - 205,547
+   * - ONNX Runtime
+     - 11 µs
+     - 3,022,593
+     - 33 µs
+     - 565,836
+   * - hard rule tree
+     - 44 µs
+     - 7,259,967
+     - 58 µs
+     - 2,974,960
+
+Single-row latency is dominated by call overhead, not arithmetic: a depth-4
+tree is fifteen dot products. ONNX Runtime has the least overhead and is the
+export to serve one request at a time; the hard rule tree is the fastest in
+batch because it evaluates one path instead of every gate. Nothing here
+needs a GPU, and the ONNX file needs neither torch nor this library where
+it runs.

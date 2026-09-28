@@ -1,0 +1,56 @@
+{
+ "Breast Cancer depth 4 p=30": {
+  "torch estimator": {
+   "one_row_us": 92.6,
+   "rows_per_s_batch": 2485509
+  },
+  "numpy export": {
+   "one_row_us": 32.6,
+   "rows_per_s_batch": 1176864
+  },
+  "ONNX Runtime": {
+   "one_row_us": 11.3,
+   "rows_per_s_batch": 3022593
+  },
+  "hard rule tree": {
+   "one_row_us": 44.2,
+   "rows_per_s_batch": 7259967
+  }
+ },
+ "Digits depth 4 p=64": {
+  "torch estimator": {
+   "one_row_us": 93.5,
+   "rows_per_s_batch": 1581051
+  },
+  "numpy export": {
+   "one_row_us": 34.1,
+   "rows_per_s_batch": 745941
+  },
+  "ONNX Runtime": {
+   "one_row_us": 11.4,
+   "rows_per_s_batch": 2913281
+  },
+  "hard rule tree": {
+   "one_row_us": 45.1,
+   "rows_per_s_batch": 4422142
+  }
+ },
+ "Digits depth 6 p=64": {
+  "torch estimator": {
+   "one_row_us": 110.7,
+   "rows_per_s_batch": 448645
+  },
+  "numpy export": {
+   "one_row_us": 49.7,
+   "rows_per_s_batch": 205547
+  },
+  "ONNX Runtime": {
+   "one_row_us": 32.6,
+   "rows_per_s_batch": 565836
+  },
+  "hard rule tree": {
+   "one_row_us": 57.9,
+   "rows_per_s_batch": 2974960
+  }
+ }
+}

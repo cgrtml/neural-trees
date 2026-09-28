@@ -27,7 +27,7 @@ Decision boundary learning with Soft Decision Trees on a toy dataset.
 - Torch imported lazily, so the numpy-only half of the library works without it
 - Soft Decision Trees (classifier and regressor), Hierarchical Mixture of Experts, Multivariate and Omnivariate Trees, GAL
 - `explain()`: per-prediction explanations with the path taken, the gates on it and a verified counterfactual
-- Exports without PyTorch: `to_numpy()` is the same model in numpy with a JSON round trip, `to_hard_tree()` a readable rule tree
+- Exports without PyTorch: `to_numpy()` is the same model in numpy with a JSON round trip, `to_onnx()` the same model for any ONNX runtime (11 microseconds a row), `to_hard_tree()` a readable rule tree
 - Combined 5x2cv F test, McNemar's test, paired t-test for classifier comparison
 - `sample_weight` and `class_weight` on every classifier; sparse input where it is cheap
 - Tested on standard benchmarks (Iris, Wine, Breast Cancer), with the table checked in CI
