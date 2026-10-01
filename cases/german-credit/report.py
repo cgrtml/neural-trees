@@ -9,6 +9,7 @@ is installed.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -38,7 +39,7 @@ lines = []
 P = lines.append
 D = R["data"]
 FM = R["final_model"]
-P(f"# German Credit: an auditable model package")
+P("# German Credit: an auditable model package")
 P("")
 P(f"neural-trees {R['library']} · {date.today().isoformat()} · every figure below is read from results.json, produced by run.py")
 P("")
@@ -198,7 +199,6 @@ P("")
 P("## 9. Stability across refits")
 P("")
 st = R["structure_per_fit"]
-from collections import Counter
 roots = Counter(tuple(s["root_top_features"][:1]) for s in st)
 P(f"Over the {len(st)} refits the per-leaf soft tree grew between {min(s['n_splits'] for s in st)} and {max(s['n_splits'] for s in st)} splits "
   f"(median {sorted(s['n_splits'] for s in st)[len(st) // 2]}). The input with the largest mean |weight × value| at the root gate was "

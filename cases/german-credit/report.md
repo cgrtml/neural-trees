@@ -1,6 +1,6 @@
 # German Credit: an auditable model package
 
-neural-trees 0.7.0 · 2026-09-28 · every figure below is read from results.json, produced by run.py
+neural-trees 0.7.0 · 2026-10-01 · every figure below is read from results.json, produced by run.py
 
 ## 1. Purpose and scope
 
