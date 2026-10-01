@@ -45,6 +45,9 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.21",
+    # the last torch wheel for Intel Macs (2.2.2) was built against NumPy 1 and
+    # fails to import next to NumPy 2, so pin NumPy below 2 there only
+    "numpy<2; platform_system == 'Darwin' and platform_machine == 'x86_64'",
     "scipy>=1.7",
     "scikit-learn>=1.0",
     "torch>=1.10",

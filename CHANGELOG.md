@@ -5,6 +5,9 @@ All notable changes to this project are documented here. This project follows
 
 ## [Unreleased]
 
+### Fixed
+- On Intel Macs `pip install neural-trees` pulled NumPy 2 next to torch 2.2.2, the last torch wheel for that platform, and the import failed with "Numpy is not available". NumPy is now pinned below 2 on that platform only. Found while checking the 0.8.0 wheel in a clean environment.
+
 ## [0.8.0] - 2026-10-01
 
 A minor release rather than a patch: the ONNX export, the regressor's growth and exports, and the rebuilt playground are new surface, not fixes.
