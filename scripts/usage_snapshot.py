@@ -47,7 +47,8 @@ def main():
         except Exception as e:  # noqa: BLE001
             pypi_error = str(e)[:80]
             time.sleep(20)
-    # a sleeping Streamlit app answers 303 to its wake-up page, a live one 200; both mean it exists
+    # Streamlit Cloud answers a cookie-less request with 303 to its auth hop even for a public app;
+    # 200 or 303 means the app exists, 404 means the subdomain is gone
     app = subprocess.run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "https://neural-trees.streamlit.app"],
                          capture_output=True, text=True).stdout or None
     row = {

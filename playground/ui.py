@@ -10,6 +10,8 @@ respected, and from the tokens below elsewhere.
 
 import streamlit as st
 
+import neural_trees
+
 LIBRARY = "#2F7D5B"   # moss: what this library implements
 BASELINE = "#4A6FA5"  # slate: what it is measured against
 WARN = "#C58A1A"
@@ -133,7 +135,7 @@ def card_text(title, tag, stat=None, group=None, lines=2, badge_line=True):
 
 def footer():
     st.markdown(
-        '<div class="nt-footer">neural-trees · tree-shaped models that train by gradient descent, scikit-learn compatible · '
+        f'<div class="nt-footer">neural-trees {neural_trees.__version__} · tree-shaped models that train by gradient descent, scikit-learn compatible · '
         '<a href="https://github.com/cgrtml/neural-trees">GitHub</a> · <a href="https://cagritemel.com/neural-trees/">Docs</a> · '
         '<a href="https://pypi.org/project/neural-trees/">PyPI</a> · built by <a href="https://github.com/cgrtml">Cagri Temel</a>. '
         'Everything on these pages is computed live; nothing is typed in.</div>',
