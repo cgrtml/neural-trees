@@ -5,10 +5,14 @@ All notable changes to this project are documented here. This project follows
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-01
+
+A minor release rather than a patch: the ONNX export, the regressor's growth and exports, and the rebuilt playground are new surface, not fixes.
+
 ### Added
+
 - `explain(..., feature_bounds=(lower, upper))` keeps a counterfactual inside the values a feature can take, so a one-hot column is never "set to 2.2". The clipped candidate is still verified by re-predicting.
 - `cases/german-credit/`: the first auditable model package. One script measures a soft tree against logistic regression, CART, random forest, XGBoost and LightGBM on identical folds with the dataset's cost matrix, writes calibration, rules, three explained decisions with reachable counterfactuals, slices by age, sex and residency, refit stability, the JSON and ONNX model files with an agreement check, and a model document generated from the numbers.
-
 - `SoftDecisionTreeRegressor` gains what the classifier had and it lacked:
   `growth` (`"incremental"`, `"per_leaf"`) with `growth_init`,
   `growth_jitter` and `growth_budget`, deciding on held-out squared error
@@ -17,6 +21,18 @@ All notable changes to this project are documented here. This project follows
   through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
   prints one value per leaf and scores R^2. The module's docstring no
   longer lists these as missing; `explain()` still is.
+- `to_onnx()` and `save_onnx()` on `SoftDecisionTree`,
+  `SoftDecisionTreeRegressor` and `NumpySoftTree`: the fitted tree as an
+  ONNX graph of standard operators, with feature names and class labels as
+  metadata, predicting the same probabilities as the torch model to
+  float32 precision. Optional extra `neural-trees[onnx]`; the file runs in
+  any ONNX runtime without torch or this library. Measured single-row
+  latency 11 microseconds in ONNX Runtime against 90 for the torch
+  estimator, 33 for the numpy copy; the "Performance" page has the table
+  and `benchmarks/latency.py` produces it.
+
+### Playground
+
 - The model page draws the structure each model ended up with: for the
   soft tree the gates with their heaviest features and the share of the
   data reaching each, the branch probabilities and the leaves, three
@@ -35,15 +51,6 @@ All notable changes to this project are documented here. This project follows
   model or an LLM will do better on nuanced text, which the page does not
   claim otherwise. The hard rule tree prints plain class values rather
   than numpy scalars.
-- `to_onnx()` and `save_onnx()` on `SoftDecisionTree`,
-  `SoftDecisionTreeRegressor` and `NumpySoftTree`: the fitted tree as an
-  ONNX graph of standard operators, with feature names and class labels as
-  metadata, predicting the same probabilities as the torch model to
-  float32 precision. Optional extra `neural-trees[onnx]`; the file runs in
-  any ONNX runtime without torch or this library. Measured single-row
-  latency 11 microseconds in ONNX Runtime against 90 for the torch
-  estimator, 33 for the numpy copy; the "Performance" page has the table
-  and `benchmarks/latency.py` produces it.
 - A "Try it on your data" page in the playground: upload a CSV, pick the
   column to predict, and run the same comparison on it, with imputation,
   scaling and one-hot encoding fitted inside every fold. It reports the
@@ -61,15 +68,7 @@ All notable changes to this project are documented here. This project follows
   verified* and *Against the field* carry the library's own contribution and
   the 24-dataset benchmark. The model registry and every cached fit live in
   `playground/`, the pages in `views/`; the contract test parses all of
-  them. The hosted app installs neural-trees 0.7.0.
-- `SoftDecisionTreeRegressor` gains what the classifier had and it lacked:
-  `growth` (`"incremental"`, `"per_leaf"`) with `growth_init`,
-  `growth_jitter` and `growth_budget`, deciding on held-out squared error
-  and splitting along the leaf's residual; `to_numpy()`, a `NumpySoftTree`
-  of kind `"regressor"` that predicts in target units and round-trips
-  through JSON; and `to_hard_tree()`, a new `HardRegressionTree` that
-  prints one value per leaf and scores R^2. The module's docstring no
-  longer lists these as missing; `explain()` still is.
+  them. The hosted app installs the released package.
 - The Streamlit playground opens on a comparison table: every selected
   model's accuracy, its gap to the best and whether that gap is within fold
   noise (paired t-test over the folds), with a plain-language summary and a
@@ -82,7 +81,7 @@ All notable changes to this project are documented here. This project follows
   "Against the field" reads `benchmarks/rakipler-sonuc.json` and shows the
   nine-model, 24-dataset comparison with a subset switch (all, small, large,
   binary, multi-class) and the same caveats as the documentation page. The
-  hosted app now installs neural-trees 0.7.0.
+  hosted app installs the released package.
 
 ## [0.7.0] - 2026-09-23
 
