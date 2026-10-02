@@ -115,7 +115,7 @@ gate at all, so the gate's gradient is exactly zero and the children receive
 identical gradients forever. The level is dead weight. Growing that way reached
 0.762 on Iris, 0.786 on Wine and 0.369 on Digits, against 0.958, 0.978 and
 0.925 for trees of the same depth trained from scratch. The mechanism and the
-measurements are the subject of a separate paper.
+measurements are the subject of a separate paper [@temel2026fourways].
 A small perturbation of the new leaf distributions breaks the symmetry, and a
 regression test asserts the zero gradient exists without it.
 
