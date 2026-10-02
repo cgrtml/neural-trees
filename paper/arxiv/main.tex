@@ -45,8 +45,8 @@ The diagnosis concerns the most natural way to deepen a soft decision tree:
 turn every leaf into a gate whose two children inherit the parent's class
 distribution, so that the function is unchanged. I prove that this leaves the
 gradient of every new gate identically zero and, with the gate at $1/2$, gives
-the two children identical gradients, so the added level can never learn. The
-tree stays at the width it started with. That predicts where the failure
+the two children identical gradients, so that under this construction the added
+level can never learn. The tree stays at the width it started with. That predicts where the failure
 costs: nothing on two-class problems, where two leaves already suffice, and a
 great deal where more classes need more leaves. Measured, the cost is
 -0.2 points on average over 13 binary datasets and
@@ -89,7 +89,8 @@ protocol.
 The result I did not expect is how little the sensible-sounding arguments
 predict. Three of the four operations trade one quantity for another, and for
 two of them the sign of the trade changes when the dataset changes. The fourth
-does not trade anything, because it cannot learn at all. That one has a cause
+does not trade anything, because under the construction one writes down first
+it cannot learn at all. That one has a cause
 that can be stated and proved rather than inferred from a table, and it is the
 main contribution here.
 
@@ -168,9 +169,10 @@ comparison use identical settings apart from the operation under test.
 
 \subsection{Reproducing this}
 
-Every number in this paper is produced by one script,
-\texttt{paper/arxiv/olcum/olc.py} in the repository, which writes a machine-readable results file. The manuscript is a template with named placeholders and
-a second script substitutes the measured values into it. No number here was
+Every number in this paper is produced by the measurement scripts under
+\texttt{paper/arxiv/olcum} in the repository, each of which writes a
+machine-readable results file. The manuscript is a template with named
+placeholders and a further script substitutes the measured values into it. No number here was
 typed by hand, which removes the failure mode where a table drifts away from the
 code that produced it while nobody notices. The archived version is
 \texttt{neural-trees} v0.7.0 \cite{temel2026neuraltrees}.
@@ -267,7 +269,12 @@ deepened, the gradient of every new gate is exactly zero in single precision,
 the sum of absolute values over both weights and biases being $0$ and not
 merely small, and the gradients of every pair of sibling leaves are bitwise
 identical. Breaking the symmetry at insertion makes both quantities nonzero.
-The check is in the repository and runs in continuous integration.
+The check is in the repository and runs in continuous integration. One
+practical caveat: on a GPU whose reductions are not deterministic, the two
+siblings can receive gradients that differ in their last bits, and the
+symmetry then breaks by accident. That is not a repair, because nothing
+controls whether or when it happens; every measurement here ran on a CPU in
+deterministic arithmetic.
 \end{remark}
 
 \begin{remark}
@@ -310,8 +317,10 @@ Same depth, trained from scratch & 0.958 $\pm$ 0.032 & 0.978 $\pm$ 0.016 & 0.925
 \bottomrule
 \end{tabular}
 \caption{Depth-four soft decision tree grown one level at a time, as a function
-of the perturbation applied to new child distributions. Mean and standard
-deviation over three seeds of stratified five-fold cross-validation.}
+of the perturbation applied to new child distributions. The tree trained from
+scratch has the same depth, epoch budget and settings; only the growth operation
+differs. Mean and standard deviation over three seeds of stratified five-fold
+cross-validation.}
 \label{tab:jitter}
 \end{table}
 
