@@ -18,3 +18,14 @@ keywords:
   - interpretable machine learning
   - model comparison
   - pytorch
+preferred-citation:
+  type: article
+  title: "Four Ways to Grow a Classifier and Why One of Them Cannot Learn"
+  authors:
+    - family-names: Temel
+      given-names: Cagri
+      orcid: "https://orcid.org/0009-0003-3359-6939"
+  journal: "arXiv preprint"
+  year: 2026
+  doi: "10.48550/arXiv.2610.00180"
+  url: "https://arxiv.org/abs/2610.00180"

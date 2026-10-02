@@ -73,6 +73,10 @@ when only the fold assignment changes.
 Citing
 ------
 
+The paper that proves why the function-preserving way of deepening a soft tree
+cannot learn, and measures the four growth decisions the library makes, is
+`arXiv:2610.00180 <https://arxiv.org/abs/2610.00180>`_.
+
 The software is archived on Zenodo. The concept DOI
 `10.5281/zenodo.22718897 <https://doi.org/10.5281/zenodo.22718897>`_ always
 resolves to the most recent release; cite the DOI of the specific version you

@@ -297,7 +297,8 @@ of them, and what the `@software` entry in the next section is for:
 - **A defect the papers do not warn about.** Deepening a soft tree by giving
   both new children the parent's distribution leaves the new gate's gradient
   exactly zero, so the added level can never learn. The proof, the
-  measurements and the one-line fix are in the accompanying paper, and the
+  measurements and the one-line fix are in the accompanying paper
+  ([arXiv:2610.00180](https://arxiv.org/abs/2610.00180)), and the
   same defect was found and fixed in the per-leaf growth.
 - **A library around the algorithms**: one scikit-learn API across seven
   classifiers and a regressor, `sample_weight` and `class_weight` on every
@@ -310,6 +311,20 @@ Where an implementation deviates from its source deliberately, the module
 docstring says so and gives the numbers.
 
 ## Citation
+
+**To cite the paper**, which proves why the function-preserving way of deepening
+a soft tree cannot learn and measures the four growth decisions:
+
+```bibtex
+@article{temel2026fourways,
+  author  = {Temel, Cagri},
+  title   = {Four Ways to Grow a Classifier and Why One of Them Cannot Learn},
+  journal = {arXiv preprint arXiv:2610.00180},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2610.00180},
+  url     = {https://arxiv.org/abs/2610.00180}
+}
+```
 
 **To cite this library**, which is the software described above:
 
