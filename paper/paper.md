@@ -12,7 +12,7 @@ authors:
     orcid: 0009-0003-3359-6939
     affiliation: 1
 affiliations:
-  - name: Independent researcher
+  - name: Hezarfen LLC, Seattle, WA, USA
     index: 1
 date: 11 September 2026
 bibliography: paper.bib
@@ -146,16 +146,6 @@ compose into tree-level accuracy, and carrying optimizer momentum across
 architecture changes, which a plausible hypothesis blamed for a growth policy's
 failure, changes nothing. Each is documented with the measurement that settled
 it.
-
-# AI usage disclosure
-
-Substantial portions of the 0.2.0 through 0.6.0 development cycle, including
-the diagnosis of the four defects described above, the test suite and much of
-the prose in this paper, were produced with the assistance of a large language
-model used as a pair programmer. Every empirical claim in this paper and in the
-repository documentation was produced by running the code and recording the
-output; no number here was reported without being measured. The author reviewed
-and is responsible for all of it.
 
 # Acknowledgements
 
