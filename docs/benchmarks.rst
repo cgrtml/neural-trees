@@ -76,6 +76,38 @@ MLP in that regime is what it adds everywhere: a model that can be read
 (:doc:`explaining`), exported as rules or as plain numpy, and whose
 probabilities are calibrated (:doc:`user_guide`).
 
+Averaging soft trees
+--------------------
+
+The natural objection to the large-data result is that it compares one soft
+tree with 300 boosted ones. ``benchmarks/soft_forest.py`` answers it: 25
+per-leaf soft trees, each on a bootstrap sample with 90 epochs, probabilities
+averaged, on the sixteen datasets above 1 000 rows under the same folds and
+seeds. Nothing tuned here either.
+
+.. csv-table::
+   :file: _generated/soft_forest.csv
+   :header-rows: 1
+
+Averaging closes about half of the gap and no more. Against XGBoost the
+single per-leaf tree is 2.3 points behind on average (median 1.5, wins,
+ties, losses 3/4/9, Wilcoxon p = 0.011); the forest is 1.0 point behind
+(median 0.05, 4/6/6, p = 0.32), which the test can no longer distinguish from
+XGBoost, while Random Forest and LightGBM sit 0.2 points ahead of it. The
+forest beats the single tree on nine datasets and loses on none
+(p = 0.002). The gain is concentrated where the tree was weakest: on the
+seven multi-class datasets the gap shrinks from 4.0 points to 1.6, on the
+nine binary ones from 1.0 to 0.5. Where boosting wins clearly it keeps
+winning: wall-robot-navigation stays 8.8 points behind, phoneme 3.9.
+
+The price is the reason to use a soft tree in the first place. A forest has
+no single path to read, no rule list and no per-prediction counterfactual;
+in that respect it is a Random Forest that trains 160 times slower (65 s per
+fit against 0.4 s for XGBoost and 27 s for the single tree) for the same
+accuracy. It is reported here so that the question has a measured answer,
+not as a recommendation: if the explanation does not matter, use LightGBM;
+if it does, use one tree and accept the two points.
+
 So the honest summary for someone choosing a model: with a few hundred rows
 and a need to explain the predictions, a soft tree or GAL is a reasonable
 first choice and will likely match or beat an untuned boosting model. With

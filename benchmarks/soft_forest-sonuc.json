@@ -1,0 +1,163 @@
+{
+ "_protokol": "25 bagged per-leaf soft trees (depth<=6, 90 epochs, residual init), 3 seeds x 5-fold, StandardScaler on the training fold; reference columns from rakipler-sonuc.json",
+ "Digits": {
+  "acc": 0.9763,
+  "sd": 0.0075,
+  "fit_sn": 17.56,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9657,
+  "SoftTree per-leaf": 0.9271,
+  "n": 1797,
+  "K": 10
+ },
+ "banknote-authentication": {
+  "acc": 0.9866,
+  "sd": 0.0072,
+  "fit_sn": 21.18,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9956,
+  "SoftTree per-leaf": 0.9886,
+  "n": 1372,
+  "K": 2
+ },
+ "phoneme": {
+  "acc": 0.8559,
+  "sd": 0.0145,
+  "fit_sn": 55.74,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.8947,
+  "SoftTree per-leaf": 0.836,
+  "n": 5000,
+  "K": 2
+ },
+ "segment": {
+  "acc": 0.9517,
+  "sd": 0.0086,
+  "fit_sn": 34.33,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9752,
+  "SoftTree per-leaf": 0.9518,
+  "n": 2310,
+  "K": 7
+ },
+ "satimage": {
+  "acc": 0.8897,
+  "sd": 0.0089,
+  "fit_sn": 45.63,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9165,
+  "SoftTree per-leaf": 0.8778,
+  "n": 5000,
+  "K": 6
+ },
+ "optdigits": {
+  "acc": 0.9779,
+  "sd": 0.0046,
+  "fit_sn": 47.12,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9763,
+  "SoftTree per-leaf": 0.9377,
+  "n": 5000,
+  "K": 10
+ },
+ "pendigits": {
+  "acc": 0.9853,
+  "sd": 0.004,
+  "fit_sn": 67.54,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9859,
+  "SoftTree per-leaf": 0.9537,
+  "n": 5000,
+  "K": 10
+ },
+ "spambase": {
+  "acc": 0.9373,
+  "sd": 0.0051,
+  "fit_sn": 109.44,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.955,
+  "SoftTree per-leaf": 0.9305,
+  "n": 4601,
+  "K": 2
+ },
+ "steel-plates-fault": {
+  "acc": 0.9995,
+  "sd": 0.0011,
+  "fit_sn": 60.89,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 1.0,
+  "SoftTree per-leaf": 0.9995,
+  "n": 1941,
+  "K": 2
+ },
+ "texture": {
+  "acc": 0.9949,
+  "sd": 0.0025,
+  "fit_sn": 473.55,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9806,
+  "SoftTree per-leaf": 0.9927,
+  "n": 5000,
+  "K": 11
+ },
+ "wall-robot-navigation": {
+  "acc": 0.9077,
+  "sd": 0.012,
+  "fit_sn": 65.78,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.996,
+  "SoftTree per-leaf": 0.8759,
+  "n": 5000,
+  "K": 4
+ },
+ "qsar-biodeg": {
+  "acc": 0.8828,
+  "sd": 0.0145,
+  "fit_sn": 7.88,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.8673,
+  "SoftTree per-leaf": 0.8724,
+  "n": 1055,
+  "K": 2
+ },
+ "ozone-level-8hr": {
+  "acc": 0.9459,
+  "sd": 0.0058,
+  "fit_sn": 12.08,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.944,
+  "SoftTree per-leaf": 0.9409,
+  "n": 2534,
+  "K": 2
+ },
+ "kc1": {
+  "acc": 0.8578,
+  "sd": 0.0105,
+  "fit_sn": 10.34,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.8581,
+  "SoftTree per-leaf": 0.8535,
+  "n": 2109,
+  "K": 2
+ },
+ "pc1": {
+  "acc": 0.9327,
+  "sd": 0.0067,
+  "fit_sn": 10.12,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.9339,
+  "SoftTree per-leaf": 0.9315,
+  "n": 1109,
+  "K": 2
+ },
+ "pc3": {
+  "acc": 0.8976,
+  "sd": 0.0066,
+  "fit_sn": 9.47,
+  "yapi": "25 per-leaf trees, 63 internal nodes each",
+  "XGBoost": 0.8919,
+  "SoftTree per-leaf": 0.897,
+  "n": 1563,
+  "K": 2
+ }
+}

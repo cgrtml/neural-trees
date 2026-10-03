@@ -80,4 +80,27 @@ st.caption(
     "[documentation page](https://cagritemel.com/neural-trees/benchmarks.html)."
 )
 
+st.subheader("Does averaging soft trees close the gap?")
+st.markdown(
+    "The fair objection to the large-data result is that it pits one soft tree against 300 boosted ones. "
+    "`benchmarks/soft_forest.py` bags **25 per-leaf soft trees** on the sixteen datasets above 1 000 rows, same folds and seeds, nothing tuned."
+)
+sf_path = Path(__file__).resolve().parent.parent / "benchmarks" / "soft_forest-sonuc.json"
+if sf_path.exists():
+    SF = json.loads(sf_path.read_text(encoding="utf-8"))
+    sf_rows = [{"dataset": k, "n": v["n"], "K": v["K"], "soft forest (25 trees)": v["acc"], "per-leaf soft tree": v["SoftTree per-leaf"], "XGBoost": v["XGBoost"], "forest s/fit": v["fit_sn"]}
+               for k, v in SF.items() if not k.startswith("_")]
+    sf = pd.DataFrame(sf_rows).sort_values(["K", "dataset"]).set_index("dataset")
+    st.dataframe(sf.style.highlight_max(axis=1, subset=["soft forest (25 trees)", "per-leaf soft tree", "XGBoost"], props="font-weight: bold; background-color: #fff6d5;")
+                 .format({c: "{:.3f}" for c in ["soft forest (25 trees)", "per-leaf soft tree", "XGBoost"]} | {"forest s/fit": "{:.0f}"}),
+                 width="stretch", height=60 + 36 * len(sf))
+    gap_t = 100 * (sf["per-leaf soft tree"] - sf["XGBoost"]).mean()
+    gap_f = 100 * (sf["soft forest (25 trees)"] - sf["XGBoost"]).mean()
+    st.info(
+        f"Averaging closes about half the gap: the single tree is {abs(gap_t):.1f} points behind XGBoost on average, the forest {abs(gap_f):.1f} "
+        f"(wins, ties, losses 4/6/6, Wilcoxon p = 0.32). The forest beats the single tree on nine datasets and loses on none. "
+        "The price is the point of a soft tree: no single path to read, no rule list, no counterfactual, and about 160 times XGBoost's fit time. "
+        "If explanation does not matter, use LightGBM; if it does, use one tree and accept the two points."
+    )
+
 ui.footer()

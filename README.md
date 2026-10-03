@@ -183,8 +183,10 @@ on average) and the per-leaf soft tree on seven of eight (+2.1), while above
 1 000 rows XGBoost wins nearly every comparison. The MLP wins on the small
 datasets too, so the finding is that smooth gradient-trained models beat
 untuned boosting on small tables; what the soft tree adds is that it can be
-read, exported and explained. The split at 1 000 rows was chosen after
-seeing the data. Full tables and the caveats are on the
+read, exported and explained. Bagging 25 soft trees closes about half of
+the large-data gap (2.3 points to 1.0 behind XGBoost) at 160 times the fit
+time and with no readable tree left, so it is reported, not recommended. The
+split at 1 000 rows was chosen after seeing the data. Full tables and the caveats are on the
 [Against the field](https://cagritemel.com/neural-trees/benchmarks.html)
 page.
 
