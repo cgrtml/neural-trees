@@ -1,0 +1,198 @@
+{
+ "_protokol": "Checks the library's DistilledTree (default HistGradientBoosting teacher)\nwith and without its synthetic rows, on the 20 000-row cells of\ndamitma_olcek.py that showed the largest and the smallest gains (jannis,\nHiggs, covertype, electricity), three seeds each. The teacher here is\nscikit-learn's, so xgboost and torch never share the process.\n\n    python3 benchmarks/munge_lib.py [--n-jobs 8]",
+ "_commit": "258217b",
+ "fits": [
+  {
+   "ad": "jannis",
+   "seed": 0,
+   "synthetic": 0,
+   "acc": 0.780826675929142,
+   "teacher": 0.783605418548107,
+   "sn": 129.77236604690552
+  },
+  {
+   "ad": "jannis",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.7809135116359848,
+   "teacher": 0.783605418548107,
+   "sn": 400.69371485710144
+  },
+  {
+   "ad": "jannis",
+   "seed": 1,
+   "synthetic": 0,
+   "acc": 0.7803056616880861,
+   "teacher": 0.7836922542549496,
+   "sn": 130.74732780456543
+  },
+  {
+   "ad": "jannis",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.781608197290726,
+   "teacher": 0.7836922542549496,
+   "sn": 401.76394486427307
+  },
+  {
+   "ad": "jannis",
+   "seed": 2,
+   "synthetic": 0,
+   "acc": 0.7778742618964919,
+   "teacher": 0.7814345258770407,
+   "sn": 130.8397409915924
+  },
+  {
+   "ad": "jannis",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.7812608544633554,
+   "teacher": 0.7814345258770407,
+   "sn": 398.45636010169983
+  },
+  {
+   "ad": "Higgs",
+   "seed": 0,
+   "synthetic": 0,
+   "acc": 0.71215,
+   "teacher": 0.71485,
+   "sn": 111.32811498641968
+  },
+  {
+   "ad": "Higgs",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.71215,
+   "teacher": 0.71485,
+   "sn": 338.34210300445557
+  },
+  {
+   "ad": "Higgs",
+   "seed": 1,
+   "synthetic": 0,
+   "acc": 0.71035,
+   "teacher": 0.71575,
+   "sn": 112.58662581443787
+  },
+  {
+   "ad": "Higgs",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.71535,
+   "teacher": 0.71575,
+   "sn": 335.5767960548401
+  },
+  {
+   "ad": "Higgs",
+   "seed": 2,
+   "synthetic": 0,
+   "acc": 0.70985,
+   "teacher": 0.71445,
+   "sn": 111.72665810585022
+  },
+  {
+   "ad": "Higgs",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.70965,
+   "teacher": 0.71445,
+   "sn": 328.69556498527527
+  },
+  {
+   "ad": "covertype",
+   "seed": 0,
+   "synthetic": 0,
+   "acc": 0.77925,
+   "teacher": 0.80445,
+   "sn": 99.10772824287415
+  },
+  {
+   "ad": "covertype",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.78965,
+   "teacher": 0.80445,
+   "sn": 289.3594481945038
+  },
+  {
+   "ad": "covertype",
+   "seed": 1,
+   "synthetic": 0,
+   "acc": 0.78045,
+   "teacher": 0.8053,
+   "sn": 99.3757951259613
+  },
+  {
+   "ad": "covertype",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.78885,
+   "teacher": 0.8053,
+   "sn": 265.4195668697357
+  },
+  {
+   "ad": "covertype",
+   "seed": 2,
+   "synthetic": 0,
+   "acc": 0.7778,
+   "teacher": 0.80295,
+   "sn": 100.2555878162384
+  },
+  {
+   "ad": "covertype",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.78775,
+   "teacher": 0.80295,
+   "sn": 264.6623990535736
+  },
+  {
+   "ad": "electricity",
+   "seed": 0,
+   "synthetic": 0,
+   "acc": 0.8097218611905381,
+   "teacher": 0.8610605666753314,
+   "sn": 96.98075604438782
+  },
+  {
+   "ad": "electricity",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.8157005458799064,
+   "teacher": 0.8610605666753314,
+   "sn": 223.47834134101868
+  },
+  {
+   "ad": "electricity",
+   "seed": 1,
+   "synthetic": 0,
+   "acc": 0.809072004159085,
+   "teacher": 0.8610605666753314,
+   "sn": 95.72484683990479
+  },
+  {
+   "ad": "electricity",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.8181700025994282,
+   "teacher": 0.8610605666753314,
+   "sn": 203.62236905097961
+  },
+  {
+   "ad": "electricity",
+   "seed": 2,
+   "synthetic": 0,
+   "acc": 0.8055627761892383,
+   "teacher": 0.8563815960488692,
+   "sn": 81.17294907569885
+  },
+  {
+   "ad": "electricity",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.8138809461918378,
+   "teacher": 0.8563815960488692,
+   "sn": 207.7630739212036
+  }
+ ]
+}

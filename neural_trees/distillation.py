@@ -223,7 +223,9 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
     the tree on labels and 0.9 over plain distillation, higher in 12 of 13
     cells each (Wilcoxon p=0.0002 and 0.0005; benchmarks/munge.py), and
     cut the mean gap to XGBoost from 3.3 to 1.8 points, at about three
-    times the fit time. Real unlabelled rows (`X_unlabeled` in `fit`) do a
+    times the fit time. With the default teacher the gain was smaller
+    (+0.5 points, 8 of 12 fits higher, none lower; benchmarks/munge_lib.py).
+    Real unlabelled rows (`X_unlabeled` in `fit`) do a
     little better again. The documentation page "Large tables" has the
     full tables.
 

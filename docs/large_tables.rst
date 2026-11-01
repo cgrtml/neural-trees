@@ -80,6 +80,16 @@ Accuracy on the test set. Over the 13 cells:
   single tree reaches its teacher. Read the section on unlabelled rows
   before comparing this column with XGBoost.
 
+The same check through the library itself (``DistilledTree`` with its default
+teacher, scikit-learn's ``HistGradientBoostingClassifier``, 20 000 rows of
+jannis, Higgs, covertype and electricity, three seeds;
+``benchmarks/munge_lib.py``) gave a smaller gain: +0.5 points for
+``synthetic=2`` over ``synthetic=0``, higher in 8 of 12 fits and lower in
+none (p=0.003). That teacher stops early on its own validation split and is
+already a smoother target, so plain distillation from it is stronger
+(jannis 0.780, Higgs 0.711) and the synthetic rows help mostly where the
+tree is short of capacity (covertype +1.0, electricity +0.8).
+
 More rows for the teacher to label is what moves the student: the
 teacher's probabilities on the training rows alone are a better target than
 the labels, but they are a target on the same few points. MUNGE
