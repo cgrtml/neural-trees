@@ -29,7 +29,8 @@ single tree.
    from xgboost import XGBClassifier
    from neural_trees import DistilledTree
 
-   model = DistilledTree(teacher=XGBClassifier(n_estimators=300, max_depth=6))
+   model = DistilledTree(teacher=XGBClassifier(n_estimators=300, max_depth=6),
+                         synthetic=2)     # MUNGE rows for the teacher to label (default)
    model.fit(X_train, y_train)
    model.predict(X_test)          # one soft tree
    model.fidelity(X_test)         # agreement with the teacher
@@ -41,23 +42,23 @@ three training samples per size, one at 100 000 rows, marked ``*``). Every
 tree is ``SoftDecisionTree(depth=8, init="cart", learn_temperature=True,
 max_epochs=60)``; the teacher is 300 XGBoost trees of depth 6.
 
-================  =========  =========  ===============  ===========  =================
-dataset           rows       XGBoost    tree on labels   distilled    + 2n unlabelled
-================  =========  =========  ===============  ===========  =================
-electricity       5 000      0.841      0.797            0.797        0.805
-electricity       20 000     0.873      0.810            0.810        0.814
-MagicTelescope    5 000      0.850      0.830            0.835        0.844
-jannis            5 000      0.764      0.717            0.715        0.753
-jannis            20 000     0.786      0.743            0.770        0.786
-MiniBooNE         5 000      0.930      0.902            0.904        0.920
-MiniBooNE         20 000     0.939      0.920            0.924        0.931
-covertype         5 000      0.788      0.759            0.765        0.774
-covertype         20 000     0.822      0.790            0.787        0.797
-covertype         100 000 *  0.847      0.818            0.810        0.821
-Higgs             5 000      0.695      0.659            0.674        0.700
-Higgs             20 000     0.714      0.688            0.709        0.717
-Higgs             100 000 *  0.731      0.718            0.727        0.730
-================  =========  =========  ===============  ===========  =================
+================  =========  =========  ===============  ===========  ===========  =================
+dataset           rows       XGBoost    tree on labels   distilled    + MUNGE      + 2n unlabelled
+================  =========  =========  ===============  ===========  ===========  =================
+electricity       5 000      0.841      0.797            0.797        0.805        0.805
+electricity       20 000     0.873      0.810            0.810        0.814        0.814
+MagicTelescope    5 000      0.850      0.830            0.835        0.844        0.844
+jannis            5 000      0.764      0.717            0.715        0.743        0.753
+jannis            20 000     0.786      0.743            0.770        0.780        0.786
+MiniBooNE         5 000      0.930      0.902            0.904        0.911        0.920
+MiniBooNE         20 000     0.939      0.920            0.924        0.929        0.931
+covertype         5 000      0.788      0.759            0.765        0.772        0.774
+covertype         20 000     0.822      0.790            0.787        0.799        0.797
+covertype         100 000 *  0.847      0.818            0.810        0.820        0.821
+Higgs             5 000      0.695      0.659            0.674        0.690        0.700
+Higgs             20 000     0.714      0.688            0.709        0.716        0.717
+Higgs             100 000 *  0.731      0.718            0.727        0.726        0.730
+================  =========  =========  ===============  ===========  ===========  =================
 
 Accuracy on the test set. Over the 13 cells:
 
@@ -66,13 +67,28 @@ Accuracy on the test set. Over the 13 cells:
   labels (Higgs +0.9 to +2.1, jannis at 20 000 rows +2.7) and not where it
   is short of capacity (electricity, covertype): the teacher's probabilities
   are a better target, not a bigger tree.
-* With twice as many unlabelled rows: +1.85 points over the tree on labels,
-  higher in all 13 cells (p=0.0002), and the mean gap to XGBoost halves,
-  from 3.3 to 1.45 points. On Higgs at 5 000 and 20 000 rows and on jannis
-  at 20 000 the single tree reaches its teacher. Read the next section
+* With synthetic rows (MUNGE, two passes, the ``DistilledTree`` default;
+  ``benchmarks/munge.py``): +1.5 points over the tree on labels and +0.9
+  over plain distillation, higher in 12 of 13 cells and level in the
+  last (p=0.0002 and 0.0005; level at 100 000 rows, where the training
+  rows are already many), and the mean gap to XGBoost falls from 3.3 to 1.8 points. No
+  data beyond XGBoost's is used, so this column compares fairly with it.
+  The cost is about three times the fit time of plain distillation.
+* With twice as many real unlabelled rows: +1.85 points over the tree on
+  labels, higher in all 13 cells (p=0.0002), a mean gap to XGBoost of 1.45
+  points, and on Higgs at 5 000 and 20 000 rows and on jannis at 20 000 the
+  single tree reaches its teacher. Read the section on unlabelled rows
   before comparing this column with XGBoost.
 
-Most of the gain is regularisation: mixing the true labels back in
+More rows for the teacher to label is what moves the student: the
+teacher's probabilities on the training rows alone are a better target than
+the labels, but they are a target on the same few points. MUNGE
+(Bucila, Caruana and Niculescu-Mizil, *Model compression*, KDD 2006) makes
+each new row from a training row by redrawing about half of its features
+near the values of the row's nearest neighbour, so the new rows stay where the
+data is and the teacher's answers there are informative.
+
+The gain of plain distillation is regularisation: mixing the true labels back in
 (``alpha=0.5``) brought the overfitting back and lost most of it (jannis,
 20 000 rows: 0.733 against 0.768 for the teacher's probabilities alone).
 

@@ -220,7 +220,7 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
     over 13 cells, not significant. What moves it is more rows for the
     teacher to label. Synthetic ones (`synthetic=2`, the default: two
     MUNGE passes, see `munge`) raised the same tree by 1.5 points over
-    the tree on labels and 0.9 over plain distillation, higher in 12 of 12
+    the tree on labels and 0.9 over plain distillation, higher in 12 of 13
     cells each (Wilcoxon p=0.0002 and 0.0005; benchmarks/munge.py), and
     cut the mean gap to XGBoost from 3.3 to 1.8 points, at about three
     times the fit time. Real unlabelled rows (`X_unlabeled` in `fit`) do a
