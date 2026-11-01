@@ -1,0 +1,378 @@
+{
+ "_protokol": "DistilledTree on the 24 datasets of rakipler.py, same protocol (features\nscaled on the training fold only, 3 seeds x 5 stratified folds, rows capped\nat 5 000), so its accuracy compares with the per-leaf soft tree and XGBoost\nthere. Library defaults throughout: HistGradientBoosting teacher, depth-8\nCART-started student, with (synthetic=2, the default) and without\n(synthetic=0) MUNGE rows. The teacher's own accuracy is recorded too.",
+ "_commit": "512c33e",
+ "Cancer": {
+  "distilled syn2": 0.9672,
+  "teacher": 0.9654,
+  "splits syn2": 14.4,
+  "sn syn2": 4.456,
+  "distilled syn0": 0.9672,
+  "splits syn0": 6.0667,
+  "sn syn0": 1.4904,
+  "n": 569,
+  "per-leaf": 0.9736,
+  "XGBoost": 0.9648
+ },
+ "Digits": {
+  "distilled syn2": 0.939,
+  "teacher": 0.9742,
+  "splits syn2": 90.8667,
+  "sn syn2": 19.8453,
+  "distilled syn0": 0.9236,
+  "splits syn0": 57.2,
+  "sn syn0": 7.754,
+  "n": 1797,
+  "per-leaf": 0.9271,
+  "XGBoost": 0.9657
+ },
+ "Iris": {
+  "distilled syn2": 0.9622,
+  "teacher": 0.9467,
+  "splits syn2": 5.8,
+  "sn syn2": 1.2812,
+  "distilled syn0": 0.96,
+  "splits syn0": 2.9333,
+  "sn syn0": 0.4961,
+  "n": 150,
+  "per-leaf": 0.96,
+  "XGBoost": 0.94
+ },
+ "Wine": {
+  "distilled syn2": 0.9646,
+  "teacher": 0.9606,
+  "splits syn2": 7.6667,
+  "sn syn2": 1.4448,
+  "distilled syn0": 0.9515,
+  "splits syn0": 3.8667,
+  "sn syn0": 0.5582,
+  "n": 178,
+  "per-leaf": 0.972,
+  "XGBoost": 0.9476
+ },
+ "banknote-authentication": {
+  "distilled syn2": 0.9959,
+  "teacher": 0.9964,
+  "splits syn2": 24.0667,
+  "sn syn2": 8.9718,
+  "distilled syn0": 0.9939,
+  "splits syn0": 18.6,
+  "sn syn0": 3.1448,
+  "n": 1372,
+  "per-leaf": 0.9886,
+  "XGBoost": 0.9956
+ },
+ "blood-transfusion-service-center": {
+  "distilled syn2": 0.7763,
+  "teacher": 0.7536,
+  "splits syn2": 22.9333,
+  "sn syn2": 9.1776,
+  "distilled syn0": 0.7745,
+  "splits syn0": 1.0,
+  "sn syn0": 3.2717,
+  "n": 748,
+  "per-leaf": 0.7852,
+  "XGBoost": 0.742
+ },
+ "climate-model-simulation-crashes": {
+  "distilled syn2": 0.937,
+  "teacher": 0.9481,
+  "splits syn2": 9.8,
+  "sn syn2": 4.2254,
+  "distilled syn0": 0.9321,
+  "splits syn0": 4.0,
+  "sn syn0": 1.4025,
+  "n": 540,
+  "per-leaf": 0.9444,
+  "XGBoost": 0.95
+ },
+ "diabetes": {
+  "distilled syn2": 0.7543,
+  "teacher": 0.7361,
+  "splits syn2": 18.4667,
+  "sn syn2": 8.8444,
+  "distilled syn0": 0.7561,
+  "splits syn0": 3.2667,
+  "sn syn0": 3.1545,
+  "n": 768,
+  "per-leaf": 0.767,
+  "XGBoost": 0.73
+ },
+ "ilpd": {
+  "distilled syn2": 0.6901,
+  "teacher": 0.6976,
+  "splits syn2": 12.1333,
+  "sn syn2": 6.8792,
+  "distilled syn0": 0.7067,
+  "splits syn0": 1.0,
+  "sn syn0": 2.4549,
+  "n": 583,
+  "per-leaf": 0.7164,
+  "XGBoost": 0.6942
+ },
+ "kc1": {
+  "distilled syn2": 0.8494,
+  "teacher": 0.8598,
+  "splits syn2": 23.5333,
+  "sn syn2": 23.932,
+  "distilled syn0": 0.8513,
+  "splits syn0": 1.0,
+  "sn syn0": 8.3853,
+  "n": 2109,
+  "per-leaf": 0.8535,
+  "XGBoost": 0.8581
+ },
+ "optdigits": {
+  "distilled syn2": 0.9583,
+  "teacher": 0.9812,
+  "splits syn2": 113.6,
+  "sn syn2": 52.8693,
+  "distilled syn0": 0.9429,
+  "splits syn0": 83.0667,
+  "sn syn0": 19.3374,
+  "n": 5000,
+  "per-leaf": 0.9377,
+  "XGBoost": 0.9763
+ },
+ "ozone-level-8hr": {
+  "distilled syn2": 0.9363,
+  "teacher": 0.9444,
+  "splits syn2": 11.0667,
+  "sn syn2": 22.657,
+  "distilled syn0": 0.9395,
+  "splits syn0": 2.1333,
+  "sn syn0": 7.0658,
+  "n": 2534,
+  "per-leaf": 0.9409,
+  "XGBoost": 0.944
+ },
+ "pc1": {
+  "distilled syn2": 0.9191,
+  "teacher": 0.9306,
+  "splits syn2": 16.7333,
+  "sn syn2": 8.8267,
+  "distilled syn0": 0.9288,
+  "splits syn0": 1.0,
+  "sn syn0": 3.022,
+  "n": 1109,
+  "per-leaf": 0.9315,
+  "XGBoost": 0.9339
+ },
+ "pc3": {
+  "distilled syn2": 0.8844,
+  "teacher": 0.8912,
+  "splits syn2": 12.4,
+  "sn syn2": 14.1325,
+  "distilled syn0": 0.8978,
+  "splits syn0": 1.9333,
+  "sn syn0": 4.7575,
+  "n": 1563,
+  "per-leaf": 0.897,
+  "XGBoost": 0.8919
+ },
+ "pendigits": {
+  "distilled syn2": 0.9774,
+  "teacher": 0.9884,
+  "splits syn2": 105.5333,
+  "sn syn2": 47.89,
+  "distilled syn0": 0.9765,
+  "splits syn0": 85.4,
+  "sn syn0": 17.0338,
+  "n": 5000,
+  "per-leaf": 0.9537,
+  "XGBoost": 0.9859
+ },
+ "phoneme": {
+  "distilled syn2": 0.8754,
+  "teacher": 0.8926,
+  "splits syn2": 76.7333,
+  "sn syn2": 51.2684,
+  "distilled syn0": 0.8677,
+  "splits syn0": 46.8,
+  "sn syn0": 17.6738,
+  "n": 5000,
+  "per-leaf": 0.836,
+  "XGBoost": 0.8947
+ },
+ "qsar-biodeg": {
+  "distilled syn2": 0.8547,
+  "teacher": 0.8689,
+  "splits syn2": 35.6667,
+  "sn syn2": 10.0365,
+  "distilled syn0": 0.8436,
+  "splits syn0": 14.5333,
+  "sn syn0": 3.489,
+  "n": 1055,
+  "per-leaf": 0.8724,
+  "XGBoost": 0.8673
+ },
+ "satimage": {
+  "distilled syn2": 0.8936,
+  "teacher": 0.9206,
+  "splits syn2": 90.2667,
+  "sn syn2": 47.1455,
+  "distilled syn0": 0.881,
+  "splits syn0": 39.9333,
+  "sn syn0": 15.8212,
+  "n": 5000,
+  "per-leaf": 0.8778,
+  "XGBoost": 0.9165
+ },
+ "segment": {
+  "distilled syn2": 0.9577,
+  "teacher": 0.9779,
+  "splits syn2": 24.4667,
+  "sn syn2": 22.8779,
+  "distilled syn0": 0.9587,
+  "splits syn0": 19.8,
+  "sn syn0": 8.0843,
+  "n": 2310,
+  "per-leaf": 0.9518,
+  "XGBoost": 0.9752
+ },
+ "spambase": {
+  "distilled syn2": 0.9418,
+  "teacher": 0.9559,
+  "splits syn2": 47.2667,
+  "sn syn2": 39.9105,
+  "distilled syn0": 0.9344,
+  "splits syn0": 33.3333,
+  "sn syn0": 13.3985,
+  "n": 4601,
+  "per-leaf": 0.9305,
+  "XGBoost": 0.955
+ },
+ "steel-plates-fault": {
+  "distilled syn2": 0.9997,
+  "teacher": 1.0,
+  "splits syn2": 6.0,
+  "sn syn2": 13.2825,
+  "distilled syn0": 0.9998,
+  "splits syn0": 6.0,
+  "sn syn0": 4.5784,
+  "n": 1941,
+  "per-leaf": 0.9995,
+  "XGBoost": 1.0
+ },
+ "texture": {
+  "distilled syn2": 0.9895,
+  "teacher": 0.9854,
+  "splits syn2": 53.0,
+  "sn syn2": 60.7792,
+  "distilled syn0": 0.9856,
+  "splits syn0": 44.3333,
+  "sn syn0": 21.4757,
+  "n": 5000,
+  "per-leaf": 0.9927,
+  "XGBoost": 0.9806
+ },
+ "vehicle": {
+  "distilled syn2": 0.7518,
+  "teacher": 0.7695,
+  "splits syn2": 66.0,
+  "sn syn2": 8.1106,
+  "distilled syn0": 0.7344,
+  "splits syn0": 32.0,
+  "sn syn0": 2.5373,
+  "n": 846,
+  "per-leaf": 0.7802,
+  "XGBoost": 0.7589
+ },
+ "wall-robot-navigation": {
+  "distilled syn2": 0.9629,
+  "teacher": 0.9966,
+  "splits syn2": 23.8667,
+  "sn syn2": 40.8508,
+  "distilled syn0": 0.963,
+  "splits syn0": 18.7333,
+  "sn syn0": 13.8654,
+  "n": 5000,
+  "per-leaf": 0.8759,
+  "XGBoost": 0.996
+ },
+ "_summary": {
+  "all: distilled syn2 - distilled syn0": {
+   "mean_pt": 0.28,
+   "higher": 12,
+   "lower": 4,
+   "n": 24,
+   "p": 0.1103
+  },
+  "all: distilled syn2 - per-leaf": {
+   "mean_pt": 0.31,
+   "higher": 10,
+   "lower": 13,
+   "n": 24,
+   "p": 0.8864
+  },
+  "all: distilled syn2 - XGBoost": {
+   "mean_pt": -0.52,
+   "higher": 6,
+   "lower": 16,
+   "n": 24,
+   "p": 0.1064
+  },
+  "all: per-leaf - XGBoost": {
+   "mean_pt": -0.83,
+   "higher": 10,
+   "lower": 13,
+   "n": 24,
+   "p": 0.4073
+  },
+  "n<=1000: distilled syn2 - distilled syn0": {
+   "mean_pt": 0.26,
+   "higher": 4,
+   "lower": 1,
+   "n": 8,
+   "p": 0.3125
+  },
+  "n<=1000: distilled syn2 - per-leaf": {
+   "mean_pt": -1.19,
+   "higher": 1,
+   "lower": 7,
+   "n": 8,
+   "p": 0.0156
+  },
+  "n<=1000: distilled syn2 - XGBoost": {
+   "mean_pt": 0.95,
+   "higher": 5,
+   "lower": 3,
+   "n": 8,
+   "p": 0.25
+  },
+  "n<=1000: per-leaf - XGBoost": {
+   "mean_pt": 2.14,
+   "higher": 7,
+   "lower": 1,
+   "n": 8,
+   "p": 0.0156
+  },
+  "n>1000: distilled syn2 - distilled syn0": {
+   "mean_pt": 0.29,
+   "higher": 8,
+   "lower": 3,
+   "n": 16,
+   "p": 0.2145
+  },
+  "n>1000: distilled syn2 - per-leaf": {
+   "mean_pt": 1.05,
+   "higher": 9,
+   "lower": 6,
+   "n": 16,
+   "p": 0.1591
+  },
+  "n>1000: distilled syn2 - XGBoost": {
+   "mean_pt": -1.26,
+   "higher": 1,
+   "lower": 13,
+   "n": 16,
+   "p": 0.0021
+  },
+  "n>1000: per-leaf - XGBoost": {
+   "mean_pt": -2.31,
+   "higher": 3,
+   "lower": 12,
+   "n": 16,
+   "p": 0.0113
+  }
+ }
+}

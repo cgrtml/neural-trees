@@ -102,6 +102,18 @@ The gain of plain distillation is regularisation: mixing the true labels back in
 (``alpha=0.5``) brought the overfitting back and lost most of it (jannis,
 20 000 rows: 0.733 against 0.768 for the teacher's probabilities alone).
 
+Below 5 000 rows
+~~~~~~~~~~~~~~~~
+
+On the 24 datasets of :doc:`benchmarks` (same folds; library defaults, the
+HistGradientBoosting teacher; ``benchmarks/damitma_kucuk.py``) the distilled
+tree is the wrong choice under 1 000 rows: 1.2 points below the per-leaf
+soft tree grown from scratch, lower on 7 of 8 datasets (p=0.016). From 1 000
+to 5 000 rows it is 1.05 points above the per-leaf tree (9 higher, 6 lower,
+not significant) and 1.3 points below XGBoost, about where the CART-started
+tree alone already is. The distillation earns its cost on the larger tables
+above, not here.
+
 Unlabelled rows
 ~~~~~~~~~~~~~~~
 
@@ -164,7 +176,8 @@ is ahead of it above 1 000 rows (+1.1, not significant) and behind it below
 wall-robot-navigation 0.976 against 0.876 for the per-leaf tree.
 
 Rule of thumb from these measurements: below about 1 000 rows grow a soft
-tree from scratch (``growth="per_leaf"``); above, start from CART.
+tree from scratch (``growth="per_leaf"``); from 1 000 to about 5 000 start
+from CART; above that, distil (``DistilledTree``).
 
 
 Missing values
