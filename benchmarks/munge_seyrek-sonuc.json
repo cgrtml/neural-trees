@@ -1,6 +1,6 @@
 {
- "_protokol": "What does a readable student cost? The MUNGE student of munge.py uses\noblique splits over many features. Here the same depth-8 student on the\nsame rows (munge.py's cached teacher probabilities) with at most three\nfeatures per split (split_features=3, started from CART), and the same\nrestriction on the tree trained on the labels, at 5 000 and 20 000 rows,\nthree seeds; compared with the unrestricted columns.",
- "_commit": "1001177",
+ "_protokol": "What does a readable student cost? The MUNGE student of munge.py uses\noblique splits over many features. Here the same depth-8 student on the\nsame rows (munge.py's cached teacher probabilities) with at most three\nfeatures per split (split_features=3, started from CART), and the same\nrestriction on the tree trained on the labels, at 5 000 and 20 000 rows,\nthree seeds (SEYREK_ENBUYUK=100000 adds the 100 000-row cells, one seed);\ncompared with the unrestricted columns.",
+ "_commit": "a69a35a",
  "electricity": {
   "5000": {
    "XGBoost": [
@@ -297,6 +297,28 @@
    "munge d8 mean": 0.799,
    "soft d8 k3 mean": 0.7856,
    "munge d8 k3 mean": 0.7933
+  },
+  "100000": {
+   "XGBoost": [
+    0.8474
+   ],
+   "soft d8": [
+    0.81815
+   ],
+   "munge d8": [
+    0.8197
+   ],
+   "soft d8 k3": [
+    0.80495
+   ],
+   "munge d8 k3": [
+    0.80625
+   ],
+   "XGBoost mean": 0.8474,
+   "soft d8 mean": 0.8182,
+   "munge d8 mean": 0.8197,
+   "soft d8 k3 mean": 0.805,
+   "munge d8 k3 mean": 0.8063
   }
  },
  "Higgs": {
@@ -363,39 +385,61 @@
    "munge d8 mean": 0.7161,
    "soft d8 k3 mean": 0.6985,
    "munge d8 k3 mean": 0.7131
+  },
+  "100000": {
+   "XGBoost": [
+    0.731
+   ],
+   "soft d8": [
+    0.7178
+   ],
+   "munge d8": [
+    0.726
+   ],
+   "soft d8 k3": [
+    0.7208
+   ],
+   "munge d8 k3": [
+    0.72125
+   ],
+   "XGBoost mean": 0.731,
+   "soft d8 mean": 0.7178,
+   "munge d8 mean": 0.726,
+   "soft d8 k3 mean": 0.7208,
+   "munge d8 k3 mean": 0.7212
   }
  },
  "_summary": {
-  "cells": 11,
+  "cells": 13,
   "munge d8 k3 - munge d8": {
-   "mean_pt": -0.13,
+   "mean_pt": -0.25,
    "higher": 2,
-   "lower": 6,
-   "p": 0.2783
+   "lower": 8,
+   "p": 0.0942
   },
   "soft d8 k3 - soft d8": {
-   "mean_pt": 0.3,
-   "higher": 4,
-   "lower": 5,
-   "p": 0.6377
+   "mean_pt": 0.17,
+   "higher": 5,
+   "lower": 6,
+   "p": 0.8394
   },
   "munge d8 k3 - soft d8": {
-   "mean_pt": 1.58,
-   "higher": 10,
-   "lower": 1,
-   "p": 0.002
+   "mean_pt": 1.27,
+   "higher": 11,
+   "lower": 2,
+   "p": 0.0081
   },
   "munge d8 k3 - soft d8 k3": {
-   "mean_pt": 1.28,
+   "mean_pt": 1.1,
    "higher": 11,
    "lower": 0,
-   "p": 0.001
+   "p": 0.0002
   },
   "munge d8 k3 - XGBoost": {
-   "mean_pt": -1.94,
+   "mean_pt": -2.03,
    "higher": 0,
-   "lower": 9,
-   "p": 0.001
+   "lower": 11,
+   "p": 0.0002
   }
  }
 }

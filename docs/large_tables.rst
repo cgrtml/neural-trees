@@ -80,12 +80,14 @@ Accuracy on the test set. Over the 13 cells:
   single tree reaches its teacher. Read the section on unlabelled rows
   before comparing this column with XGBoost.
 
-Readable rules cost almost nothing here. The same MUNGE student limited to
-three features per split (``split_features=3``, started from CART; the 11
-cells up to 20 000 rows, ``benchmarks/munge_seyrek.py``) lost 0.13 points
-against the unrestricted student (2 cells higher, 6 lower, p=0.28) and was
-1.6 points above the unrestricted tree trained on the labels (10 higher, 1
-lower, p=0.002), 1.9 points behind XGBoost:
+Readable rules cost little here. The same MUNGE student limited to three
+features per split (``split_features=3``, started from CART; all 13 cells,
+``benchmarks/munge_seyrek.py``) lost 0.25 points against the unrestricted
+student (2 cells higher, 8 lower, p=0.09) and was 1.3 points above the
+unrestricted tree trained on the labels (11 higher, 2 lower, p=0.008), 2.0
+points behind XGBoost. The cost grows with the data: 0.13 points up to
+20 000 rows, 1.3 on covertype and 0.5 on Higgs at 100 000, where many rows
+can feed many features per split.
 
 .. code-block:: python
 

@@ -216,8 +216,9 @@ XGBoost from 3.3 to 1.8 points; with real unlabelled rows passed as
 `fit(X, y, X_unlabeled=...)` the gap was 1.45 and on two tables the tree
 reached its teacher. Limiting the student to three features per split
 (`student=SoftDecisionTree(depth=8, init="cart", split_features=3,
-learn_temperature=True)`) cost 0.13 points and kept it 1.6 points above the
-unrestricted tree trained on the labels. Below 1 000 rows it is the wrong tool: the per-leaf
+learn_temperature=True)`) cost 0.25 points on average (more at 100 000
+rows) and kept it 1.3 points above the unrestricted tree trained on the
+labels. Below 1 000 rows it is the wrong tool: the per-leaf
 soft tree is 1.2 points better there. Tables, the cases where it does not
 help and what was tried and dropped are on the
 [Large tables](https://cagritemel.com/neural-trees/large_tables.html) page.
