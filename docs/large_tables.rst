@@ -191,6 +191,12 @@ split (``benchmarks/gelistir.py``):
 * Training three times longer: no gain.
 * Depth 10 to 12 instead of 6 to 8: small gains on two datasets, a failed fit
   on a third, five to ten times the cost.
+* A depth-10 student on the MUNGE rows instead of depth 8 (5 000 and 20 000
+  rows, three seeds; ``benchmarks/munge_derin.py``): +0.05 points on
+  average, 3 cells higher and 3 lower. It helps where one tree is short of
+  capacity and rows are many (electricity and covertype at 20 000 rows,
+  +0.8 and +0.7) and loses on the small and noisy cells (Higgs at 5 000
+  rows, -0.7), at about three times the fit time.
 * Linear models in the leaves: overfits (jannis train 0.99, test 0.70).
 * Growing the student leaf by leaf on the teacher's probabilities: below the
   CART-started student on four of five datasets.
