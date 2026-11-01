@@ -1,0 +1,360 @@
+{
+ "_protokol": "A deep hard tree as the student. On electricity the depth-8 soft student of\nmunge.py stays 4 to 6 points below XGBoost, and neither a deeper soft tree\n(munge_derin.py) nor a group of three (grup.py) closes that. A pilot found\nthat one deep axis-aligned CART fitted to the teacher's labels on many\nMUNGE rows comes much closer there (electricity 20k: 0.855 against XGBoost\n0.870 and the soft student 0.814), while on Higgs and covertype it stays\nbelow the soft student. This measures that on every cell.\n\nStudent: sklearn DecisionTreeClassifier (min_samples_leaf=5) on the\ntraining rows plus 20 MUNGE passes, every row labelled with the XGBoost\nteacher's predicted class. Depth is chosen among 8, 12, 16 and unlimited by\nagreement with the teacher on 2 further MUNGE passes drawn with another\nseed (no labels used). \"hard pick\" is that choice; the depth columns are\nreported as well.",
+ "_commit": "4a25cdd",
+ "electricity": {
+  "5000": {
+   "XGBoost": [
+    0.8428645697946452,
+    0.838185599168183,
+    0.841564855731739
+   ],
+   "munge d8": [
+    0.8077722900961788,
+    0.8011437483753574,
+    0.8059526904081102
+   ],
+   "hard pick": [
+    0.8221991161944372,
+    0.8188198596308812,
+    0.8157005458799064
+   ],
+   "leaves": [
+    2490,
+    2669,
+    2503
+   ],
+   "XGBoost mean": 0.8409,
+   "munge d8 mean": 0.805,
+   "hard pick mean": 0.8189,
+   "leaves mean": 2554.0
+  },
+  "20000": {
+   "XGBoost": [
+    0.8700285937093839,
+    0.8769170782427866,
+    0.8718481933974526
+   ],
+   "munge d8": [
+    0.8153106316610346,
+    0.8138809461918378,
+    0.8136210033792566
+   ],
+   "hard pick": [
+    0.8550818819859631,
+    0.8582011957369379,
+    0.8587210813621003
+   ],
+   "leaves": [
+    7251,
+    7131,
+    6928
+   ],
+   "XGBoost mean": 0.8729,
+   "munge d8 mean": 0.8143,
+   "hard pick mean": 0.8573,
+   "leaves mean": 7103.3333
+  }
+ },
+ "MagicTelescope": {
+  "5000": {
+   "XGBoost": [
+    0.8493457943925233,
+    0.8534579439252337,
+    0.8471028037383178
+   ],
+   "munge d8": [
+    0.8493457943925233,
+    0.8418691588785047,
+    0.839626168224299
+   ],
+   "hard pick": [
+    0.8291588785046728,
+    0.8142056074766355,
+    0.822429906542056
+   ],
+   "leaves": [
+    2816,
+    2833,
+    2808
+   ],
+   "XGBoost mean": 0.85,
+   "munge d8 mean": 0.8436,
+   "hard pick mean": 0.8219,
+   "leaves mean": 2819.0
+  }
+ },
+ "jannis": {
+  "5000": {
+   "XGBoost": [
+    0.7622438346648142,
+    0.7661514414727336,
+    0.7641542202153525
+   ],
+   "munge d8": [
+    0.7444425147620701,
+    0.7462660646057659,
+    0.7371483153872872
+   ],
+   "hard pick": [
+    0.7282910732893366,
+    0.743487321986801,
+    0.7289857589440778
+   ],
+   "leaves": [
+    1516,
+    1454,
+    1669
+   ],
+   "XGBoost mean": 0.7642,
+   "munge d8 mean": 0.7426,
+   "hard pick mean": 0.7336,
+   "leaves mean": 1546.3333
+  },
+  "20000": {
+   "XGBoost": [
+    0.7825633900659952,
+    0.7896839180270927,
+    0.7856894755123307
+   ],
+   "munge d8": [
+    0.7783952761375478,
+    0.7797846474470302,
+    0.7805661688086141
+   ],
+   "hard pick": [
+    0.7618096561306009,
+    0.7584230635637375,
+    0.754515456755818
+   ],
+   "leaves": [
+    7892,
+    7754,
+    7832
+   ],
+   "XGBoost mean": 0.786,
+   "munge d8 mean": 0.7796,
+   "hard pick mean": 0.7582,
+   "leaves mean": 7826.0
+  }
+ },
+ "MiniBooNE": {
+  "5000": {
+   "XGBoost": [
+    0.9305431878895815,
+    0.9301322008356737,
+    0.9305431878895815
+   ],
+   "munge d8": [
+    0.9110898006712789,
+    0.9091718610863758,
+    0.9119117747790945
+   ],
+   "hard pick": [
+    0.8943763271456949,
+    0.8980752106308652,
+    0.898417699842455
+   ],
+   "leaves": [
+    1095,
+    1564,
+    1691
+   ],
+   "XGBoost mean": 0.9304,
+   "munge d8 mean": 0.9107,
+   "hard pick mean": 0.897,
+   "leaves mean": 1450.0
+  },
+  "20000": {
+   "XGBoost": [
+    0.9389684224946914,
+    0.9386259332831016,
+    0.9402698814987328
+   ],
+   "munge d8": [
+    0.9265018151928214,
+    0.9310911706281252,
+    0.9308856771011713
+   ],
+   "hard pick": [
+    0.9105418179327351,
+    0.9097198438249195,
+    0.9126652510445921
+   ],
+   "leaves": [
+    5200,
+    5258,
+    5113
+   ],
+   "XGBoost mean": 0.9393,
+   "munge d8 mean": 0.9295,
+   "hard pick mean": 0.911,
+   "leaves mean": 5190.3333
+  }
+ },
+ "covertype": {
+  "5000": {
+   "XGBoost": [
+    0.7926,
+    0.78665,
+    0.78425
+   ],
+   "munge d8": [
+    0.7714,
+    0.76865,
+    0.77665
+   ],
+   "hard pick": [
+    0.7592,
+    0.7569,
+    0.7541
+   ],
+   "leaves": [
+    3478,
+    3455,
+    3585
+   ],
+   "XGBoost mean": 0.7878,
+   "munge d8 mean": 0.7722,
+   "hard pick mean": 0.7567,
+   "leaves mean": 3506.0
+  },
+  "20000": {
+   "XGBoost": [
+    0.81935,
+    0.8248,
+    0.82165
+   ],
+   "munge d8": [
+    0.79875,
+    0.79995,
+    0.79825
+   ],
+   "hard pick": [
+    0.79925,
+    0.79745,
+    0.7985
+   ],
+   "leaves": [
+    8994,
+    8600,
+    8870
+   ],
+   "XGBoost mean": 0.8219,
+   "munge d8 mean": 0.799,
+   "hard pick mean": 0.7984,
+   "leaves mean": 8821.3333
+  },
+  "100000": {
+   "XGBoost": [
+    0.8474
+   ],
+   "munge d8": [
+    0.8197
+   ],
+   "hard pick": [
+    0.8311
+   ],
+   "leaves": [
+    25240
+   ],
+   "XGBoost mean": 0.8474,
+   "munge d8 mean": 0.8197,
+   "hard pick mean": 0.8311,
+   "leaves mean": 25240.0
+  }
+ },
+ "Higgs": {
+  "5000": {
+   "XGBoost": [
+    0.6941,
+    0.6939,
+    0.69565
+   ],
+   "munge d8": [
+    0.69045,
+    0.68295,
+    0.6968
+   ],
+   "hard pick": [
+    0.67255,
+    0.6634,
+    0.65655
+   ],
+   "leaves": [
+    1830,
+    3828,
+    4488
+   ],
+   "XGBoost mean": 0.6946,
+   "munge d8 mean": 0.6901,
+   "hard pick mean": 0.6642,
+   "leaves mean": 3382.0
+  },
+  "20000": {
+   "XGBoost": [
+    0.71255,
+    0.7179,
+    0.71015
+   ],
+   "munge d8": [
+    0.716,
+    0.7174,
+    0.715
+   ],
+   "hard pick": [
+    0.6935,
+    0.69475,
+    0.69085
+   ],
+   "leaves": [
+    10032,
+    9440,
+    9672
+   ],
+   "XGBoost mean": 0.7135,
+   "munge d8 mean": 0.7161,
+   "hard pick mean": 0.693,
+   "leaves mean": 9714.6667
+  },
+  "100000": {
+   "XGBoost": [
+    0.731
+   ],
+   "munge d8": [
+    0.726
+   ],
+   "hard pick": [
+    0.71145
+   ],
+   "leaves": [
+    21433
+   ],
+   "XGBoost mean": 0.731,
+   "munge d8 mean": 0.726,
+   "hard pick mean": 0.7115,
+   "leaves mean": 21433.0
+  }
+ },
+ "_summary": {
+  "cells": 13,
+  "hard pick - munge d8": {
+   "mean_pt": -0.74,
+   "higher": 3,
+   "lower": 9,
+   "p": 0.0942
+  },
+  "hard pick - XGBoost": {
+   "mean_pt": -2.52,
+   "higher": 0,
+   "lower": 13,
+   "p": 0.0002
+  },
+  "best of two - XGBoost": {
+   "mean_pt": -1.25,
+   "higher": 1,
+   "lower": 12,
+   "p": 0.0005
+  },
+  "note": "best of two picks per cell by test accuracy: an upper bound for a chooser, not a result"
+ }
+}
