@@ -5,7 +5,8 @@ oblique splits over many features. Here the same depth-8 student on the
 same rows (munge.py's cached teacher probabilities) with at most three
 features per split (split_features=3, started from CART), and the same
 restriction on the tree trained on the labels, at 5 000 and 20 000 rows,
-three seeds; compared with the unrestricted columns.
+three seeds (SEYREK_ENBUYUK=100000 adds the 100 000-row cells, one seed);
+compared with the unrestricted columns.
 
     python3 benchmarks/munge_seyrek.py ogrenci [--n-jobs 8]
     python3 benchmarks/munge_seyrek.py ozet
@@ -27,6 +28,7 @@ KOK = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(KOK))
 CIKTI = KOK / "munge_seyrek-sonuc.json"
 K = 3
+ENBUYUK = int(os.environ.get("SEYREK_ENBUYUK", "20000"))   # 100000 adds the two 100k cells, one seed
 
 
 def _ogrenci(yol, isim):
@@ -60,7 +62,7 @@ def _ogrenci(yol, isim):
 def ogrenci(n_jobs):
     import munge as M
     from joblib import Parallel, delayed
-    yollar = sorted((p for p in M.ARA.glob("*.npz") if int(p.stem.split("__")[1]) <= 20_000),
+    yollar = sorted((p for p in M.ARA.glob("*.npz") if int(p.stem.split("__")[1]) <= ENBUYUK),
                     key=lambda p: -int(p.stem.split("__")[1]))
     isler = [(p, i) for i in (f"munge d8 k{K}", f"soft d8 k{K}") for p in yollar]
     Parallel(n_jobs=n_jobs)(delayed(_ogrenci)(p, i) for p, i in isler)
@@ -77,9 +79,9 @@ def ozet():
     A = {c: [] for c in cols}
     print(f"{'dataset':14s} {'n':>6s}  " + " ".join(f"{c:>10s}" for c in cols))
     for ad in D.KUMELER:
-        for n in (5_000, 20_000):
+        for n in (5_000, 20_000, 100_000):
             r = {c: [] for c in cols}
-            for s in (0, 1, 2):
+            for s in D.tohumlar(n):
                 stem = f"{ad}__{n}__{s}"
                 yer = {c: M.ARA / f"{stem}__{c.replace(' ', '_')}.json" for c in cols[2:]}
                 yer["soft d8"] = M.DAMITMA / f"{stem}__soft_d8.json"
