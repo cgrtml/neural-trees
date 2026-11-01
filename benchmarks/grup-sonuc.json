@@ -1,0 +1,365 @@
+{
+ "_protokol": "A few soft trees instead of one. munge.py left the single distilled tree\n1.8 points below XGBoost on average (13 cells), with the largest gaps where\none tree lacks capacity (electricity, covertype). Here the student is a\nsmall group of distilled soft trees, each fitted like the munge.py student\n(teacher probabilities on the training rows plus two MUNGE passes, CART\nstart, learnt temperature, 60 epochs) on its own bootstrap sample of those\nrows, and the group predicts with the sum of the trees' log probabilities:\n\n    group3 d6  three depth-6 trees\n    group3 d8  three depth-8 trees\n\nA pilot on three 5k cells (seed 0) found no gain from five trees over three,\nnor from fine-tuning the summed group jointly afterwards, nor from boosting\nsoft regression trees on the teacher's logits; those are not in this run.",
+ "_commit": "827ac57",
+ "electricity": {
+  "5000": {
+   "XGBoost": [
+    0.8428645697946452,
+    0.838185599168183,
+    0.841564855731739
+   ],
+   "munge d8": [
+    0.8077722900961788,
+    0.8011437483753574,
+    0.8059526904081102
+   ],
+   "group3 d6": [
+    0.8004938913439044,
+    0.7986742916558357,
+    0.7989342344684169
+   ],
+   "group3 d8": [
+    0.8111515466597349,
+    0.804652976345204,
+    0.8099818040031194
+   ],
+   "XGBoost mean": 0.8409,
+   "munge d8 mean": 0.805,
+   "group3 d6 mean": 0.7994,
+   "group3 d8 mean": 0.8086
+  },
+  "20000": {
+   "XGBoost": [
+    0.8700285937093839,
+    0.8769170782427866,
+    0.8718481933974526
+   ],
+   "munge d8": [
+    0.8153106316610346,
+    0.8138809461918378,
+    0.8136210033792566
+   ],
+   "group3 d6": [
+    0.8114114894723161,
+    0.8138809461918378,
+    0.8099818040031194
+   ],
+   "group3 d8": [
+    0.8203795165063686,
+    0.8216792305692747,
+    0.8242786586950871
+   ],
+   "XGBoost mean": 0.8729,
+   "munge d8 mean": 0.8143,
+   "group3 d6 mean": 0.8118,
+   "group3 d8 mean": 0.8221
+  }
+ },
+ "MagicTelescope": {
+  "5000": {
+   "XGBoost": [
+    0.8493457943925233,
+    0.8534579439252337,
+    0.8471028037383178
+   ],
+   "munge d8": [
+    0.8493457943925233,
+    0.8418691588785047,
+    0.839626168224299
+   ],
+   "group3 d6": [
+    0.8437383177570094,
+    0.8467289719626169,
+    0.8485981308411215
+   ],
+   "group3 d8": [
+    0.8388785046728972,
+    0.8489719626168224,
+    0.8444859813084112
+   ],
+   "XGBoost mean": 0.85,
+   "munge d8 mean": 0.8436,
+   "group3 d6 mean": 0.8464,
+   "group3 d8 mean": 0.8441
+  }
+ },
+ "jannis": {
+  "5000": {
+   "XGBoost": [
+    0.7622438346648142,
+    0.7661514414727336,
+    0.7641542202153525
+   ],
+   "munge d8": [
+    0.7444425147620701,
+    0.7462660646057659,
+    0.7371483153872872
+   ],
+   "group3 d6": [
+    0.7394060437651963,
+    0.7528655783258076,
+    0.7508683570684266
+   ],
+   "group3 d8": [
+    0.7473949287947204,
+    0.7495658214657868,
+    0.7533865925668635
+   ],
+   "XGBoost mean": 0.7642,
+   "munge d8 mean": 0.7426,
+   "group3 d6 mean": 0.7477,
+   "group3 d8 mean": 0.7501
+  },
+  "20000": {
+   "XGBoost": [
+    0.7825633900659952,
+    0.7896839180270927,
+    0.7856894755123307
+   ],
+   "munge d8": [
+    0.7783952761375478,
+    0.7797846474470302,
+    0.7805661688086141
+   ],
+   "group3 d6": [
+    0.7799583188607155,
+    0.7827370614796805,
+    0.783605418548107
+   ],
+   "group3 d8": [
+    0.781608197290726,
+    0.7826502257728378,
+    0.7816950329975686
+   ],
+   "XGBoost mean": 0.786,
+   "munge d8 mean": 0.7796,
+   "group3 d6 mean": 0.7821,
+   "group3 d8 mean": 0.782
+  }
+ },
+ "MiniBooNE": {
+  "5000": {
+   "XGBoost": [
+    0.9305431878895815,
+    0.9301322008356737,
+    0.9305431878895815
+   ],
+   "munge d8": [
+    0.9110898006712789,
+    0.9091718610863758,
+    0.9119117747790945
+   ],
+   "group3 d6": [
+    0.9154736625796287,
+    0.9165696280567163,
+    0.9147886841564491
+   ],
+   "group3 d8": [
+    0.9130077402561819,
+    0.9143776971025412,
+    0.910815809302007
+   ],
+   "XGBoost mean": 0.9304,
+   "munge d8 mean": 0.9107,
+   "group3 d6 mean": 0.9156,
+   "group3 d8 mean": 0.9127
+  },
+  "20000": {
+   "XGBoost": [
+    0.9389684224946914,
+    0.9386259332831016,
+    0.9402698814987328
+   ],
+   "munge d8": [
+    0.9265018151928214,
+    0.9310911706281252,
+    0.9308856771011713
+   ],
+   "group3 d6": [
+    0.929378724570176,
+    0.9347215562709774,
+    0.9306801835742174
+   ],
+   "group3 d8": [
+    0.9306801835742174,
+    0.9322556339475306,
+    0.9303376943626276
+   ],
+   "XGBoost mean": 0.9393,
+   "munge d8 mean": 0.9295,
+   "group3 d6 mean": 0.9316,
+   "group3 d8 mean": 0.9311
+  }
+ },
+ "covertype": {
+  "5000": {
+   "XGBoost": [
+    0.7926,
+    0.78665,
+    0.78425
+   ],
+   "munge d8": [
+    0.7714,
+    0.76865,
+    0.77665
+   ],
+   "group3 d6": [
+    0.77635,
+    0.773,
+    0.7754
+   ],
+   "group3 d8": [
+    0.783,
+    0.77925,
+    0.77665
+   ],
+   "XGBoost mean": 0.7878,
+   "munge d8 mean": 0.7722,
+   "group3 d6 mean": 0.7749,
+   "group3 d8 mean": 0.7796
+  },
+  "20000": {
+   "XGBoost": [
+    0.81935,
+    0.8248,
+    0.82165
+   ],
+   "munge d8": [
+    0.79875,
+    0.79995,
+    0.79825
+   ],
+   "group3 d6": [
+    0.78745,
+    0.78945,
+    0.78955
+   ],
+   "group3 d8": [
+    0.79955,
+    0.7991,
+    0.8018
+   ],
+   "XGBoost mean": 0.8219,
+   "munge d8 mean": 0.799,
+   "group3 d6 mean": 0.7888,
+   "group3 d8 mean": 0.8002
+  },
+  "100000": {
+   "XGBoost": [
+    0.8474
+   ],
+   "munge d8": [
+    0.8197
+   ],
+   "group3 d6": [
+    0.80355
+   ],
+   "group3 d8": [
+    0.8213
+   ],
+   "XGBoost mean": 0.8474,
+   "munge d8 mean": 0.8197,
+   "group3 d6 mean": 0.8035,
+   "group3 d8 mean": 0.8213
+  }
+ },
+ "Higgs": {
+  "5000": {
+   "XGBoost": [
+    0.6941,
+    0.6939,
+    0.69565
+   ],
+   "munge d8": [
+    0.69045,
+    0.68295,
+    0.6968
+   ],
+   "group3 d6": [
+    0.6977,
+    0.694,
+    0.6928
+   ],
+   "group3 d8": [
+    0.69575,
+    0.68845,
+    0.6921
+   ],
+   "XGBoost mean": 0.6946,
+   "munge d8 mean": 0.6901,
+   "group3 d6 mean": 0.6948,
+   "group3 d8 mean": 0.6921
+  },
+  "20000": {
+   "XGBoost": [
+    0.71255,
+    0.7179,
+    0.71015
+   ],
+   "munge d8": [
+    0.716,
+    0.7174,
+    0.715
+   ],
+   "group3 d6": [
+    0.71535,
+    0.71805,
+    0.7127
+   ],
+   "group3 d8": [
+    0.71495,
+    0.71595,
+    0.71595
+   ],
+   "XGBoost mean": 0.7135,
+   "munge d8 mean": 0.7161,
+   "group3 d6 mean": 0.7154,
+   "group3 d8 mean": 0.7156
+  },
+  "100000": {
+   "XGBoost": [
+    0.731
+   ],
+   "munge d8": [
+    0.726
+   ],
+   "group3 d6": [
+    0.7273
+   ],
+   "group3 d8": [
+    0.7286
+   ],
+   "XGBoost mean": 0.731,
+   "munge d8 mean": 0.726,
+   "group3 d6 mean": 0.7273,
+   "group3 d8 mean": 0.7286
+  }
+ },
+ "_summary": {
+  "cells": 13,
+  "group3 d6 - munge d8": {
+   "mean_pt": -0.07,
+   "higher": 7,
+   "lower": 4,
+   "p": 0.7869
+  },
+  "group3 d6 - XGBoost": {
+   "mean_pt": -1.85,
+   "higher": 0,
+   "lower": 11,
+   "p": 0.0012
+  },
+  "group3 d8 - munge d8": {
+   "mean_pt": 0.31,
+   "higher": 8,
+   "lower": 0,
+   "p": 0.0007
+  },
+  "group3 d8 - XGBoost": {
+   "mean_pt": -1.47,
+   "higher": 1,
+   "lower": 12,
+   "p": 0.0005
+  }
+ }
+}
