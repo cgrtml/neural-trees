@@ -31,6 +31,7 @@ __version__ = "0.8.0"
 __author__ = "Cagri Temel"
 
 # name -> module that defines it, for the estimators that need torch
+from neural_trees.distillation import Distilled, distill, fidelity  # noqa: E402
 from neural_trees.explain import Counterfactual, Explanation, GateStep  # noqa: E402
 
 _LAZY = {
@@ -69,6 +70,7 @@ def __dir__():
 
 __all__ = [
     "Counterfactual",
+    "Distilled",
     "Explanation",
     "GALNetwork",
     "GateStep",
@@ -84,6 +86,8 @@ __all__ = [
     "SoftDecisionTreeRegressor",
     "WeightedKNN",
     "combined_5x2cv_f_test",
+    "distill",
+    "fidelity",
     "mcnemar_test",
     "paired_t_test",
 ]

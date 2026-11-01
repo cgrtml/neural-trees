@@ -790,3 +790,41 @@ def test_from_hard_tree_rejects_unfitted_or_grown():
     cart = DecisionTreeClassifier(max_depth=2).fit(X, y)
     with pytest.raises(ValueError, match="growth"):
         SoftDecisionTree.from_hard_tree(cart, growth="per_leaf")
+
+
+def test_from_hard_tree_fine_tunes_on_another_device():
+    import torch
+    from sklearn.tree import DecisionTreeClassifier
+
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        pytest.skip("no accelerator")
+    X, y = load_iris(return_X_y=True)
+    cart = DecisionTreeClassifier(max_depth=2, random_state=0).fit(X, y)
+    soft = SoftDecisionTree.from_hard_tree(cart, X, max_epochs=2, device=device).fit(X, y)
+    assert soft.predict(X).shape == y.shape
+
+
+def test_explain_keeps_a_used_feature_whose_value_is_zero():
+    from sklearn.tree import DecisionTreeClassifier
+
+    rng = np.random.default_rng(0)
+    X = rng.integers(0, 2, size=(200, 8)).astype(float)
+    y = X[:, 5].astype(int)
+    cart = DecisionTreeClassifier(max_depth=1, random_state=0).fit(X, y)
+    soft = SoftDecisionTree.from_hard_tree(cart, X)
+    row = X[X[:, 5] == 0][:1]
+    terms = soft.explain(row)[0].path[0].terms
+    assert [t["feature"] for t in terms] == ["x5"]
+
+
+def test_warm_start_rejects_a_different_feature_count():
+    from sklearn.tree import DecisionTreeClassifier
+
+    X, y = load_iris(return_X_y=True)
+    soft = SoftDecisionTree.from_hard_tree(DecisionTreeClassifier(max_depth=2).fit(X, y), X, max_epochs=2)
+    with pytest.raises(ValueError, match="same features"):
+        soft.fit(X[:, :3], y)

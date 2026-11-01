@@ -720,7 +720,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         check_classification_targets(y)
         encoder = LabelEncoder()
         y_enc = encoder.fit_transform(y)
-        continuing = self._reuse_existing_model(len(encoder.classes_))
+        continuing = self._reuse_existing_model(len(encoder.classes_), X.shape[1])
         self.le_ = encoder
         self.classes_ = encoder.classes_
         self.n_features_in_ = X.shape[1]
@@ -813,6 +813,10 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                     penalty_coef=self.penalty_coef,
                     learn_temperature=self.learn_temperature,
                 ).to(device)
+            else:
+                # a continued model may live elsewhere: from_hard_tree builds it
+                # on the CPU, and the device parameter may have changed since
+                self.model_ = self.model_.to(device)
             optimizer = torch.optim.Adam(self.model_.parameters(), lr=self.learning_rate)
             _, best_state = self._train_epochs(
                 self.model_, loader, optimizer, self.max_epochs, X_val_t, y_val_t,
@@ -877,7 +881,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                 model.gates.weight.mul_(mask)  # exact zeros whatever the optimiser did
 
     @classmethod
-    def from_hard_tree(cls, tree, X=None, sharpness: float = 4.0, **params) -> "SoftDecisionTree":
+    def from_hard_tree(cls, tree, X=None, sharpness: float = 10.0, **params) -> "SoftDecisionTree":
         """
         A soft tree that starts as a copy of a fitted scikit-learn
         `DecisionTreeClassifier`, ready to be fine-tuned with `fit`.
@@ -903,7 +907,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             Data on the scale the tree was fitted on, used only for the
             feature standard deviations. Without it the features are assumed
             standardised (std 1).
-        sharpness : float, default=4.0
+        sharpness : float, default=10.0
             Gate slope in units of the feature's standard deviation. Larger
             copies CART more exactly at the start but leaves the gates in the
             flat part of the sigmoid, where gradients are small.
@@ -951,7 +955,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         est._w_val_t = None
         return est
 
-    def _reuse_existing_model(self, n_classes: int) -> bool:
+    def _reuse_existing_model(self, n_classes: int, n_features: Optional[int] = None) -> bool:
         """
         Whether a previous fit's parameters can be continued from.
 
@@ -965,6 +969,11 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             raise ValueError(
                 "warm_start=True requires the same classes across calls to fit; "
                 "the label set changed, and this model cannot grow its output layer."
+            )
+        if n_features is not None and n_features != getattr(self, "n_features_in_", n_features):
+            raise ValueError(
+                f"warm_start=True requires the same features across calls to fit; the model "
+                f"has {self.n_features_in_}, X has {n_features}."
             )
         return True
 
