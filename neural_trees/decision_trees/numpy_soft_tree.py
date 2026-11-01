@@ -68,36 +68,45 @@ class NumpySoftTree:
         if self.weights_.shape[0] != self.n_internal_:
             raise ValueError(f"expected {self.n_internal_} gates for depth {self.depth}, got {self.weights_.shape[0]}")
 
-    # ── prediction · the same walk as the torch module, in log space ──
+    # ── prediction · only the gates that split, in log space ──
+    def _compiled(self):
+        """
+        Gates that split, and for every acting leaf the signs of its path.
+
+        A depth-8 tree has 255 gates, but after growth or pruning usually far
+        fewer of them split. Computing only those, and summing each leaf's
+        path as one matrix product, gives the same numbers as the full walk
+        at a fraction of the cost.
+        """
+        cached = getattr(self, "_paths_cache", None)
+        if cached is not None:
+            return cached
+        from neural_trees.decision_trees.onnx_export import _paths
+
+        leaves = _paths(self.depth, self.is_split_)
+        gates = np.array(sorted({g for _, path in leaves for g, _ in path}), dtype=np.int64)
+        col = {int(g): i for i, g in enumerate(gates)}
+        # path matrix over [log sigmoid(z) for each gate, log sigmoid(-z) for each gate]
+        P = np.zeros((2 * len(gates), len(leaves)))
+        for t, (_, path) in enumerate(leaves):
+            for g, right in path:
+                P[col[g] + (0 if right else len(gates)), t] = 1.0
+        nodes = np.array([node for node, _ in leaves], dtype=np.int64)
+        self._paths_cache = (gates, P, nodes)
+        return self._paths_cache
+
     def _arrival(self, X):
         """(terms, log_mu) for every acting leaf: node index and log arrival mass."""
         X = np.asarray(X, dtype=np.float64)
         if X.ndim != 2 or X.shape[1] != self.n_features_in_:
             raise ValueError(f"X must have shape (n_samples, {self.n_features_in_})")
         X = augment(X, self.missing_columns_)
-        logits = np.exp(self.log_beta_) * (X @ self.weights_.T + self.biases_)  # (n, n_internal)
-        n = X.shape[0]
-        log_mu = np.zeros((n, 1))
-        nodes: List[np.ndarray] = []
-        masses: List[np.ndarray] = []
-        start = 0
-        for level in range(self.depth):
-            width = 2 ** level
-            lv = logits[:, start:start + width]
-            splits = self.is_split_[start:start + width]
-            if not splits.all():
-                stopped = np.where(~splits)[0]
-                nodes.append(start + stopped)
-                masses.append(log_mu[:, stopped])
-            log_left, log_right = _log_sigmoid(-lv), _log_sigmoid(lv)
-            children = np.stack([log_left, log_right], axis=2).reshape(n, 2 * width)
-            log_mu = np.repeat(log_mu, 2, axis=1) + children
-            if not splits.all():
-                log_mu = np.where(np.repeat(splits, 2), log_mu, -np.inf)
-            start += width
-        nodes.append(np.arange(self.n_internal_, self.n_internal_ + self.n_leaves_))
-        masses.append(log_mu)
-        return np.concatenate(nodes), np.concatenate(masses, axis=1)
+        gates, P, nodes = self._compiled()
+        if len(gates) == 0:
+            return nodes, np.zeros((X.shape[0], 1))
+        z = np.exp(self.log_beta_[gates]) * (X @ self.weights_[gates].T + self.biases_[gates])
+        right = _log_sigmoid(z)
+        return nodes, np.hstack([right, right - z]) @ P   # log sigmoid(-z) = log sigmoid(z) - z
 
     def predict_values(self, X) -> np.ndarray:
         """Regressor only: arrival-weighted leaf values, in target units."""
@@ -112,37 +121,19 @@ class NumpySoftTree:
     def predict_log_proba(self, X) -> np.ndarray:
         if self.kind != "classifier":
             raise AttributeError("predict_log_proba is for a classifier export; use predict_values")
-        X = np.asarray(X, dtype=np.float64)
-        if X.ndim != 2 or X.shape[1] != self.n_features_in_:
-            raise ValueError(f"X must have shape (n_samples, {self.n_features_in_})")
-        X = augment(X, self.missing_columns_)
-        logits = np.exp(self.log_beta_) * (X @ self.weights_.T + self.biases_)  # (n, n_internal)
-        log_dist = _log_softmax(self.node_logits_)                               # (n_nodes, K)
-        n = X.shape[0]
-        log_mu = np.zeros((n, 1))
-        parts: List[np.ndarray] = []
-        start = 0
-        for level in range(self.depth):
-            width = 2 ** level
-            lv = logits[:, start:start + width]
-            splits = self.is_split_[start:start + width]
-            if not splits.all():
-                stopped = np.where(~splits)[0]
-                idx = start + stopped
-                parts.append(log_mu[:, stopped][:, :, None] + log_dist[idx][None, :, :])
-            log_left, log_right = _log_sigmoid(-lv), _log_sigmoid(lv)
-            children = np.stack([log_left, log_right], axis=2).reshape(n, 2 * width)
-            log_mu = np.repeat(log_mu, 2, axis=1) + children
-            if not splits.all():
-                alive = np.repeat(splits, 2)
-                log_mu = np.where(alive, log_mu, -np.inf)
-            start += width
-        bottom = np.arange(self.n_internal_, self.n_internal_ + self.n_leaves_)
-        parts.append(log_mu[:, :, None] + log_dist[bottom][None, :, :])
-        allp = np.concatenate(parts, axis=1)                                      # (n, n_terms, K)
-        m = allp.max(axis=1, keepdims=True)
-        m = np.where(np.isfinite(m), m, 0.0)
-        return (m + np.log(np.exp(allp - m).sum(axis=1, keepdims=True)))[:, 0, :]
+        nodes, log_mu = self._arrival(X)                                # (n, terms)
+        log_dist = _log_softmax(self.node_logits_)[nodes]                 # (terms, K)
+        # log sum_t mu_t * p_t, both factors scaled by their maxima first
+        m = log_mu.max(axis=1, keepdims=True)
+        k = log_dist.max(axis=0, keepdims=True)
+        with np.errstate(divide="ignore"):
+            out = m + k + np.log(np.exp(log_mu - m) @ np.exp(log_dist - k))
+        bad = ~np.isfinite(out).all(axis=1)
+        if bad.any():                                                     # underflow: exact sum
+            allp = log_mu[bad][:, :, None] + log_dist[None, :, :]
+            mm = allp.max(axis=1, keepdims=True)
+            out[bad] = (mm + np.log(np.exp(allp - mm).sum(axis=1, keepdims=True)))[:, 0, :]
+        return out
 
     def predict_proba(self, X) -> np.ndarray:
         return np.exp(self.predict_log_proba(X))
