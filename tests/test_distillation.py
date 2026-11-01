@@ -94,3 +94,33 @@ def test_unlabeled_rows_reach_the_student_not_the_teacher():
     assert (m.predict(Xte) == yte).mean() > 0.8
     with pytest.raises(ValueError, match="X_unlabeled"):
         DistilledTree().fit(Xl, yl, X_unlabeled=Xu[:, :3])
+
+
+def test_munge_rows_stay_near_the_data():
+    from neural_trees.distillation import munge
+
+    rng = np.random.default_rng(0)
+    X = np.column_stack([rng.normal(100, 30, 300), rng.integers(0, 3, 300), rng.normal(size=300)])
+    X[::7, 2] = np.nan
+    M = munge(X, passes=2, random_state=0)
+    assert M.shape == (600, 3)
+    assert np.array_equal(M, munge(X, passes=2, random_state=0), equal_nan=True)
+    assert set(np.unique(M[:, 1])) <= {0.0, 1.0, 2.0}          # discrete feature copies values
+    assert abs(np.nanmean(M[:, 0]) - 100) < 10 and np.nanstd(M[:, 0]) < 40
+    assert np.isnan(M[:, 2]).any() and not np.isnan(M[:, :2]).any()
+    assert munge(X, passes=0).shape == (0, 3)
+    with pytest.raises(ValueError):
+        munge(X, p=1.5)
+
+
+def test_synthetic_rows_reach_the_student_only():
+    Xtr, Xte, ytr, yte = _data()
+    m = DistilledTree(student=SoftDecisionTree(depth=3, max_epochs=20, random_state=0), synthetic=1,
+                      random_state=0).fit(Xtr, ytr)
+    assert m.teacher_.n_features_in_ == Xtr.shape[1]
+    assert (m.predict(Xte) == yte).mean() > 0.8
+    m0 = DistilledTree(student=SoftDecisionTree(depth=3, max_epochs=20, random_state=0), synthetic=0).fit(Xtr, ytr)
+    assert m0.predict(Xte).shape == (len(Xte),)
+    for bad in (-1, 1.5, True):
+        with pytest.raises(ValueError, match="synthetic"):
+            DistilledTree(synthetic=bad).fit(Xtr, ytr)
