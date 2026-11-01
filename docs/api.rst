@@ -37,6 +37,22 @@ Constructive and classical models
    neural_trees.WeightedKNN
    neural_trees.NaiveBayesClassifier
 
+Distillation
+------------
+
+.. autosummary::
+   :toctree: generated
+   :template: autosummary/class.rst
+
+   neural_trees.DistilledTree
+
+.. autosummary::
+   :toctree: generated
+
+   neural_trees.distill
+   neural_trees.fidelity
+   neural_trees.Distilled
+
 Statistical tests
 -----------------
 
