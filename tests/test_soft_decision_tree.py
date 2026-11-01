@@ -1,7 +1,7 @@
 """Tests for Soft Decision Tree."""
 import numpy as np
 import pytest
-from sklearn.datasets import load_iris, load_wine
+from sklearn.datasets import load_iris, load_wine, make_classification
 from sklearn.model_selection import train_test_split
 
 from neural_trees import SoftDecisionTree
@@ -693,3 +693,100 @@ def test_growth_budget_is_validated_and_full_runs():
     m = SoftDecisionTree(depth=3, max_epochs=30, growth="incremental",
                          growth_budget="full", random_state=0).fit(X, y)
     assert m.score(X, y) > 0.85
+
+
+# ── split_features ──────────────────────────────────────────────────────────
+@pytest.mark.parametrize("k", [1, 3])
+def test_split_features_limits_every_gate_to_k_exact_nonzeros(k):
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_breast_cancer(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+    m = SoftDecisionTree(depth=3, max_epochs=20, split_features=k, random_state=0).fit(X, y)
+    W = m.model_.gates.weight.detach().cpu().numpy()
+    assert ((W != 0).sum(axis=1) <= k).all()
+    assert (m.to_numpy().predict(X) == m.predict(X)).all()
+    assert (m.predict(X) == y).mean() > 0.85
+
+
+def test_split_features_at_or_above_n_features_changes_nothing():
+    X, y = make_classification(n_samples=120, n_features=4, random_state=0)
+    a = SoftDecisionTree(depth=2, max_epochs=5, random_state=0).fit(X, y)
+    b = SoftDecisionTree(depth=2, max_epochs=5, split_features=4, random_state=0).fit(X, y)
+    assert np.allclose(a.predict_proba(X), b.predict_proba(X))
+
+
+@pytest.mark.parametrize("bad", [0, -1, 1.5, True, "2"])
+def test_split_features_rejects_non_positive_integers(bad):
+    X, y = make_classification(n_samples=60, n_features=4, random_state=0)
+    with pytest.raises(ValueError, match="split_features"):
+        SoftDecisionTree(depth=2, max_epochs=2, split_features=bad).fit(X, y)
+
+
+def test_split_features_rules_print_only_the_kept_features():
+    from sklearn.datasets import load_digits
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_digits(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+    m = SoftDecisionTree(depth=2, max_epochs=10, split_features=2, random_state=0).fit(X, y)
+    text = m.to_hard_tree().export_text()
+    assert "more)" not in text and "0.000*" not in text
+    for step in m.explain(X[:3])[0].path:
+        assert 1 <= len(step.terms) <= 2
+
+
+# ── starting from CART ──────────────────────────────────────────────────────
+def test_from_hard_tree_with_a_sharp_gate_reproduces_cart():
+    from sklearn.tree import DecisionTreeClassifier
+
+    X, y = load_wine(return_X_y=True)
+    labels = np.array(["a", "b", "c"])[y]           # string labels map through
+    cart = DecisionTreeClassifier(max_depth=4, random_state=0).fit(X, labels)
+    soft = SoftDecisionTree.from_hard_tree(cart, X, sharpness=1e4)
+    assert soft.depth == cart.get_depth()
+    assert (soft.predict(X) == cart.predict(X)).mean() > 0.99
+    assert (soft.to_hard_tree().predict(X) == cart.predict(X)).mean() > 0.99
+
+
+def test_from_hard_tree_keeps_an_unbalanced_shape_and_fine_tunes():
+    from sklearn.tree import DecisionTreeClassifier
+
+    X, y = load_iris(return_X_y=True)
+    cart = DecisionTreeClassifier(max_depth=3, random_state=0).fit(X, y)
+    soft = SoftDecisionTree.from_hard_tree(cart, X, max_epochs=5, random_state=0)
+    n_split = int(soft.model_.is_split.sum())
+    assert n_split == int((cart.tree_.children_left != -1).sum())
+    soft.fit(X, y)                                  # continues from the copy
+    assert int(soft.model_.is_split.sum()) == n_split
+    assert (soft.predict(X) == y).mean() > 0.9
+
+
+def test_init_cart_fits_and_beats_chance():
+    X, y = load_wine(return_X_y=True)
+    m = SoftDecisionTree(depth=3, max_epochs=20, init="cart", learn_temperature=True,
+                         random_state=0).fit(X, y)
+    assert (m.predict(X) == y).mean() > 0.9
+
+
+@pytest.mark.parametrize("params,match", [
+    ({"init": "xavier"}, "init must be"),
+    ({"init": "cart", "growth": "per_leaf"}, "growth='none'"),
+    ({"init_sharpness": 0.0}, "init_sharpness"),
+])
+def test_init_parameters_are_validated(params, match):
+    X, y = load_iris(return_X_y=True)
+    with pytest.raises(ValueError, match=match):
+        SoftDecisionTree(depth=2, max_epochs=2, **params).fit(X, y)
+
+
+def test_from_hard_tree_rejects_unfitted_or_grown():
+    from sklearn.tree import DecisionTreeClassifier
+
+    with pytest.raises(ValueError, match="fitted"):
+        SoftDecisionTree.from_hard_tree(DecisionTreeClassifier())
+    X, y = load_iris(return_X_y=True)
+    cart = DecisionTreeClassifier(max_depth=2).fit(X, y)
+    with pytest.raises(ValueError, match="growth"):
+        SoftDecisionTree.from_hard_tree(cart, growth="per_leaf")

@@ -384,6 +384,45 @@ class _SoftTreeModule(nn.Module):
         return total
 
 
+def _module_from_cart(t, depth, n_classes, columns, spread, sharpness, penalty_coef,
+                      learn_temperature):
+    """
+    A `_SoftTreeModule` of `depth` that copies the sklearn tree structure `t`.
+
+    `columns[j]` is the class index (0..n_classes-1) of column j of the
+    tree's value array, so a tree that saw only some of the classes still
+    lands in the right outputs. See `SoftDecisionTree.from_hard_tree`.
+    """
+    module = _SoftTreeModule(n_features=len(spread), n_classes=n_classes, depth=depth,
+                             penalty_coef=penalty_coef, learn_temperature=learn_temperature)
+    W = np.zeros((module.n_internal, len(spread)))
+    B = np.zeros(module.n_internal)
+    logits = np.zeros((module.n_internal + module.n_leaves, n_classes))
+    is_split = np.zeros(module.n_internal, dtype=bool)
+    stack = [(0, 0)]                     # (sklearn node, breadth-first index here)
+    while stack:
+        node, here = stack.pop()
+        dist = np.zeros(n_classes)
+        dist[np.asarray(columns, dtype=int)] = np.asarray(t.value[node][0], dtype=np.float64)
+        dist = dist / dist.sum() if dist.sum() > 0 else np.full(n_classes, 1.0 / n_classes)
+        logits[here] = np.log(dist + 1e-3)
+        left, right = t.children_left[node], t.children_right[node]
+        if left == -1 or here >= module.n_internal:
+            continue
+        f, thr = int(t.feature[node]), float(t.threshold[node])
+        W[here, f] = sharpness / spread[f]
+        B[here] = -sharpness * thr / spread[f]
+        is_split[here] = True
+        stack.append((left, 2 * here + 1))
+        stack.append((right, 2 * here + 2))
+    with torch.no_grad():
+        module.gates.weight.copy_(torch.as_tensor(W, dtype=torch.float32))
+        module.gates.bias.copy_(torch.as_tensor(B, dtype=torch.float32))
+        module.node_logits.copy_(torch.as_tensor(logits, dtype=torch.float32))
+        module.is_split.copy_(torch.as_tensor(is_split))
+    return module
+
+
 class SoftDecisionTree(ClassifierMixin, BaseEstimator):
     """
     Soft Decision Tree Classifier (sklearn-compatible).
@@ -512,6 +551,28 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         Fraction held out when `early_stopping=True`.
     n_iter_no_change : int, default=10
         Epochs without validation improvement before stopping.
+    init : {"random", "cart"}, default="random"
+        How the gates start. ``"cart"`` fits a CART tree of the same depth on
+        the training data and starts from a soft copy of it (see
+        `from_hard_tree`): greedy search places sharp single-feature
+        thresholds, gradient descent then moves them jointly and tilts them.
+        Requires ``growth="none"``. Pair it with ``learn_temperature=True`` so
+        a gate that needs CART's sharp threshold can keep it.
+    init_sharpness : float, default=10.0
+        Gate slope of the CART copy, in standard deviations of the feature.
+        Large values copy CART exactly but give small gradients; small values
+        learn more and blur sharp thresholds. Worth tuning per dataset.
+    split_features : int or None, default=None
+        At most this many features per split. A soft split is oblique: its
+        gate weighs every feature, which copies a complex boundary well and
+        reads badly. With `split_features=k` the tree is first trained as
+        usual, then pruned in rounds that halve the features each gate keeps
+        until `k` remain, ranking by ``|weight| * std(feature)`` (the
+        feature's share of the gate's variation, so the choice does not
+        depend on the input scale). After each round the tree is fine-tuned
+        with the pruned weights held at zero; the rounds share
+        ``max_epochs // 2`` extra epochs. ``split_features=1`` gives axis-aligned soft splits, a soft
+        threshold on one feature each, as in CART. None keeps every feature.
 
     Attributes
     ----------
@@ -569,6 +630,9 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         early_stopping: bool = False,
         validation_fraction: float = 0.1,
         n_iter_no_change: int = 10,
+        split_features: Optional[int] = None,
+        init: str = "random",
+        init_sharpness: float = 10.0,
     ):
         self.depth = depth
         self.max_epochs = max_epochs
@@ -588,6 +652,9 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.early_stopping = early_stopping
         self.validation_fraction = validation_fraction
         self.n_iter_no_change = n_iter_no_change
+        self.split_features = split_features
+        self.init = init
+        self.init_sharpness = init_sharpness
 
     def fit(self, X, y, sample_weight=None) -> "SoftDecisionTree":
         """
@@ -626,6 +693,20 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             raise ValueError(
                 f"growth_budget must be 'split' or 'full', got {self.growth_budget!r}"
             )
+        if self.split_features is not None and (
+            isinstance(self.split_features, bool)
+            or not isinstance(self.split_features, (int, np.integer))
+            or self.split_features < 1
+        ):
+            raise ValueError(
+                f"split_features must be a positive integer or None, got {self.split_features!r}"
+            )
+        if self.init not in ("random", "cart"):
+            raise ValueError(f"init must be 'random' or 'cart', got {self.init!r}")
+        if self.init == "cart" and self.growth != "none":
+            raise ValueError("init='cart' fixes the shape from the CART tree; use growth='none'")
+        if not self.init_sharpness > 0:
+            raise ValueError(f"init_sharpness must be positive, got {self.init_sharpness!r}")
         if self.growth_jitter < 0:
             raise ValueError(f"growth_jitter must be non-negative, got {self.growth_jitter!r}")
         if self.growth not in ("none", "incremental", "per_leaf"):
@@ -713,7 +794,18 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         elif self.growth_ == "incremental":
             self._fit_incrementally(loader, X_val_t, y_val_t, n_classes, device)
         else:
-            if not continuing:
+            if not continuing and self.init == "cart":
+                from sklearn.tree import DecisionTreeClassifier
+
+                cart = DecisionTreeClassifier(max_depth=self.depth, random_state=self.random_state)
+                cart.fit(X_fit, y_fit, sample_weight=w_fit)
+                spread = X_fit.std(axis=0)
+                spread = np.where(spread > 1e-12, spread, 1.0)
+                self.model_ = _module_from_cart(
+                    cart.tree_, self.depth, n_classes, cart.classes_, spread,
+                    self.init_sharpness, self.penalty_coef, self.learn_temperature,
+                ).to(device)
+            elif not continuing:
                 self.model_ = _SoftTreeModule(
                     n_features=self.n_features_in_,
                     n_classes=n_classes,
@@ -729,11 +821,135 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             if best_state is not None:
                 self.model_.load_state_dict(best_state)
 
+        if self.split_features is not None and self.split_features < self.n_features_in_:
+            self._restrict_split_features(loader, X_t, X_val_t, y_val_t)
+
         self.tree_depth_ = self.model_.depth
         self.n_iter_ = len(self.training_history_)
         self.feature_importances_ = self._compute_feature_importances(X_t)
         self._w_val_t = None  # only needed while fitting
         return self
+
+    def _restrict_split_features(self, loader, X_t, X_val_t, y_val_t) -> None:
+        """
+        Prune every gate down to its `split_features` strongest features, in
+        rounds that halve the number kept, fine-tuning after each round with
+        the pruned weights held at zero (see `split_features`).
+
+        Pruning in one step after training loses most of what an oblique tree
+        learned (Digits, depth 5, k=1: 0.94 to 0.53), because the tree's shape
+        was built around splits that use many features. Halving lets the
+        remaining weights take over before the next cut.
+
+        The zeros stay exact: their gradient is masked to zero, and a fresh
+        Adam state with only zero gradients never moves a parameter.
+        """
+        model = self.model_
+        assert self.split_features is not None
+        k = int(self.split_features)
+        n = self.n_features_in_
+        schedule = []
+        kept = n
+        while kept > k:
+            kept = max(k, kept // 2)
+            schedule.append(kept)
+        epochs = max(5, (self.max_epochs // 2) // len(schedule))
+        with torch.no_grad():
+            spread = X_t.std(dim=0).clamp_min(1e-12)
+        mask = torch.ones_like(model.gates.weight)
+        for kept in schedule:
+            with torch.no_grad():
+                share = model.gates.weight.abs() * spread[None, :] * mask
+                keep = torch.zeros_like(mask, dtype=torch.bool)
+                keep.scatter_(1, share.topk(kept, dim=1).indices, True)
+                mask = mask * keep.to(mask.dtype)
+                model.gates.weight.mul_(mask)
+            frozen = mask.clone()
+            handle = model.gates.weight.register_hook(lambda grad, m=frozen: grad * m)
+            try:
+                optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
+                _, best_state = self._train_epochs(model, loader, optimizer, epochs, X_val_t, y_val_t)
+                if best_state is not None:
+                    model.load_state_dict(best_state)
+            finally:
+                handle.remove()
+            with torch.no_grad():
+                model.gates.weight.mul_(mask)  # exact zeros whatever the optimiser did
+
+    @classmethod
+    def from_hard_tree(cls, tree, X=None, sharpness: float = 4.0, **params) -> "SoftDecisionTree":
+        """
+        A soft tree that starts as a copy of a fitted scikit-learn
+        `DecisionTreeClassifier`, ready to be fine-tuned with `fit`.
+
+        Every CART split ``x[f] <= t`` becomes the axis-aligned gate
+        ``sigmoid(sharpness * (x[f] - t) / std(x[f]))``: right when the
+        feature is above the threshold, as in CART, with a transition about
+        ``1 / sharpness`` standard deviations wide. Every node takes CART's
+        class distribution, and nodes CART did not split stay leaves, so an
+        unbalanced CART tree keeps its shape.
+
+        The point is to start where greedy search is strong (sharp,
+        single-feature thresholds, found exactly) and let gradients do what it
+        cannot (move thresholds jointly, tilt splits towards other features).
+        Call ``fit(X, y)`` to fine-tune; the returned estimator has
+        ``warm_start=True`` so that fit continues from the copy instead of
+        reinitialising. Without fine-tuning it already predicts.
+
+        Parameters
+        ----------
+        tree : fitted sklearn.tree.DecisionTreeClassifier
+        X : array-like of shape (n_samples, n_features), optional
+            Data on the scale the tree was fitted on, used only for the
+            feature standard deviations. Without it the features are assumed
+            standardised (std 1).
+        sharpness : float, default=4.0
+            Gate slope in units of the feature's standard deviation. Larger
+            copies CART more exactly at the start but leaves the gates in the
+            flat part of the sigmoid, where gradients are small.
+        **params
+            Any other `SoftDecisionTree` parameter (`max_epochs`,
+            `learning_rate`, `split_features`, ...). `depth` is taken from the
+            tree, `growth` must stay ``"none"``.
+
+        Returns
+        -------
+        SoftDecisionTree
+        """
+        if not hasattr(tree, "tree_") or not hasattr(tree, "classes_"):
+            raise ValueError("from_hard_tree expects a fitted sklearn DecisionTreeClassifier")
+        if getattr(tree, "n_outputs_", 1) != 1:
+            raise ValueError("from_hard_tree supports single-output trees only")
+        if params.get("growth", "none") != "none":
+            raise ValueError("from_hard_tree builds a fixed shape; growth must be 'none'")
+        if not sharpness > 0:
+            raise ValueError(f"sharpness must be positive, got {sharpness!r}")
+        params.pop("depth", None)
+        params["warm_start"] = True
+        t = tree.tree_
+        depth = max(1, int(t.max_depth))
+        n_features, n_classes = int(tree.n_features_in_), len(tree.classes_)
+        spread = np.ones(n_features)
+        if X is not None:
+            X = check_array(X, dtype=np.float64)
+            if X.shape[1] != n_features:
+                raise ValueError(f"X has {X.shape[1]} features, the tree {n_features}")
+            spread = np.where(X.std(axis=0) > 1e-12, X.std(axis=0), 1.0)
+
+        est = cls(depth=depth, **params)
+        module = _module_from_cart(t, depth, n_classes, list(range(n_classes)), spread, sharpness,
+                                   est.penalty_coef, est.learn_temperature)
+        est.model_ = module
+        est.le_ = LabelEncoder().fit(tree.classes_)
+        est.classes_ = est.le_.classes_
+        est.n_features_in_ = n_features
+        est.device_ = "cpu"
+        est.tree_depth_ = depth
+        est.n_iter_ = 0
+        est.training_history_ = []
+        est.feature_importances_ = np.asarray(tree.feature_importances_, dtype=np.float64)
+        est._w_val_t = None
+        return est
 
     def _reuse_existing_model(self, n_classes: int) -> bool:
         """

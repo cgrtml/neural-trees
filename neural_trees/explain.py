@@ -182,7 +182,8 @@ def explain_soft_tree(
             p_right = float(gate_p[i, gnode])
             p_went = p_right if went == "right" else 1.0 - p_right
             contrib = weights[gnode] * x
-            order = np.argsort(-np.abs(contrib))[:max_terms]
+            ranked = np.argsort(-np.abs(contrib))[:max_terms]
+            order = [j for j in ranked if weights[gnode, j] != 0.0]  # pruned features say nothing
             terms = [{"feature": feature_names[j], "weight": float(weights[gnode, j]),
                       "value": float(x[j]), "contribution": float(contrib[j])} for j in order]
             path.append(GateStep(node=int(gnode), went=went, probability=p_went,

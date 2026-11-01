@@ -198,13 +198,16 @@ class HardDecisionTree:
 
         def describe_split(node: int) -> str:
             weights = self.weights_[node]
-            order = np.argsort(-np.abs(weights))[:max_features]
+            # a pruned weight is exactly zero: it is not part of the rule, so it
+            # is neither printed nor counted among the omitted terms
+            used = int(np.count_nonzero(weights))
+            order = np.argsort(-np.abs(weights))[:min(max_features, used)]
             terms = [
                 f"{weights[i]:+.{decimals}f}*{feature_names[i]}" for i in order
             ]
             omitted = ""
-            if self.n_features_in_ > max_features:
-                omitted = f" (+{self.n_features_in_ - max_features} more)"
+            if used > max_features:
+                omitted = f" (+{used - max_features} more)"
             return f"{' '.join(terms)} {self.biases_[node]:+.{decimals}f}{omitted} > 0"
 
         def walk(node: int, indent: str, branch: str):
