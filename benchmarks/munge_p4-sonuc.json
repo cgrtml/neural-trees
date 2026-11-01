@@ -1,0 +1,395 @@
+{
+ "_protokol": "Can synthetic rows replace unlabelled ones? damitma_olcek.py found that a\ndistilled tree gains most when the teacher labels further rows for it\n(2n unlabelled pool rows: +1.85 points over the tree on labels, 13 of 13\ncells). Here the further rows are generated from the training rows alone\nwith MUNGE (Bucila, Caruana and Niculescu-Mizil, \"Model compression\",\nKDD 2006): each new row starts from a training row and, feature by\nfeature with probability p, takes a value drawn around its nearest\nneighbour's (normal, sd = |difference| / s; features with at most ten\ndistinct values copy the neighbour's value). Two passes give 2n rows, the\nbudget of the unlabelled column. MUNGE_PASSES=4 in the environment runs\nthe same with four passes (cells up to 20 000 rows), as an ablation. p = 0.5, s = 5 are our choice, not tuned.",
+ "_commit": "5fda0e7",
+ "electricity": {
+  "5000": {
+   "XGBoost": [
+    0.8428645697946452,
+    0.838185599168183,
+    0.841564855731739
+   ],
+   "soft d8": [
+    0.7969846633740577,
+    0.7998440343124512,
+    0.7956849493111515
+   ],
+   "distilled d8": [
+    0.7993241486872888,
+    0.797894463218092,
+    0.7930855211853393
+   ],
+   "unlabeled d8": [
+    0.8092019755653757,
+    0.7980244346243827,
+    0.8093319469716662
+   ],
+   "munge d8": [
+    0.8045230049389135,
+    0.7988042630621264,
+    0.8025734338445542
+   ],
+   "XGBoost mean": 0.8409,
+   "soft d8 mean": 0.7975,
+   "distilled d8 mean": 0.7968,
+   "unlabeled d8 mean": 0.8055,
+   "munge d8 mean": 0.802
+  },
+  "20000": {
+   "XGBoost": [
+    0.8700285937093839,
+    0.8769170782427866,
+    0.8718481933974526
+   ],
+   "soft d8": [
+    0.8077722900961788,
+    0.8084221471276319,
+    0.8138809461918378
+   ],
+   "distilled d8": [
+    0.8120613465037692,
+    0.8116714322848974,
+    0.8054328047829478
+   ],
+   "unlabeled d8": [
+    0.8157005458799064,
+    0.8111515466597349,
+    0.8149207174421628
+   ],
+   "munge d8": [
+    0.8179100597868469,
+    0.8167403171302313,
+    0.8221991161944372
+   ],
+   "XGBoost mean": 0.8729,
+   "soft d8 mean": 0.81,
+   "distilled d8 mean": 0.8097,
+   "unlabeled d8 mean": 0.8139,
+   "munge d8 mean": 0.8189
+  }
+ },
+ "MagicTelescope": {
+  "5000": {
+   "XGBoost": [
+    0.8493457943925233,
+    0.8534579439252337,
+    0.8471028037383178
+   ],
+   "soft d8": [
+    0.8392523364485981,
+    0.8299065420560747,
+    0.8205607476635514
+   ],
+   "distilled d8": [
+    0.8381308411214953,
+    0.8295327102803738,
+    0.8373831775700935
+   ],
+   "unlabeled d8": [
+    0.8411214953271028,
+    0.8463551401869159,
+    0.8437383177570094
+   ],
+   "munge d8": [
+    0.8426168224299065,
+    0.8429906542056075,
+    0.8385046728971962
+   ],
+   "XGBoost mean": 0.85,
+   "soft d8 mean": 0.8299,
+   "distilled d8 mean": 0.835,
+   "unlabeled d8 mean": 0.8437,
+   "munge d8 mean": 0.8414
+  }
+ },
+ "jannis": {
+  "5000": {
+   "XGBoost": [
+    0.7622438346648142,
+    0.7661514414727336,
+    0.7641542202153525
+   ],
+   "soft d8": [
+    0.7123133032302883,
+    0.7175234456408475,
+    0.7222125738103509
+   ],
+   "distilled d8": [
+    0.7164814171587357,
+    0.7175234456408475,
+    0.7109239319208058
+   ],
+   "unlabeled d8": [
+    0.7463529003126086,
+    0.7574678707884682,
+    0.7555574852379299
+   ],
+   "munge d8": [
+    0.7450503647099688,
+    0.7487843001042028,
+    0.7493921500521015
+   ],
+   "XGBoost mean": 0.7642,
+   "soft d8 mean": 0.7173,
+   "distilled d8 mean": 0.715,
+   "unlabeled d8 mean": 0.7531,
+   "munge d8 mean": 0.7477
+  },
+  "20000": {
+   "XGBoost": [
+    0.7825633900659952,
+    0.7896839180270927,
+    0.7856894755123307
+   ],
+   "soft d8": [
+    0.7428794720389024,
+    0.740969086488364,
+    0.7445293504689128
+   ],
+   "distilled d8": [
+    0.7682354984369573,
+    0.7708405696422369,
+    0.770580062521709
+   ],
+   "unlabeled d8": [
+    0.7861236540465439,
+    0.7862973254602292,
+    0.7843869399096909
+   ],
+   "munge d8": [
+    0.7810003473428274,
+    0.7855158040986454,
+    0.7828238971865231
+   ],
+   "XGBoost mean": 0.786,
+   "soft d8 mean": 0.7428,
+   "distilled d8 mean": 0.7699,
+   "unlabeled d8 mean": 0.7856,
+   "munge d8 mean": 0.7831
+  }
+ },
+ "MiniBooNE": {
+  "5000": {
+   "XGBoost": [
+    0.9305431878895815,
+    0.9301322008356737,
+    0.9305431878895815
+   ],
+   "soft d8": [
+    0.8998561545311323,
+    0.9064319473936571,
+    0.9010891156928557
+   ],
+   "distilled d8": [
+    0.9008151243235838,
+    0.9043770121241181,
+    0.9081443934516062
+   ],
+   "unlabeled d8": [
+    0.9197205288033427,
+    0.9215699705459278,
+    0.9196520309610248
+   ],
+   "munge d8": [
+    0.9146516884718131,
+    0.9119117747790945,
+    0.9120487704637303
+   ],
+   "XGBoost mean": 0.9304,
+   "soft d8 mean": 0.9025,
+   "distilled d8 mean": 0.9044,
+   "unlabeled d8 mean": 0.9203,
+   "munge d8 mean": 0.9129
+  },
+  "20000": {
+   "XGBoost": [
+    0.9389684224946914,
+    0.9386259332831016,
+    0.9402698814987328
+   ],
+   "soft d8": [
+    0.9182135762723475,
+    0.921227481334338,
+    0.9193780395917529
+   ],
+   "distilled d8": [
+    0.9245838756079183,
+    0.9228029317076513,
+    0.9254058497157339
+   ],
+   "unlabeled d8": [
+    0.9293102267278581,
+    0.9346530584286595,
+    0.9298582094664019
+   ],
+   "munge d8": [
+    0.9309541749434893,
+    0.9306801835742174,
+    0.9326666210014385
+   ],
+   "XGBoost mean": 0.9393,
+   "soft d8 mean": 0.9196,
+   "distilled d8 mean": 0.9243,
+   "unlabeled d8 mean": 0.9313,
+   "munge d8 mean": 0.9314
+  }
+ },
+ "covertype": {
+  "5000": {
+   "XGBoost": [
+    0.7926,
+    0.78665,
+    0.78425
+   ],
+   "soft d8": [
+    0.74865,
+    0.7669,
+    0.76105
+   ],
+   "distilled d8": [
+    0.76395,
+    0.76785,
+    0.7646
+   ],
+   "unlabeled d8": [
+    0.77545,
+    0.7731,
+    0.77485
+   ],
+   "munge d8": [
+    0.7771,
+    0.7765,
+    0.7809
+   ],
+   "XGBoost mean": 0.7878,
+   "soft d8 mean": 0.7589,
+   "distilled d8 mean": 0.7655,
+   "unlabeled d8 mean": 0.7745,
+   "munge d8 mean": 0.7782
+  },
+  "20000": {
+   "XGBoost": [
+    0.81935,
+    0.8248,
+    0.82165
+   ],
+   "soft d8": [
+    0.7895,
+    0.7877,
+    0.79355
+   ],
+   "distilled d8": [
+    0.78725,
+    0.78945,
+    0.78375
+   ],
+   "unlabeled d8": [
+    0.79845,
+    0.79755,
+    0.7944
+   ],
+   "munge d8": [
+    0.7974,
+    0.80015,
+    0.79695
+   ],
+   "XGBoost mean": 0.8219,
+   "soft d8 mean": 0.7903,
+   "distilled d8 mean": 0.7868,
+   "unlabeled d8 mean": 0.7968,
+   "munge d8 mean": 0.7982
+  }
+ },
+ "Higgs": {
+  "5000": {
+   "XGBoost": [
+    0.6941,
+    0.6939,
+    0.69565
+   ],
+   "soft d8": [
+    0.6523,
+    0.6619,
+    0.6629
+   ],
+   "distilled d8": [
+    0.67275,
+    0.6804,
+    0.6703
+   ],
+   "unlabeled d8": [
+    0.6983,
+    0.701,
+    0.7001
+   ],
+   "munge d8": [
+    0.6938,
+    0.6898,
+    0.68405
+   ],
+   "XGBoost mean": 0.6946,
+   "soft d8 mean": 0.659,
+   "distilled d8 mean": 0.6745,
+   "unlabeled d8 mean": 0.6998,
+   "munge d8 mean": 0.6892
+  },
+  "20000": {
+   "XGBoost": [
+    0.71255,
+    0.7179,
+    0.71015
+   ],
+   "soft d8": [
+    0.68505,
+    0.69465,
+    0.68275
+   ],
+   "distilled d8": [
+    0.70975,
+    0.7102,
+    0.7071
+   ],
+   "unlabeled d8": [
+    0.71775,
+    0.7171,
+    0.7168
+   ],
+   "munge d8": [
+    0.7162,
+    0.7171,
+    0.7146
+   ],
+   "XGBoost mean": 0.7135,
+   "soft d8 mean": 0.6875,
+   "distilled d8 mean": 0.709,
+   "unlabeled d8 mean": 0.7172,
+   "munge d8 mean": 0.716
+  }
+ },
+ "_summary": {
+  "cells": 11,
+  "munge d8 - soft d8": {
+   "mean_pt": 1.85,
+   "higher": 11,
+   "lower": 0,
+   "p": 0.001
+  },
+  "munge d8 - distilled d8": {
+   "mean_pt": 1.16,
+   "higher": 11,
+   "lower": 0,
+   "p": 0.001
+  },
+  "munge d8 - unlabeled d8": {
+   "mean_pt": -0.21,
+   "higher": 2,
+   "lower": 6,
+   "p": 0.2402
+  },
+  "munge d8 - XGBoost": {
+   "mean_pt": -1.66,
+   "higher": 1,
+   "lower": 10,
+   "p": 0.002
+  }
+ }
+}

@@ -210,6 +210,9 @@ split (``benchmarks/gelistir.py``):
   capacity and rows are many (electricity and covertype at 20 000 rows,
   +0.8 and +0.7) and loses on the small and noisy cells (Higgs at 5 000
   rows, -0.7), at about three times the fit time.
+* Four MUNGE passes instead of two (the 11 cells up to 20 000 rows;
+  ``MUNGE_PASSES=4 benchmarks/munge.py``): +0.15 points, 5 cells higher and
+  2 lower (p=0.21), at about 1.8 times the fit time.
 * Linear models in the leaves: overfits (jannis train 0.99, test 0.70).
 * Growing the student leaf by leaf on the teacher's probabilities: below the
   CART-started student on four of five datasets.
