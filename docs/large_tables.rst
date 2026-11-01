@@ -30,7 +30,7 @@ single tree.
    from neural_trees import DistilledTree
 
    model = DistilledTree(teacher=XGBClassifier(n_estimators=300, max_depth=6),
-                         synthetic=2)     # MUNGE rows for the teacher to label (default)
+                         synthetic=10)    # MUNGE passes for the teacher to label (default)
    model.fit(X_train, y_train)
    model.predict(X_test)          # one soft tree
    model.fidelity(X_test)         # agreement with the teacher
@@ -67,7 +67,7 @@ Accuracy on the test set. Over the 13 cells:
   labels (Higgs +0.9 to +2.1, jannis at 20 000 rows +2.7) and not where it
   is short of capacity (electricity, covertype): the teacher's probabilities
   are a better target, not a bigger tree.
-* With synthetic rows (MUNGE, two passes, the ``DistilledTree`` default;
+* With synthetic rows (MUNGE, two passes, the default before 0.9.0;
   ``benchmarks/munge.py``): +1.5 points over the tree on labels and +0.9
   over plain distillation, higher in 12 of 13 cells and level in the
   last (p=0.0002 and 0.0005; level at 100 000 rows, where the training
@@ -126,6 +126,58 @@ data is and the teacher's answers there are informative.
 The gain of plain distillation is regularisation: mixing the true labels back in
 (``alpha=0.5``) brought the overfitting back and lost most of it (jannis,
 20 000 rows: 0.733 against 0.768 for the teacher's probabilities alone).
+
+Ten passes and a small group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The number of MUNGE passes turned out to be the student's bottleneck. Ten
+passes (``synthetic=10``, the default from 0.9.0) raised the tree by 0.5
+points over two on the 11 cells up to 20 000 rows (7 higher, none lower,
+p=0.001; ``MUNGE_PASSES=10 benchmarks/munge.py``); thirty were no better
+than ten. With the library's default teacher the gain was 0.3 points (8 of
+12 fits higher, none lower, p=0.009; ``benchmarks/munge_lib.py --synthetic
+2 10``). Ten passes fit in four to six times the time of two, about 15
+minutes for 20 000 rows on one CPU thread; ``synthetic=2`` stays available
+as the faster setting.
+
+:class:`~neural_trees.DistilledForest` trains three students instead of
+one, each on its own bootstrap sample of the teacher's rows, and predicts
+with the sum of their log probabilities. Every tree can still be explained
+and exported on its own, but the prediction is the group's. On the same 11
+cells (``MUNGE_PASSES=10 benchmarks/grup.py``) the group of three depth-8
+trees was 0.38 points above the single tree (10 higher, none lower,
+p=0.001) and 0.9 points below XGBoost with 300 trees (p=0.12).
+
+The fairer comparison is with an XGBoost model of the same size.
+``benchmarks/xgb_boyut.py`` fits XGBoost with 3 to 300 trees of depth 6 on
+the same cells and counts the split nodes of every model:
+
+==================  ===============  =====================  =====================
+XGBoost             its splits       one distilled tree     group of three
+                                     (137 splits)           (about 450 splits)
+==================  ===============  =====================  =====================
+10 trees            521              +0.78 (9/2, p=0.02)    +1.16 (10/1, p=0.003)
+30 trees            1 303            -0.25 (6/5, p=0.90)    +0.13 (8/3, p=0.41)
+100 trees           4 159            -0.78 (3/8, p=0.04)    -0.40 (5/6, p=0.58)
+300 trees           11 059           -1.28 (1/10, p=0.005)  -0.90 (3/8, p=0.12)
+==================  ===============  =====================  =====================
+
+Mean difference in test accuracy points over the 11 cells, cells higher and
+lower, Wilcoxon p. One tree is level with XGBoost at 30 trees, about ten
+times its size, and three trees with XGBoost at 100, about nine times
+theirs: the differences there are small and not significant. Neither reaches 300 trees, and the gap is largest where
+one tree is short of capacity (electricity and covertype, 3 to 5 points).
+Prediction costs about the same as XGBoost with 300 trees: the numpy export
+evaluates only the gates that split, 12 to 58 ms for 10 000 rows against
+17 to 19 ms, and 0.05 ms for one row against 0.056.
+
+Tried and not kept: five trees instead of three (no better), depth-6
+students in the group (no better than one depth-8 tree), boosting soft
+regression trees on the teacher's logits and stagewise boosting of
+classification trees (worse, or saturating at three to five trees), joint
+fine-tuning of the group (no gain), linear models in the leaves (no gain
+over eight runs) and a deep hard CART student on the teacher's labels
+(0.74 points below the soft tree, ahead only on electricity).
 
 Below 5 000 rows
 ~~~~~~~~~~~~~~~~

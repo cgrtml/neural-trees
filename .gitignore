@@ -37,3 +37,6 @@ benchmarks/_distill_cache/
 benchmarks/_gelistir_teacher/
 benchmarks/gelistir-sonuc.jsonl
 benchmarks/_damitma_cache/
+benchmarks/_*_cache*/
+benchmarks/_*_cache.json
+benchmarks/*.log

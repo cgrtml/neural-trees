@@ -210,9 +210,30 @@ model.fidelity(X_test)    # agreement with the teacher
 ```
 
 With an XGBoost teacher on 13 dataset and size cells from 5 000 to 100 000
-rows, this put the tree 1.5 points above the same tree trained on the
-labels, higher in 12 of 13 cells (Wilcoxon p=0.0002), and halved its gap to
-XGBoost from 3.3 to 1.8 points; with real unlabelled rows passed as
+rows, two MUNGE passes put the tree 1.5 points above the same tree trained
+on the labels, higher in 12 of 13 cells (Wilcoxon p=0.0002), and halved its
+gap to XGBoost from 3.3 to 1.8 points. Ten passes, the default, add another
+0.5 points (11 cells up to 20 000 rows, 7 higher, none lower, p=0.001).
+
+`DistilledForest` trains three such trees on bootstrap samples of the
+teacher's rows and predicts with the group. Against XGBoost models of about
+the same size, on the same 11 cells (accuracy points, cells higher/lower,
+Wilcoxon p):
+
+| XGBoost (depth 6) | its splits | one distilled tree, 137 splits | `DistilledForest`, about 450 splits |
+|---|---|---|---|
+| 10 trees | 521 | +0.78 (9/2, p=0.02) | +1.16 (10/1, p=0.003) |
+| 30 trees | 1 303 | -0.25 (6/5, p=0.90) | +0.13 (8/3, p=0.41) |
+| 100 trees | 4 159 | -0.78 (3/8, p=0.04) | -0.40 (5/6, p=0.58) |
+| 300 trees | 11 059 | -1.28 (1/10, p=0.005) | -0.90 (3/8, p=0.12) |
+
+One tree is level with XGBoost at about ten times its splits (30 trees),
+and three trees with XGBoost at 100 trees: the differences there are
+small and not significant. Neither reaches 300 trees, the gap
+is largest on electricity and covertype (3 to 5 points), and ten passes
+fit in about 15 minutes for 20 000 rows on one CPU thread (`synthetic=2`
+is faster). Prediction from the numpy export costs about what XGBoost
+with 300 trees does. With real unlabelled rows passed as
 `fit(X, y, X_unlabeled=...)` the gap was 1.45 and on two tables the tree
 reached its teacher. Limiting the student to three features per split
 (`student=SoftDecisionTree(depth=8, init="cart", split_features=3,

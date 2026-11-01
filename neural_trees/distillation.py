@@ -218,15 +218,23 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
     points and jannis at 20 000 rows by 2.7, and did nothing where the tree
     is short of capacity (electricity, covertype); +0.6 points on average
     over 13 cells, not significant. What moves it is more rows for the
-    teacher to label. Synthetic ones (`synthetic=2`, the default: two
-    MUNGE passes, see `munge`) raised the same tree by 1.5 points over
-    the tree on labels and 0.9 over plain distillation, higher in 12 of 13
-    cells each (Wilcoxon p=0.0002 and 0.0005; benchmarks/munge.py), and
-    cut the mean gap to XGBoost from 3.3 to 1.8 points, at about three
-    times the fit time. With the default teacher the gain was smaller
-    (+0.5 points, 8 of 12 fits higher, none lower; benchmarks/munge_lib.py),
-    with a LightGBM teacher about the same (+0.9 over plain distillation, 9
-    of 11 cells higher, none lower; benchmarks/munge_lgbm.py).
+    teacher to label. Synthetic ones (MUNGE passes, see `munge`) raised
+    the same tree, with two passes, by 1.5 points over the tree on labels
+    and 0.9 over plain distillation, higher in 12 of 13 cells each
+    (Wilcoxon p=0.0002 and 0.0005; benchmarks/munge.py), and cut the mean
+    gap to XGBoost from 3.3 to 1.8 points. Ten passes (`synthetic=10`,
+    the default) added 0.5 points over two on the 11 cells up to 20 000
+    rows (7 higher, none lower, p=0.001; benchmarks/munge.py with
+    MUNGE_PASSES=10), leaving the tree 1.3 points behind XGBoost with 300
+    trees and level with XGBoost with 30 trees, about ten times its size.
+    With the default teacher ten passes gave +0.3 over two (8 of 12 fits
+    higher, none lower, p=0.009; benchmarks/munge_lib.py). Thirty passes
+    were no better than ten. The cost is fit time: ten passes fit in four
+    to six times the time of two (about 15 minutes at 20 000 rows on one
+    CPU thread); `synthetic=2` is the faster setting. With a LightGBM
+    teacher two passes gained about as much as with XGBoost (+0.9 over
+    plain distillation, 9 of 11 cells higher, none lower;
+    benchmarks/munge_lgbm.py).
     Real unlabelled rows (`X_unlabeled` in `fit`) do a
     little better again. Below about 1 000 rows use
     ``SoftDecisionTree(growth="per_leaf")`` instead: on the 24 datasets of
@@ -249,9 +257,10 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
     threshold : float, default=0.01
         A class enters a row's soft target only with at least this teacher
         probability.
-    synthetic : int, default=2
+    synthetic : int, default=10
         MUNGE passes over the labelled rows; each adds len(X) synthetic rows
-        that the teacher labels for the student. 0 turns it off.
+        that the teacher labels for the student. 0 turns it off; fewer
+        passes fit faster and score a little lower.
     random_state : int, optional
         Seeds the synthetic rows and the default student.
 
@@ -262,7 +271,7 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
     """
 
     def __init__(self, teacher=None, student=None, alpha: float = 0.0, threshold: float = 0.01,
-                 synthetic: int = 2, random_state: Optional[int] = None):
+                 synthetic: int = 10, random_state: Optional[int] = None):
         self.teacher = teacher
         self.student = student
         self.alpha = alpha
@@ -404,6 +413,17 @@ class DistilledForest(DistilledTree):
     tree is still a `SoftDecisionTree` and can be explained and exported on
     its own (`estimators_`), but the prediction is the group's.
 
+    Measured with an XGBoost teacher (300 trees of depth 6), ten MUNGE
+    passes and depth-8 students, on the 11 cells of six OpenML tables up
+    to 20 000 rows (benchmarks/grup.py with MUNGE_PASSES=10): three trees
+    were 0.38 points above one distilled tree (10 cells higher, none lower,
+    p=0.001) and 0.9 below the teacher (p=0.12). With about 450 splits in
+    all, the group was 1.2 points above XGBoost with 10 trees (521 splits;
+    10 of 11 cells, p=0.003) and level with XGBoost with 100 trees (4 159
+    splits; -0.4, p=0.58). Five trees were no better than three, and
+    depth-6 students no better than one depth-8 tree. It fits in about
+    three times the time of `DistilledTree`.
+
     Parameters are those of `DistilledTree`, plus
 
     n_trees : int, default=3
@@ -417,7 +437,7 @@ class DistilledForest(DistilledTree):
     """
 
     def __init__(self, teacher=None, student=None, n_trees: int = 3, alpha: float = 0.0,
-                 threshold: float = 0.01, synthetic: int = 2, random_state: Optional[int] = None):
+                 threshold: float = 0.01, synthetic: int = 10, random_state: Optional[int] = None):
         super().__init__(teacher=teacher, student=student, alpha=alpha, threshold=threshold,
                          synthetic=synthetic, random_state=random_state)
         self.n_trees = n_trees
