@@ -451,7 +451,9 @@ def _pruned_cart(make_tree, X, Y, w, prune, seed, score, folds):
     if not prune or folds is None:
         return make_tree(0.0).fit(X, Y, sample_weight=w), 0.0
     path = make_tree(0.0).cost_complexity_pruning_path(X, Y, sample_weight=w)
-    alphas = np.unique(path.ccp_alphas[:-1])  # the last one prunes to the root
+    # the last alpha prunes to the root; the path can hold tiny negative values
+    # from floating-point cancellation, which sklearn rejects as ccp_alpha
+    alphas = np.unique(np.clip(path.ccp_alphas[:-1], 0.0, None))
     if len(alphas) > 12:
         alphas = np.unique(np.quantile(alphas, np.linspace(0, 1, 12)))
     if len(alphas) <= 1:

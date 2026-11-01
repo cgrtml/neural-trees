@@ -851,3 +851,22 @@ def test_init_cart_with_one_feature_per_split_keeps_carts_features():
     used = {int(np.flatnonzero(w)[0]) for w, s in zip(W, m.model_.is_split.numpy()) if s}
     assert ((W != 0).sum(axis=1) <= 1).all()
     assert used <= set(int(f) for f in cart.tree_.feature if f >= 0)
+
+
+def test_pruned_cart_tolerates_negative_alphas_from_rounding():
+    from sklearn.tree import DecisionTreeClassifier
+
+    from neural_trees.decision_trees.soft_decision_tree import _pruned_cart
+
+    class Path:
+        ccp_alphas = np.array([-2.7e-20, 0.0, 0.01, 0.5])
+
+    class Tree(DecisionTreeClassifier):
+        def cost_complexity_pruning_path(self, X, y, sample_weight=None):
+            return Path()
+
+    X, y = load_iris(return_X_y=True)
+    folds = [(np.arange(0, 150, 2), np.arange(1, 150, 2))]
+    tree, alpha = _pruned_cart(lambda a: Tree(max_depth=3, ccp_alpha=a), X, y, np.ones(150), True, 0,
+                               lambda m, X, y, w: float((m.predict(X) == y).mean()), folds)
+    assert alpha >= 0.0
