@@ -1,0 +1,746 @@
+{
+ "xgboost_runs": {
+  "electricity__5000__0__3": {
+   "acc": 0.8079022615024695,
+   "splits": 154
+  },
+  "electricity__5000__0__10": {
+   "acc": 0.815830517286197,
+   "splits": 474
+  },
+  "electricity__5000__0__30": {
+   "acc": 0.8279178580712243,
+   "splits": 1056
+  },
+  "electricity__5000__0__100": {
+   "acc": 0.8301273719781648,
+   "splits": 3327
+  },
+  "electricity__5000__0__300": {
+   "acc": 0.8428645697946452,
+   "splits": 8452
+  },
+  "electricity__5000__1__3": {
+   "acc": 0.7913958929035613,
+   "splits": 158
+  },
+  "electricity__5000__1__10": {
+   "acc": 0.8133610605666753,
+   "splits": 491
+  },
+  "electricity__5000__1__30": {
+   "acc": 0.828047829477515,
+   "splits": 1103
+  },
+  "electricity__5000__1__100": {
+   "acc": 0.8316870288536522,
+   "splits": 3375
+  },
+  "electricity__5000__1__300": {
+   "acc": 0.838185599168183,
+   "splits": 8974
+  },
+  "electricity__5000__2__3": {
+   "acc": 0.7885365219651677,
+   "splits": 148
+  },
+  "electricity__5000__2__10": {
+   "acc": 0.8134910319729659,
+   "splits": 464
+  },
+  "electricity__5000__2__30": {
+   "acc": 0.8254484013517026,
+   "splits": 1118
+  },
+  "electricity__5000__2__100": {
+   "acc": 0.831427086041071,
+   "splits": 3299
+  },
+  "electricity__5000__2__300": {
+   "acc": 0.841564855731739,
+   "splits": 8462
+  },
+  "electricity__20000__0__3": {
+   "acc": 0.8089420327527944,
+   "splits": 169
+  },
+  "electricity__20000__0__10": {
+   "acc": 0.8234988302573434,
+   "splits": 534
+  },
+  "electricity__20000__0__30": {
+   "acc": 0.8539121393293475,
+   "splits": 1355
+  },
+  "electricity__20000__0__100": {
+   "acc": 0.856121653236288,
+   "splits": 4144
+  },
+  "electricity__20000__0__300": {
+   "acc": 0.8700285937093839,
+   "splits": 11146
+  },
+  "electricity__20000__1__3": {
+   "acc": 0.8123212893163504,
+   "splits": 175
+  },
+  "electricity__20000__1__10": {
+   "acc": 0.8277878866649337,
+   "splits": 559
+  },
+  "electricity__20000__1__30": {
+   "acc": 0.851052768390954,
+   "splits": 1385
+  },
+  "electricity__20000__1__100": {
+   "acc": 0.8545619963608007,
+   "splits": 4299
+  },
+  "electricity__20000__1__300": {
+   "acc": 0.8769170782427866,
+   "splits": 11403
+  },
+  "electricity__20000__2__3": {
+   "acc": 0.8103717182219912,
+   "splits": 174
+  },
+  "electricity__20000__2__10": {
+   "acc": 0.8245386015076683,
+   "splits": 563
+  },
+  "electricity__20000__2__30": {
+   "acc": 0.852742396672732,
+   "splits": 1349
+  },
+  "electricity__20000__2__100": {
+   "acc": 0.8549519105796725,
+   "splits": 4245
+  },
+  "electricity__20000__2__300": {
+   "acc": 0.8718481933974526,
+   "splits": 11164
+  },
+  "MagicTelescope__5000__0__3": {
+   "acc": 0.8328971962616822,
+   "splits": 142
+  },
+  "MagicTelescope__5000__0__10": {
+   "acc": 0.8444859813084112,
+   "splits": 444
+  },
+  "MagicTelescope__5000__0__30": {
+   "acc": 0.8493457943925233,
+   "splits": 1086
+  },
+  "MagicTelescope__5000__0__100": {
+   "acc": 0.8519626168224299,
+   "splits": 3404
+  },
+  "MagicTelescope__5000__0__300": {
+   "acc": 0.8493457943925233,
+   "splits": 9033
+  },
+  "MagicTelescope__5000__1__3": {
+   "acc": 0.8194392523364487,
+   "splits": 145
+  },
+  "MagicTelescope__5000__1__10": {
+   "acc": 0.8332710280373832,
+   "splits": 448
+  },
+  "MagicTelescope__5000__1__30": {
+   "acc": 0.8422429906542056,
+   "splits": 1016
+  },
+  "MagicTelescope__5000__1__100": {
+   "acc": 0.8508411214953271,
+   "splits": 3289
+  },
+  "MagicTelescope__5000__1__300": {
+   "acc": 0.8534579439252337,
+   "splits": 8627
+  },
+  "MagicTelescope__5000__2__3": {
+   "acc": 0.822429906542056,
+   "splits": 148
+  },
+  "MagicTelescope__5000__2__10": {
+   "acc": 0.8370093457943926,
+   "splits": 475
+  },
+  "MagicTelescope__5000__2__30": {
+   "acc": 0.8463551401869159,
+   "splits": 1115
+  },
+  "MagicTelescope__5000__2__100": {
+   "acc": 0.8508411214953271,
+   "splits": 3433
+  },
+  "MagicTelescope__5000__2__300": {
+   "acc": 0.8471028037383178,
+   "splits": 8843
+  },
+  "jannis__5000__0__3": {
+   "acc": 0.7381035081625564,
+   "splits": 170
+  },
+  "jannis__5000__0__10": {
+   "acc": 0.7506946856547412,
+   "splits": 525
+  },
+  "jannis__5000__0__30": {
+   "acc": 0.7532129211531782,
+   "splits": 1298
+  },
+  "jannis__5000__0__100": {
+   "acc": 0.7634595345606113,
+   "splits": 4077
+  },
+  "jannis__5000__0__300": {
+   "acc": 0.7622438346648142,
+   "splits": 10706
+  },
+  "jannis__5000__1__3": {
+   "acc": 0.7341959013546371,
+   "splits": 169
+  },
+  "jannis__5000__1__10": {
+   "acc": 0.7526050712052796,
+   "splits": 521
+  },
+  "jannis__5000__1__30": {
+   "acc": 0.7566863494268843,
+   "splits": 1189
+  },
+  "jannis__5000__1__100": {
+   "acc": 0.7651962486974644,
+   "splits": 3938
+  },
+  "jannis__5000__1__300": {
+   "acc": 0.7661514414727336,
+   "splits": 10663
+  },
+  "jannis__5000__2__3": {
+   "acc": 0.7330670371656826,
+   "splits": 173
+  },
+  "jannis__5000__2__10": {
+   "acc": 0.7580757207363668,
+   "splits": 510
+  },
+  "jannis__5000__2__30": {
+   "acc": 0.7532129211531782,
+   "splits": 1235
+  },
+  "jannis__5000__2__100": {
+   "acc": 0.7671934699548454,
+   "splits": 4037
+  },
+  "jannis__5000__2__300": {
+   "acc": 0.7641542202153525,
+   "splits": 10677
+  },
+  "jannis__20000__0__3": {
+   "acc": 0.7541681139284474,
+   "splits": 186
+  },
+  "jannis__20000__0__10": {
+   "acc": 0.770580062521709,
+   "splits": 602
+  },
+  "jannis__20000__0__30": {
+   "acc": 0.7751823549843696,
+   "splits": 1547
+  },
+  "jannis__20000__0__100": {
+   "acc": 0.781347690170198,
+   "splits": 5107
+  },
+  "jannis__20000__0__300": {
+   "acc": 0.7825633900659952,
+   "splits": 14300
+  },
+  "jannis__20000__1__3": {
+   "acc": 0.7537339353942341,
+   "splits": 186
+  },
+  "jannis__20000__1__10": {
+   "acc": 0.7691906912122265,
+   "splits": 580
+  },
+  "jannis__20000__1__30": {
+   "acc": 0.7814345258770407,
+   "splits": 1518
+  },
+  "jannis__20000__1__100": {
+   "acc": 0.7867315039944425,
+   "splits": 4878
+  },
+  "jannis__20000__1__300": {
+   "acc": 0.7896839180270927,
+   "splits": 13987
+  },
+  "jannis__20000__2__3": {
+   "acc": 0.7517367141368531,
+   "splits": 184
+  },
+  "jannis__20000__2__10": {
+   "acc": 0.7715352552969781,
+   "splits": 584
+  },
+  "jannis__20000__2__30": {
+   "acc": 0.7802188259812435,
+   "splits": 1537
+  },
+  "jannis__20000__2__100": {
+   "acc": 0.7849079541507468,
+   "splits": 4856
+  },
+  "jannis__20000__2__300": {
+   "acc": 0.7856894755123307,
+   "splits": 13765
+  },
+  "MiniBooNE__5000__0__3": {
+   "acc": 0.8971847386807316,
+   "splits": 160
+  },
+  "MiniBooNE__5000__0__10": {
+   "acc": 0.9141037057332694,
+   "splits": 507
+  },
+  "MiniBooNE__5000__0__30": {
+   "acc": 0.9243783820809645,
+   "splits": 1220
+  },
+  "MiniBooNE__5000__0__100": {
+   "acc": 0.9277347763545448,
+   "splits": 3907
+  },
+  "MiniBooNE__5000__0__300": {
+   "acc": 0.9305431878895815,
+   "splits": 8527
+  },
+  "MiniBooNE__5000__1__3": {
+   "acc": 0.8936913487225152,
+   "splits": 167
+  },
+  "MiniBooNE__5000__1__10": {
+   "acc": 0.9126652510445921,
+   "splits": 514
+  },
+  "MiniBooNE__5000__1__30": {
+   "acc": 0.9244468799232824,
+   "splits": 1242
+  },
+  "MiniBooNE__5000__1__100": {
+   "acc": 0.927392287142955,
+   "splits": 3963
+  },
+  "MiniBooNE__5000__1__300": {
+   "acc": 0.9301322008356737,
+   "splits": 8287
+  },
+  "MiniBooNE__5000__2__3": {
+   "acc": 0.8954722926227824,
+   "splits": 159
+  },
+  "MiniBooNE__5000__2__10": {
+   "acc": 0.9152681690526748,
+   "splits": 499
+  },
+  "MiniBooNE__5000__2__30": {
+   "acc": 0.9236249058154669,
+   "splits": 1231
+  },
+  "MiniBooNE__5000__2__100": {
+   "acc": 0.9283512569354065,
+   "splits": 4018
+  },
+  "MiniBooNE__5000__2__300": {
+   "acc": 0.9305431878895815,
+   "splits": 8388
+  },
+  "MiniBooNE__20000__0__3": {
+   "acc": 0.9014316049044455,
+   "splits": 184
+  },
+  "MiniBooNE__20000__0__10": {
+   "acc": 0.919104048222481,
+   "splits": 589
+  },
+  "MiniBooNE__20000__0__30": {
+   "acc": 0.931365161997397,
+   "splits": 1541
+  },
+  "MiniBooNE__20000__0__100": {
+   "acc": 0.9352010411672033,
+   "splits": 5225
+  },
+  "MiniBooNE__20000__0__300": {
+   "acc": 0.9389684224946914,
+   "splits": 12934
+  },
+  "MiniBooNE__20000__1__3": {
+   "acc": 0.9060894581820673,
+   "splits": 184
+  },
+  "MiniBooNE__20000__1__10": {
+   "acc": 0.9215699705459278,
+   "splits": 602
+  },
+  "MiniBooNE__20000__1__30": {
+   "acc": 0.9325296253168025,
+   "splits": 1582
+  },
+  "MiniBooNE__20000__1__100": {
+   "acc": 0.9355435303787931,
+   "splits": 5170
+  },
+  "MiniBooNE__20000__1__300": {
+   "acc": 0.9386259332831016,
+   "splits": 13212
+  },
+  "MiniBooNE__20000__2__3": {
+   "acc": 0.9013631070621275,
+   "splits": 184
+  },
+  "MiniBooNE__20000__2__10": {
+   "acc": 0.9205425029111582,
+   "splits": 591
+  },
+  "MiniBooNE__20000__2__30": {
+   "acc": 0.9312966641550792,
+   "splits": 1561
+  },
+  "MiniBooNE__20000__2__100": {
+   "acc": 0.9385574354407836,
+   "splits": 5268
+  },
+  "MiniBooNE__20000__2__300": {
+   "acc": 0.9402698814987328,
+   "splits": 13168
+  },
+  "covertype__5000__0__3": {
+   "acc": 0.7578,
+   "splits": 125
+  },
+  "covertype__5000__0__10": {
+   "acc": 0.7658,
+   "splits": 384
+  },
+  "covertype__5000__0__30": {
+   "acc": 0.77545,
+   "splits": 1019
+  },
+  "covertype__5000__0__100": {
+   "acc": 0.78285,
+   "splits": 3232
+  },
+  "covertype__5000__0__300": {
+   "acc": 0.7926,
+   "splits": 9270
+  },
+  "covertype__5000__1__3": {
+   "acc": 0.7606,
+   "splits": 134
+  },
+  "covertype__5000__1__10": {
+   "acc": 0.7695,
+   "splits": 424
+  },
+  "covertype__5000__1__30": {
+   "acc": 0.778,
+   "splits": 1046
+  },
+  "covertype__5000__1__100": {
+   "acc": 0.78325,
+   "splits": 3278
+  },
+  "covertype__5000__1__300": {
+   "acc": 0.78665,
+   "splits": 9004
+  },
+  "covertype__5000__2__3": {
+   "acc": 0.7599,
+   "splits": 139
+  },
+  "covertype__5000__2__10": {
+   "acc": 0.76635,
+   "splits": 437
+  },
+  "covertype__5000__2__30": {
+   "acc": 0.7765,
+   "splits": 1099
+  },
+  "covertype__5000__2__100": {
+   "acc": 0.78185,
+   "splits": 3252
+  },
+  "covertype__5000__2__300": {
+   "acc": 0.78425,
+   "splits": 8957
+  },
+  "covertype__20000__0__3": {
+   "acc": 0.76275,
+   "splits": 161
+  },
+  "covertype__20000__0__10": {
+   "acc": 0.77465,
+   "splits": 494
+  },
+  "covertype__20000__0__30": {
+   "acc": 0.7982,
+   "splits": 1355
+  },
+  "covertype__20000__0__100": {
+   "acc": 0.79985,
+   "splits": 4183
+  },
+  "covertype__20000__0__300": {
+   "acc": 0.81935,
+   "splits": 12297
+  },
+  "covertype__20000__1__3": {
+   "acc": 0.76545,
+   "splits": 162
+  },
+  "covertype__20000__1__10": {
+   "acc": 0.7777,
+   "splits": 510
+  },
+  "covertype__20000__1__30": {
+   "acc": 0.799,
+   "splits": 1207
+  },
+  "covertype__20000__1__100": {
+   "acc": 0.79995,
+   "splits": 3906
+  },
+  "covertype__20000__1__300": {
+   "acc": 0.8248,
+   "splits": 11481
+  },
+  "covertype__20000__2__3": {
+   "acc": 0.7653,
+   "splits": 168
+  },
+  "covertype__20000__2__10": {
+   "acc": 0.7755,
+   "splits": 519
+  },
+  "covertype__20000__2__30": {
+   "acc": 0.79645,
+   "splits": 1293
+  },
+  "covertype__20000__2__100": {
+   "acc": 0.7972,
+   "splits": 4165
+  },
+  "covertype__20000__2__300": {
+   "acc": 0.82165,
+   "splits": 11931
+  },
+  "Higgs__5000__0__3": {
+   "acc": 0.67585,
+   "splits": 174
+  },
+  "Higgs__5000__0__10": {
+   "acc": 0.6887,
+   "splits": 514
+  },
+  "Higgs__5000__0__30": {
+   "acc": 0.6882,
+   "splits": 1277
+  },
+  "Higgs__5000__0__100": {
+   "acc": 0.69625,
+   "splits": 4189
+  },
+  "Higgs__5000__0__300": {
+   "acc": 0.6941,
+   "splits": 11773
+  },
+  "Higgs__5000__1__3": {
+   "acc": 0.6735,
+   "splits": 161
+  },
+  "Higgs__5000__1__10": {
+   "acc": 0.6915,
+   "splits": 507
+  },
+  "Higgs__5000__1__30": {
+   "acc": 0.6895,
+   "splits": 1301
+  },
+  "Higgs__5000__1__100": {
+   "acc": 0.69705,
+   "splits": 3983
+  },
+  "Higgs__5000__1__300": {
+   "acc": 0.6939,
+   "splits": 11114
+  },
+  "Higgs__5000__2__3": {
+   "acc": 0.66925,
+   "splits": 180
+  },
+  "Higgs__5000__2__10": {
+   "acc": 0.6873,
+   "splits": 546
+  },
+  "Higgs__5000__2__30": {
+   "acc": 0.6872,
+   "splits": 1305
+  },
+  "Higgs__5000__2__100": {
+   "acc": 0.69765,
+   "splits": 4339
+  },
+  "Higgs__5000__2__300": {
+   "acc": 0.69565,
+   "splits": 11530
+  },
+  "Higgs__20000__0__3": {
+   "acc": 0.68875,
+   "splits": 186
+  },
+  "Higgs__20000__0__10": {
+   "acc": 0.70495,
+   "splits": 600
+  },
+  "Higgs__20000__0__30": {
+   "acc": 0.70845,
+   "splits": 1598
+  },
+  "Higgs__20000__0__100": {
+   "acc": 0.72,
+   "splits": 4995
+  },
+  "Higgs__20000__0__300": {
+   "acc": 0.71255,
+   "splits": 14024
+  },
+  "Higgs__20000__1__3": {
+   "acc": 0.6908,
+   "splits": 183
+  },
+  "Higgs__20000__1__10": {
+   "acc": 0.70965,
+   "splits": 597
+  },
+  "Higgs__20000__1__30": {
+   "acc": 0.71555,
+   "splits": 1628
+  },
+  "Higgs__20000__1__100": {
+   "acc": 0.7154,
+   "splits": 5299
+  },
+  "Higgs__20000__1__300": {
+   "acc": 0.7179,
+   "splits": 14598
+  },
+  "Higgs__20000__2__3": {
+   "acc": 0.68705,
+   "splits": 186
+  },
+  "Higgs__20000__2__10": {
+   "acc": 0.70305,
+   "splits": 599
+  },
+  "Higgs__20000__2__30": {
+   "acc": 0.7051,
+   "splits": 1576
+  },
+  "Higgs__20000__2__100": {
+   "acc": 0.71185,
+   "splits": 5152
+  },
+  "Higgs__20000__2__300": {
+   "acc": 0.71015,
+   "splits": 14257
+  }
+ },
+ "comparisons": {
+  "one tree": {
+   "cells": 11,
+   "splits": 137.06060606060603,
+   "XGBoost 3 trees": {
+    "xgb_splits": 166.0,
+    "mean_pt": 2.3313337481960668,
+    "higher": 11,
+    "lower": 0,
+    "p": 0.0009765625
+   },
+   "XGBoost 10 trees": {
+    "xgb_splits": 521.4242424242425,
+    "mean_pt": 0.7786501560331146,
+    "higher": 9,
+    "lower": 2,
+    "p": 0.0244140625
+   },
+   "XGBoost 30 trees": {
+    "xgb_splits": 1302.6666666666665,
+    "mean_pt": -0.24679050717486042,
+    "higher": 6,
+    "lower": 5,
+    "p": 0.8984375
+   },
+   "XGBoost 100 trees": {
+    "xgb_splits": 4158.545454545455,
+    "mean_pt": -0.7771959599588623,
+    "higher": 3,
+    "lower": 8,
+    "p": 0.0419921875
+   },
+   "XGBoost 300 trees": {
+    "xgb_splits": 11059.21212121212,
+    "mean_pt": -1.2836986573504356,
+    "higher": 1,
+    "lower": 10,
+    "p": 0.0048828125
+   }
+  },
+  "group of three": {
+   "cells": 11,
+   "splits": 448.90909090909093,
+   "XGBoost 3 trees": {
+    "xgb_splits": 166.0,
+    "mean_pt": 2.710906717829662,
+    "higher": 11,
+    "lower": 0,
+    "p": 0.0009765625
+   },
+   "XGBoost 10 trees": {
+    "xgb_splits": 521.4242424242425,
+    "mean_pt": 1.1582231256667102,
+    "higher": 10,
+    "lower": 1,
+    "p": 0.0029296875
+   },
+   "XGBoost 30 trees": {
+    "xgb_splits": 1302.6666666666665,
+    "mean_pt": 0.13278246245873493,
+    "higher": 8,
+    "lower": 3,
+    "p": 0.4130859375
+   },
+   "XGBoost 100 trees": {
+    "xgb_splits": 4158.545454545455,
+    "mean_pt": -0.3976229903252667,
+    "higher": 5,
+    "lower": 6,
+    "p": 0.5771484375
+   },
+   "XGBoost 300 trees": {
+    "xgb_splits": 11059.21212121212,
+    "mean_pt": -0.9041256877168401,
+    "higher": 3,
+    "lower": 8,
+    "p": 0.123046875
+   }
+  }
+ },
+ "_protokol": "\nXGBoost at 3, 10, 30, 100 and 300 trees of depth 6, on the same cells, seeds\nand test rows as munge.py and grup.py (six OpenML tables, 5 000 and 20 000\ntraining rows, three seeds), to compare the distilled students with an\nXGBoost model of about their size. Learning rate 0.3 up to 30 trees, 0.1\nfrom 100 (the library default of 300 trees at 0.1 is the reference model\nelsewhere). Size is the number of split nodes over all trees.\n\n    python3 benchmarks/xgb_boyut.py           # fits, then the comparison\n    python3 benchmarks/xgb_boyut.py ozet      # comparison only\n\nThe comparison reads the single distilled tree (ten MUNGE passes) from\n_munge_cache_p10 and the group of three from _grup_cache_p10, both written\nby `MUNGE_PASSES=10 munge.py` and `MUNGE_PASSES=10 grup.py`.\n",
+ "_commit": "5fd0e4f"
+}
