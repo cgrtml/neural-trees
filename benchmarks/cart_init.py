@@ -38,13 +38,16 @@ from rakipler import TOHUM, kumeler  # noqa: E402
 
 KOK = pathlib.Path(__file__).resolve().parent
 CIKTI = KOK / "cart_init-sonuc.json"
+PRUNE = "--prune" in sys.argv          # init_prune=True; results to cart_init_prune-sonuc.json
+if PRUNE:
+    CIKTI = KOK / "cart_init_prune-sonuc.json"
 DEPTH, EPOCHS, GRID = 6, 60, (4.0, 10.0, 30.0, 100.0)
 
 
 def _soft(sharpness, seed):
     from neural_trees import SoftDecisionTree
     return SoftDecisionTree(depth=DEPTH, max_epochs=EPOCHS, init="cart", init_sharpness=sharpness,
-                            learn_temperature=True, random_state=seed)
+                            learn_temperature=True, init_prune=PRUNE, random_state=seed)
 
 
 def _bir_kat(X, y, tr, te, seed):
@@ -71,10 +74,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hizli", action="store_true")
     ap.add_argument("--n-jobs", type=int, default=10)
+    ap.add_argument("--prune", action="store_true", help="init_prune=True (cross-validated CART pruning)")
     a = ap.parse_args()
     ref = json.loads((KOK / "rakipler-sonuc.json").read_text(encoding="utf-8"))
     S = json.loads(CIKTI.read_text(encoding="utf-8")) if CIKTI.exists() and not a.hizli else {}
-    S["_protokol"] = (f"depth {DEPTH}, {EPOCHS} epochs, learn_temperature=True, sharpness grid {list(GRID)}; "
+    S["_protokol"] = (f"init_prune={PRUNE}, depth {DEPTH}, {EPOCHS} epochs, learn_temperature=True, sharpness grid {list(GRID)}; "
                       "'init chosen' picks the sharpness on 20 % of each training fold; "
                       f"seeds {list(TOHUM)} x 5-fold, StandardScaler on the training fold; "
                       "reference columns from rakipler-sonuc.json")

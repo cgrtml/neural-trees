@@ -828,3 +828,26 @@ def test_warm_start_rejects_a_different_feature_count():
     soft = SoftDecisionTree.from_hard_tree(DecisionTreeClassifier(max_depth=2).fit(X, y), X, max_epochs=2)
     with pytest.raises(ValueError, match="same features"):
         soft.fit(X[:, :3], y)
+
+
+def test_init_prune_starts_from_a_smaller_tree_on_noisy_data():
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(300, 5))
+    y = ((X[:, 0] + rng.normal(scale=1.5, size=300)) > 0).astype(int)   # mostly noise
+    full = SoftDecisionTree(depth=5, max_epochs=2, init="cart", init_prune=False, random_state=0).fit(X, y)
+    pruned = SoftDecisionTree(depth=5, max_epochs=2, init="cart", random_state=0).fit(X, y)
+    assert int(pruned.model_.is_split.sum()) < int(full.model_.is_split.sum())
+    assert pruned.init_ccp_alpha_ > 0
+
+
+def test_init_cart_with_one_feature_per_split_keeps_carts_features():
+    from sklearn.tree import DecisionTreeClassifier
+
+    X, y = load_wine(return_X_y=True)
+    m = SoftDecisionTree(depth=3, max_epochs=10, init="cart", init_prune=False, split_features=1,
+                         random_state=0).fit(X, y)
+    cart = DecisionTreeClassifier(max_depth=3, random_state=0).fit(X, y)
+    W = m.model_.gates.weight.detach().numpy()
+    used = {int(np.flatnonzero(w)[0]) for w, s in zip(W, m.model_.is_split.numpy()) if s}
+    assert ((W != 0).sum(axis=1) <= 1).all()
+    assert used <= set(int(f) for f in cart.tree_.feature if f >= 0)

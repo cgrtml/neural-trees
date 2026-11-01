@@ -42,6 +42,7 @@ torch in one process can deadlock on libomp (see rakipler.py).
     python3 benchmarks/distill.py ozet
     python3 benchmarks/distill.py istatistik      # paired tests over datasets
     python3 benchmarks/distill.py seyrek          # fidelity vs split_features
+    python3 benchmarks/distill.py seyrek_cart     # the same, students started from CART
 """
 from __future__ import annotations
 
@@ -288,6 +289,52 @@ def _seyrek_bir(yol, k):
                                "splits": len(m.get_split_weights())}))
 
 
+def _seyrek_cart_bir(yol, k):
+    """Student started from CART (init="cart"), k features per split, soft targets."""
+    import torch
+    torch.set_num_threads(1)
+    from neural_trees import SoftDecisionTree
+    out = yol.with_name(f"{yol.stem}__k{k}.cart.json")
+    if out.exists():
+        return
+    d = np.load(yol)
+    Xa, Pa, Xte, Pte, K = d["Xa"], d["Pa"], d["Xte"], d["Pte"], int(d["K"])
+    i, c = np.nonzero(Pa >= 0.01)
+    m = SoftDecisionTree(depth=6, max_epochs=60, init="cart", learn_temperature=True,
+                         split_features=min(k, Xa.shape[1]), random_state=SEED)
+    m.fit(Xa[i], c, sample_weight=Pa[i, c])
+    P = _tam(m.predict_proba(Xte), m.classes_, K)
+    hard = m.to_hard_tree().predict(Xte)
+    out.write_text(json.dumps({"fid": float(np.mean(P.argmax(1) == Pte.argmax(1))),
+                               "fid_hard": float(np.mean(hard == Pte.argmax(1))),
+                               "splits": int(m.model_.is_split.sum())}))
+
+
+def seyrek_cart(n_jobs):
+    """Fidelity of a CART-started student at k = 1, 2, 3 features per split, against CART."""
+    from joblib import Parallel, delayed
+    from scipy.stats import wilcoxon
+    yollar = sorted(ARA.glob("*__XGBoost__*.npz"), key=lambda p: -p.stat().st_size)
+    Parallel(n_jobs=n_jobs)(delayed(_seyrek_cart_bir)(p, k) for p in yollar for k in (1, 2, 3))
+    S = {}
+    for p in yollar:
+        ad = p.stem.split("__")[0]
+        tam = json.loads(p.with_suffix(".json").read_text())
+        r = S.setdefault(ad, {"cart6": []})
+        r["cart6"].append(tam["cart6"]["fid"])
+        for k in (1, 2, 3):
+            js = json.loads(p.with_name(f"{p.stem}__k{k}.cart.json").read_text())
+            r.setdefault(f"cart-k{k}", []).append(js["fid"])
+            r.setdefault(f"cart-k{k}_hard", []).append(js["fid_hard"])
+    S = {ad: {k: round(float(np.mean(v)), 4) for k, v in r.items()} for ad, r in S.items()}
+    (KOK / "distill-seyrek-cart.json").write_text(json.dumps(S, indent=1), encoding="utf-8")
+    for k in ("cart-k1", "cart-k1_hard", "cart-k2", "cart-k3"):
+        d = np.array([r[k] - r["cart6"] for r in S.values()])
+        w, lo = int((d > 0.005).sum()), int((d < -0.005).sum())
+        print(f"{k:13s} - cart6  mean {d.mean()*100:+.2f} pt  median {np.median(d)*100:+.2f}  "
+              f"higher/tie/lower {w}/{len(d)-w-lo}/{lo}  p={wilcoxon(d).pvalue:.4f}")
+
+
 def seyrek(n_jobs):
     """Fidelity of the soft-target student under split_features=k, XGBoost teacher."""
     from joblib import Parallel, delayed
@@ -315,13 +362,14 @@ def seyrek(n_jobs):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("asama", choices=["ogretmen", "ogrenci", "ozet", "istatistik", "seyrek"])
+    ap.add_argument("asama", choices=["ogretmen", "ogrenci", "ozet", "istatistik", "seyrek", "seyrek_cart"])
     ap.add_argument("--hizli", action="store_true")
     ap.add_argument("--n-jobs", type=int, default=10)
     a = ap.parse_args()
     {"ogretmen": lambda: ogretmen_asamasi(a.hizli),
      "ogrenci": lambda: ogrenci_asamasi(a.hizli, a.n_jobs),
-     "ozet": ozet, "istatistik": istatistik, "seyrek": lambda: seyrek(a.n_jobs)}[a.asama]()
+     "ozet": ozet, "istatistik": istatistik, "seyrek": lambda: seyrek(a.n_jobs),
+     "seyrek_cart": lambda: seyrek_cart(a.n_jobs)}[a.asama]()
 
 
 if __name__ == "__main__":
