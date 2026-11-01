@@ -1,0 +1,483 @@
+{
+ "_protokol": "init_prune=True, depth 6, 60 epochs, learn_temperature=True, sharpness grid [4.0, 10.0, 30.0, 100.0]; 'init chosen' picks the sharpness on 20 % of each training fold; seeds [0, 1, 2] x 5-fold, StandardScaler on the training fold; reference columns from rakipler-sonuc.json",
+ "Iris": {
+  "CART d6": 0.9467,
+  "init s4": 0.9378,
+  "init s10": 0.9422,
+  "init s30": 0.9289,
+  "init s100": 0.9222,
+  "init chosen": 0.9311,
+  "sd_chosen": 0.0791,
+  "chosen_counts": {
+   "4": 11,
+   "10": 3,
+   "30": 0,
+   "100": 1
+  },
+  "SoftTree per-leaf": 0.96,
+  "XGBoost": 0.94,
+  "RandomForest": 0.9489,
+  "n": 150,
+  "K": 3
+ },
+ "Wine": {
+  "CART d6": 0.9158,
+  "init s4": 0.9795,
+  "init s10": 0.9515,
+  "init s30": 0.9122,
+  "init s100": 0.8935,
+  "init chosen": 0.9795,
+  "sd_chosen": 0.0222,
+  "chosen_counts": {
+   "4": 15,
+   "10": 0,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.972,
+  "XGBoost": 0.9476,
+  "RandomForest": 0.9776,
+  "n": 178,
+  "K": 3
+ },
+ "Cancer": {
+  "CART d6": 0.9285,
+  "init s4": 0.966,
+  "init s10": 0.9654,
+  "init s30": 0.9543,
+  "init s100": 0.9314,
+  "init chosen": 0.9666,
+  "sd_chosen": 0.0194,
+  "chosen_counts": {
+   "4": 13,
+   "10": 2,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9736,
+  "XGBoost": 0.9648,
+  "RandomForest": 0.9578,
+  "n": 569,
+  "K": 2
+ },
+ "Digits": {
+  "CART d6": 0.7637,
+  "init s4": 0.944,
+  "init s10": 0.9293,
+  "init s30": 0.862,
+  "init s100": 0.8049,
+  "init chosen": 0.944,
+  "sd_chosen": 0.0124,
+  "chosen_counts": {
+   "4": 15,
+   "10": 0,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9271,
+  "XGBoost": 0.9657,
+  "RandomForest": 0.9768,
+  "n": 1797,
+  "K": 10
+ },
+ "banknote-authentication": {
+  "CART d6": 0.9786,
+  "init s4": 0.9988,
+  "init s10": 0.9954,
+  "init s30": 0.9891,
+  "init s100": 0.9813,
+  "init chosen": 0.9988,
+  "sd_chosen": 0.003,
+  "chosen_counts": {
+   "4": 15,
+   "10": 0,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9886,
+  "XGBoost": 0.9956,
+  "RandomForest": 0.9927,
+  "n": 1372,
+  "K": 2
+ },
+ "blood-transfusion-service-center": {
+  "CART d6": 0.7647,
+  "init s4": 0.7914,
+  "init s10": 0.7763,
+  "init s30": 0.7669,
+  "init s100": 0.7647,
+  "init chosen": 0.7887,
+  "sd_chosen": 0.0224,
+  "chosen_counts": {
+   "4": 11,
+   "10": 1,
+   "30": 3,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.7852,
+  "XGBoost": 0.742,
+  "RandomForest": 0.7397,
+  "n": 748,
+  "K": 2
+ },
+ "phoneme": {
+  "CART d6": 0.8351,
+  "init s4": 0.8621,
+  "init s10": 0.8599,
+  "init s30": 0.8518,
+  "init s100": 0.8441,
+  "init chosen": 0.8611,
+  "sd_chosen": 0.0081,
+  "chosen_counts": {
+   "4": 8,
+   "10": 6,
+   "30": 1,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.836,
+  "XGBoost": 0.8947,
+  "RandomForest": 0.9078,
+  "n": 5000,
+  "K": 2
+ },
+ "diabetes": {
+  "CART d6": 0.7256,
+  "init s4": 0.7544,
+  "init s10": 0.7544,
+  "init s30": 0.7405,
+  "init s100": 0.7361,
+  "init chosen": 0.7509,
+  "sd_chosen": 0.0397,
+  "chosen_counts": {
+   "4": 6,
+   "10": 7,
+   "30": 0,
+   "100": 2
+  },
+  "SoftTree per-leaf": 0.767,
+  "XGBoost": 0.73,
+  "RandomForest": 0.7613,
+  "n": 768,
+  "K": 2
+ },
+ "vehicle": {
+  "CART d6": 0.6974,
+  "init s4": 0.74,
+  "init s10": 0.7266,
+  "init s30": 0.6962,
+  "init s100": 0.686,
+  "init chosen": 0.7329,
+  "sd_chosen": 0.0346,
+  "chosen_counts": {
+   "4": 13,
+   "10": 0,
+   "30": 1,
+   "100": 1
+  },
+  "SoftTree per-leaf": 0.7802,
+  "XGBoost": 0.7589,
+  "RandomForest": 0.7494,
+  "n": 846,
+  "K": 4
+ },
+ "segment": {
+  "CART d6": 0.9095,
+  "init s4": 0.9537,
+  "init s10": 0.9566,
+  "init s30": 0.9514,
+  "init s100": 0.9505,
+  "init chosen": 0.9554,
+  "sd_chosen": 0.0076,
+  "chosen_counts": {
+   "4": 4,
+   "10": 6,
+   "30": 5,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9518,
+  "XGBoost": 0.9752,
+  "RandomForest": 0.971,
+  "n": 2310,
+  "K": 7
+ },
+ "satimage": {
+  "CART d6": 0.8394,
+  "init s4": 0.8865,
+  "init s10": 0.8823,
+  "init s30": 0.8707,
+  "init s100": 0.8589,
+  "init chosen": 0.8863,
+  "sd_chosen": 0.0111,
+  "chosen_counts": {
+   "4": 12,
+   "10": 3,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.8778,
+  "XGBoost": 0.9165,
+  "RandomForest": 0.9151,
+  "n": 5000,
+  "K": 6
+ },
+ "optdigits": {
+  "CART d6": 0.7627,
+  "init s4": 0.9607,
+  "init s10": 0.9497,
+  "init s30": 0.9349,
+  "init s100": 0.8906,
+  "init chosen": 0.9607,
+  "sd_chosen": 0.0045,
+  "chosen_counts": {
+   "4": 15,
+   "10": 0,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9377,
+  "XGBoost": 0.9763,
+  "RandomForest": 0.9821,
+  "n": 5000,
+  "K": 10
+ },
+ "pendigits": {
+  "CART d6": 0.8606,
+  "init s4": 0.9797,
+  "init s10": 0.9713,
+  "init s30": 0.9561,
+  "init s100": 0.9205,
+  "init chosen": 0.9798,
+  "sd_chosen": 0.0065,
+  "chosen_counts": {
+   "4": 14,
+   "10": 1,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9537,
+  "XGBoost": 0.9859,
+  "RandomForest": 0.9884,
+  "n": 5000,
+  "K": 10
+ },
+ "spambase": {
+  "CART d6": 0.9123,
+  "init s4": 0.9303,
+  "init s10": 0.9302,
+  "init s30": 0.9275,
+  "init s100": 0.9273,
+  "init chosen": 0.9281,
+  "sd_chosen": 0.0068,
+  "chosen_counts": {
+   "4": 6,
+   "10": 4,
+   "30": 3,
+   "100": 2
+  },
+  "SoftTree per-leaf": 0.9305,
+  "XGBoost": 0.955,
+  "RandomForest": 0.9542,
+  "n": 4601,
+  "K": 2
+ },
+ "steel-plates-fault": {
+  "CART d6": 1.0,
+  "init s4": 1.0,
+  "init s10": 0.9997,
+  "init s30": 1.0,
+  "init s100": 1.0,
+  "init chosen": 1.0,
+  "sd_chosen": 0.0,
+  "chosen_counts": {
+   "4": 15,
+   "10": 0,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9995,
+  "XGBoost": 1.0,
+  "RandomForest": 0.9936,
+  "n": 1941,
+  "K": 2
+ },
+ "ilpd": {
+  "CART d6": 0.6519,
+  "init s4": 0.6976,
+  "init s10": 0.6976,
+  "init s30": 0.7004,
+  "init s100": 0.7027,
+  "init chosen": 0.6919,
+  "sd_chosen": 0.0382,
+  "chosen_counts": {
+   "4": 10,
+   "10": 3,
+   "30": 2,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.7164,
+  "XGBoost": 0.6942,
+  "RandomForest": 0.7067,
+  "n": 583,
+  "K": 2
+ },
+ "climate-model-simulation-crashes": {
+  "CART d6": 0.9025,
+  "init s4": 0.9395,
+  "init s10": 0.9426,
+  "init s30": 0.9179,
+  "init s100": 0.913,
+  "init chosen": 0.9389,
+  "sd_chosen": 0.0167,
+  "chosen_counts": {
+   "4": 10,
+   "10": 3,
+   "30": 2,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9444,
+  "XGBoost": 0.95,
+  "RandomForest": 0.9204,
+  "n": 540,
+  "K": 2
+ },
+ "texture": {
+  "CART d6": 0.7502,
+  "init s4": 0.9927,
+  "init s10": 0.9899,
+  "init s30": 0.9819,
+  "init s100": 0.8914,
+  "init chosen": 0.9927,
+  "sd_chosen": 0.0038,
+  "chosen_counts": {
+   "4": 15,
+   "10": 0,
+   "30": 0,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9927,
+  "XGBoost": 0.9806,
+  "RandomForest": 0.9759,
+  "n": 5000,
+  "K": 11
+ },
+ "wall-robot-navigation": {
+  "CART d6": 0.9849,
+  "init s4": 0.9443,
+  "init s10": 0.9591,
+  "init s30": 0.9723,
+  "init s100": 0.9795,
+  "init chosen": 0.9791,
+  "sd_chosen": 0.0057,
+  "chosen_counts": {
+   "4": 0,
+   "10": 0,
+   "30": 1,
+   "100": 14
+  },
+  "SoftTree per-leaf": 0.8759,
+  "XGBoost": 0.996,
+  "RandomForest": 0.993,
+  "n": 5000,
+  "K": 4
+ },
+ "qsar-biodeg": {
+  "CART d6": 0.8224,
+  "init s4": 0.8531,
+  "init s10": 0.842,
+  "init s30": 0.8433,
+  "init s100": 0.8288,
+  "init chosen": 0.8436,
+  "sd_chosen": 0.0231,
+  "chosen_counts": {
+   "4": 6,
+   "10": 5,
+   "30": 3,
+   "100": 1
+  },
+  "SoftTree per-leaf": 0.8724,
+  "XGBoost": 0.8673,
+  "RandomForest": 0.8711,
+  "n": 1055,
+  "K": 2
+ },
+ "ozone-level-8hr": {
+  "CART d6": 0.9242,
+  "init s4": 0.9329,
+  "init s10": 0.9338,
+  "init s30": 0.9382,
+  "init s100": 0.9354,
+  "init chosen": 0.934,
+  "sd_chosen": 0.0106,
+  "chosen_counts": {
+   "4": 4,
+   "10": 4,
+   "30": 4,
+   "100": 3
+  },
+  "SoftTree per-leaf": 0.9409,
+  "XGBoost": 0.944,
+  "RandomForest": 0.9436,
+  "n": 2534,
+  "K": 2
+ },
+ "kc1": {
+  "CART d6": 0.8459,
+  "init s4": 0.8525,
+  "init s10": 0.8532,
+  "init s30": 0.8467,
+  "init s100": 0.847,
+  "init chosen": 0.8525,
+  "sd_chosen": 0.0092,
+  "chosen_counts": {
+   "4": 10,
+   "10": 4,
+   "30": 1,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.8535,
+  "XGBoost": 0.8581,
+  "RandomForest": 0.8622,
+  "n": 2109,
+  "K": 2
+ },
+ "pc1": {
+  "CART d6": 0.9225,
+  "init s4": 0.9276,
+  "init s10": 0.9294,
+  "init s30": 0.9291,
+  "init s100": 0.9291,
+  "init chosen": 0.9279,
+  "sd_chosen": 0.0085,
+  "chosen_counts": {
+   "4": 9,
+   "10": 3,
+   "30": 3,
+   "100": 0
+  },
+  "SoftTree per-leaf": 0.9315,
+  "XGBoost": 0.9339,
+  "RandomForest": 0.939,
+  "n": 1109,
+  "K": 2
+ },
+ "pc3": {
+  "CART d6": 0.8795,
+  "init s4": 0.8944,
+  "init s10": 0.8942,
+  "init s30": 0.8949,
+  "init s100": 0.8944,
+  "init chosen": 0.8944,
+  "sd_chosen": 0.0123,
+  "chosen_counts": {
+   "4": 11,
+   "10": 2,
+   "30": 0,
+   "100": 2
+  },
+  "SoftTree per-leaf": 0.897,
+  "XGBoost": 0.8919,
+  "RandomForest": 0.8987,
+  "n": 1563,
+  "K": 2
+ }
+}

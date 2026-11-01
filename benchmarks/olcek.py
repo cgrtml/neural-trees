@@ -115,6 +115,9 @@ def main():
     a = ap.parse_args()
     S = json.loads(CIKTI.read_text(encoding="utf-8")) if CIKTI.exists() else {}
     S["_protokol"] = __doc__.split("    python3")[0].strip()
+    import subprocess
+    S["_commit"] = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True,
+                                  cwd=KOK).stdout.strip()
     for ad in a.kume:
         X, y = yukle(ad)
         n_te = min(20_000, len(y) // 5)
