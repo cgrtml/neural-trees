@@ -9,7 +9,8 @@ KDD 2006): each new row starts from a training row and, feature by
 feature with probability p, takes a value drawn around its nearest
 neighbour's (normal, sd = |difference| / s; features with at most ten
 distinct values copy the neighbour's value). Two passes give 2n rows, the
-budget of the unlabelled column. p = 0.5, s = 5 are our choice, not tuned.
+budget of the unlabelled column. MUNGE_PASSES=4 in the environment runs
+the same with four passes (cells up to 20 000 rows), as an ablation. p = 0.5, s = 5 are our choice, not tuned.
 
 Same datasets, sizes, seeds, test sets and teacher as damitma_olcek.py.
 
@@ -32,10 +33,12 @@ import numpy as np
 
 KOK = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(KOK))
-ARA = KOK / "_munge_cache"
+PASSES = int(os.environ.get("MUNGE_PASSES", "2"))   # other values: ablation, 20 000 rows at most
+EK = "" if PASSES == 2 else f"_p{PASSES}"
+ARA = KOK / f"_munge_cache{EK}"
 DAMITMA = KOK / "_damitma_cache"
-CIKTI = KOK / "munge-sonuc.json"
-P_SWAP, S_SPREAD, PASSES = 0.5, 5.0, 2
+CIKTI = KOK / f"munge{EK}-sonuc.json"
+P_SWAP, S_SPREAD = 0.5, 5.0
 
 
 def munge(X, seed, p=P_SWAP, s=S_SPREAD, passes=PASSES):
@@ -61,7 +64,7 @@ def ogretmen():
         for n in D.BOYUTLAR:
             for s in D.tohumlar(n):
                 yol = ARA / f"{ad}__{n}__{s}.npz"
-                if yol.exists() or not (DAMITMA / yol.name).exists():
+                if yol.exists() or not (DAMITMA / yol.name).exists() or (EK and n > 20_000):
                     continue
                 Xtr, ytr, Xte, yte = D.bolum(ad, n, s)
                 m = xgb.XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1, random_state=s,
