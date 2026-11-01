@@ -32,8 +32,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils.validation import _check_sample_weight, check_is_fitted, check_X_y
 
 from neural_trees._batching import TensorBatches
+from neural_trees._missing import allow_nan, augment, missing_columns
 from neural_trees._validation import check_predict_input, reject_sparse, resolve_device
-from neural_trees.decision_trees.soft_decision_tree import _SoftTreeModule
+from neural_trees.decision_trees.soft_decision_tree import (
+    SoftDecisionTree,
+    _copy_cart,
+    _pruned_cart,
+    _SoftTreeModule,
+)
 
 
 class _SoftTreeRegModule(_SoftTreeModule):
@@ -151,6 +157,19 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
     validation_fraction : float, default=0.1
     n_iter_no_change : int, default=10
     verbose : bool, default=False
+    split_features : int or None, default=None
+        At most this many features per split, as in `SoftDecisionTree`.
+    init : {"random", "cart"}, default="random"
+        ``"cart"`` starts from a soft copy of a `DecisionTreeRegressor` of the
+        same depth fitted on the standardised targets, as in
+        `SoftDecisionTree`; requires ``growth="none"``.
+    init_sharpness : float, default=10.0
+    init_prune : bool, default=True
+        Prune the starting CART tree with a cost-complexity strength chosen
+        by 3-fold cross-validation on weighted squared error.
+
+    Missing values are accepted as in `SoftDecisionTree`: NaN is set to 0 and
+    each feature with missing values in training gets an indicator input.
 
     Attributes
     ----------
@@ -191,6 +210,10 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
         growth_init: str = "residual",
         growth_jitter: float = 0.2,
         growth_budget: str = "split",
+        split_features: Optional[int] = None,
+        init: str = "random",
+        init_sharpness: float = 10.0,
+        init_prune: bool = True,
     ):
         self.depth = depth
         self.max_epochs = max_epochs
@@ -207,16 +230,21 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
         self.growth_init = growth_init
         self.growth_jitter = growth_jitter
         self.growth_budget = growth_budget
+        self.split_features = split_features
+        self.init = init
+        self.init_sharpness = init_sharpness
+        self.init_prune = init_prune
 
     # scikit-learn >= 1.6 reads __sklearn_tags__; older versions read _more_tags.
     # Both say the same thing: multi-output targets are supported.
     def __sklearn_tags__(self):
         tags = super().__sklearn_tags__()
         tags.target_tags.multi_output = True
+        tags.input_tags.allow_nan = True
         return tags
 
     def _more_tags(self):
-        return {"multioutput": True}
+        return {"multioutput": True, "allow_nan": True}
 
     def fit(self, X, y, sample_weight=None) -> "SoftDecisionTreeRegressor":
         if isinstance(self.depth, bool) or not isinstance(self.depth, int) or self.depth < 1:
@@ -229,14 +257,30 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             )
         if self.growth_budget not in ("split", "full"):
             raise ValueError(f"growth_budget must be 'split' or 'full', got {self.growth_budget!r}")
+        if self.split_features is not None and (
+            isinstance(self.split_features, bool)
+            or not isinstance(self.split_features, (int, np.integer))
+            or self.split_features < 1
+        ):
+            raise ValueError(
+                f"split_features must be a positive integer or None, got {self.split_features!r}"
+            )
+        if self.init not in ("random", "cart"):
+            raise ValueError(f"init must be 'random' or 'cart', got {self.init!r}")
+        if self.init == "cart" and self.growth != "none":
+            raise ValueError("init='cart' fixes the shape from the CART tree; use growth='none'")
+        if not self.init_sharpness > 0:
+            raise ValueError(f"init_sharpness must be positive, got {self.init_sharpness!r}")
         needs_validation = self.early_stopping or self.growth != "none"
         if needs_validation and not 0.0 < self.validation_fraction < 1.0:
             raise ValueError(
                 f"validation_fraction must be in (0, 1), got {self.validation_fraction!r}"
             )
         reject_sparse(self, X)
-        X, y = check_X_y(X, y, y_numeric=True, multi_output=True, dtype=np.float64)
+        X, y = check_X_y(X, y, y_numeric=True, multi_output=True, dtype=np.float64, **allow_nan())
         self.n_features_in_ = X.shape[1]
+        self.missing_columns_ = missing_columns(X)
+        X = augment(X, self.missing_columns_)
         y = np.asarray(y, dtype=np.float64)
         single = y.ndim == 1
         Y = y.reshape(-1, 1) if single else y
@@ -282,6 +326,26 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             model = self._fit_per_leaf(loader, X_t, Y_t, w_t, X_val_t, Y_val_t, device)
         elif self.growth_ == "incremental":
             model = self._fit_incrementally(loader, X_val_t, Y_val_t, device)
+        elif self.init == "cart":
+            model = self._cart_module(X_fit, Y_fit, w_fit, device)
+            lock = None
+            if self.split_features == 1:   # keep CART's feature in every gate
+                with torch.no_grad():
+                    lock = (model.gates.weight != 0).to(model.gates.weight.dtype)
+                handle = model.gates.weight.register_hook(lambda grad: grad * lock)
+            try:
+                optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
+                _, best_state = self._train_epochs(
+                    model, loader, optimizer, self.max_epochs, X_val_t, Y_val_t,
+                    stop_early=self.early_stopping and X_val_t is not None,
+                )
+                if best_state is not None:
+                    model.load_state_dict(best_state)
+            finally:
+                if lock is not None:
+                    handle.remove()
+                    with torch.no_grad():
+                        model.gates.weight.mul_(lock)
         else:
             model = self._new_module(self.depth, device)
             optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
@@ -291,9 +355,13 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             )
             if best_state is not None:
                 model.load_state_dict(best_state)
+        self.model_ = model
+        locked = self.init == "cart" and self.split_features == 1 and self.growth_ == "none"
+        if self.split_features is not None and self.split_features < self._n_inputs() and not locked:
+            SoftDecisionTree._restrict_split_features(self, loader, X_t, X_val_t, Y_val_t)  # type: ignore[arg-type]
+            model = self.model_
         self.n_iter_ = len(self.training_history_)
         self.tree_depth_ = model.depth
-        self.model_ = model
         # A float64 CPU copy for prediction, as the mixture of experts keeps:
         # in float32 the same row scored inside a different batch differs by
         # ~1e-7 from BLAS blocking, which target scaling amplifies past the
@@ -304,9 +372,40 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
         return self
 
     # ── training and growth ──
+    def _n_inputs(self) -> int:
+        """Width of the gates' input: the features plus one indicator per missing-value column."""
+        return int(self.n_features_in_ + len(getattr(self, "missing_columns_", ())))
+
+    def _cart_module(self, X_fit, Y_fit, w_fit, device) -> "_SoftTreeRegModule":
+        """A soft copy of a (pruned) DecisionTreeRegressor on the standardised targets."""
+        from sklearn.model_selection import KFold
+        from sklearn.tree import DecisionTreeRegressor
+
+        def make(alpha):
+            return DecisionTreeRegressor(max_depth=self.depth, ccp_alpha=alpha, random_state=self.random_state)
+
+        def neg_mse(m, X, Y, w):
+            p = m.predict(X).reshape(len(X), -1)
+            t = np.asarray(Y).reshape(len(X), -1)   # same shape, or (n,1)-(n,) broadcasts to (n,n)
+            return -float((((p - t) ** 2).mean(axis=1) * w).sum() / w.sum())
+
+        folds = None
+        if self.init_prune and len(X_fit) >= 30:
+            folds = list(KFold(3, shuffle=True, random_state=self.random_state or 0).split(X_fit))
+        Y = Y_fit[:, 0] if Y_fit.shape[1] == 1 else Y_fit
+        cart, self.init_ccp_alpha_ = _pruned_cart(make, X_fit, Y, w_fit, self.init_prune,
+                                                  self.random_state, neg_mse, folds)
+        spread = X_fit.std(axis=0)
+        spread = np.where(spread > 1e-12, spread, 1.0)
+        module = self._new_module(self.depth, "cpu")
+        t = cart.tree_
+        _copy_cart(t, module, spread, self.init_sharpness,
+                   lambda node: np.asarray(t.value[node], dtype=np.float64)[:, 0])
+        return module.to(device)
+
     def _new_module(self, depth: int, device) -> _SoftTreeRegModule:
         return _SoftTreeRegModule(
-            n_features=self.n_features_in_,
+            n_features=self._n_inputs(),
             n_classes=self.n_outputs_,
             depth=depth,
             penalty_coef=self.penalty_coef,
@@ -482,6 +581,7 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             y_mean=self.y_mean_,
             y_scale=self.y_scale_,
             single_output=self._single_output,
+            missing_columns=getattr(self, "missing_columns_", None),
         )
 
     def to_onnx(self, feature_names=None, opset: int = 17):
@@ -518,11 +618,12 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             is_split=m.is_split.detach().cpu().numpy(),
             log_beta=m.log_beta.detach().cpu().numpy(),
             single_output=self._single_output,
+            missing_columns=getattr(self, "missing_columns_", None),
         )
 
     def predict(self, X) -> np.ndarray:
         check_is_fitted(self)
-        X = check_predict_input(self, X)
+        X = augment(check_predict_input(self, X, allow_nan=True), getattr(self, "missing_columns_", None))
         with torch.no_grad():
             out = self.model_double_.predict_values(
                 torch.from_numpy(np.ascontiguousarray(X, dtype=np.float64))

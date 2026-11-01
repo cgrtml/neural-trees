@@ -243,10 +243,11 @@ class HardRegressionTree(HardDecisionTree):
     """
 
     def __init__(self, weights, biases, node_values, n_features_in, is_split=None, log_beta=None,
-                 single_output=True):
+                 single_output=True, missing_columns=None):
         super().__init__(
             weights, biases, np.asarray(node_values, dtype=np.float64), classes=[],
             n_features_in=n_features_in, is_split=is_split, log_beta=log_beta, rule="gate",
+            missing_columns=missing_columns,
         )
         self.node_values_ = self.node_distributions_
         self.n_outputs_ = self.node_values_.shape[1]
@@ -257,13 +258,13 @@ class HardRegressionTree(HardDecisionTree):
 
     def predict(self, X) -> np.ndarray:
         """Leaf value of the reached leaf, shape (n_samples,) or (n_samples, n_outputs)."""
-        X = check_array(X)
+        X = check_array(X, **allow_nan())
         if X.shape[1] != self.n_features_in_:
             raise ValueError(
                 f"X has {X.shape[1]} features, but HardRegressionTree is expecting "
                 f"{self.n_features_in_} features as input."
             )
-        out = self.node_values_[self._leaf_index(X)]
+        out = self.node_values_[self._leaf_index(augment(X, self.missing_columns_))]
         return out[:, 0] if self.single_output_ else out
 
     def score(self, X, y) -> float:

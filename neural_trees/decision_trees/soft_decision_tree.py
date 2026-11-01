@@ -385,28 +385,22 @@ class _SoftTreeModule(nn.Module):
         return total
 
 
-def _module_from_cart(t, depth, n_classes, columns, spread, sharpness, penalty_coef,
-                      learn_temperature):
+def _copy_cart(t, module, spread, sharpness, node_row):
     """
-    A `_SoftTreeModule` of `depth` that copies the sklearn tree structure `t`.
-
-    `columns[j]` is the class index (0..n_classes-1) of column j of the
-    tree's value array, so a tree that saw only some of the classes still
-    lands in the right outputs. See `SoftDecisionTree.from_hard_tree`.
+    Write the sklearn tree structure `t` into `module` in place: every split
+    ``x[f] <= thr`` becomes the gate ``sharpness * (x[f] - thr) / spread[f]``
+    (right when the feature is above the threshold, as in CART), every node
+    gets ``node_row(sklearn_node)`` as its row of `node_logits`, and nodes
+    CART did not split stay leaves. Shared by the classifier and regressor.
     """
-    module = _SoftTreeModule(n_features=len(spread), n_classes=n_classes, depth=depth,
-                             penalty_coef=penalty_coef, learn_temperature=learn_temperature)
     W = np.zeros((module.n_internal, len(spread)))
     B = np.zeros(module.n_internal)
-    logits = np.zeros((module.n_internal + module.n_leaves, n_classes))
+    rows = np.zeros(tuple(module.node_logits.shape))
     is_split = np.zeros(module.n_internal, dtype=bool)
     stack = [(0, 0)]                     # (sklearn node, breadth-first index here)
     while stack:
         node, here = stack.pop()
-        dist = np.zeros(n_classes)
-        dist[np.asarray(columns, dtype=int)] = np.asarray(t.value[node][0], dtype=np.float64)
-        dist = dist / dist.sum() if dist.sum() > 0 else np.full(n_classes, 1.0 / n_classes)
-        logits[here] = np.log(dist + 1e-3)
+        rows[here] = node_row(node)
         left, right = t.children_left[node], t.children_right[node]
         if left == -1 or here >= module.n_internal:
             continue
@@ -419,9 +413,59 @@ def _module_from_cart(t, depth, n_classes, columns, spread, sharpness, penalty_c
     with torch.no_grad():
         module.gates.weight.copy_(torch.as_tensor(W, dtype=torch.float32))
         module.gates.bias.copy_(torch.as_tensor(B, dtype=torch.float32))
-        module.node_logits.copy_(torch.as_tensor(logits, dtype=torch.float32))
+        module.node_logits.copy_(torch.as_tensor(rows, dtype=torch.float32))
         module.is_split.copy_(torch.as_tensor(is_split))
     return module
+
+
+def _module_from_cart(t, depth, n_classes, columns, spread, sharpness, penalty_coef,
+                      learn_temperature):
+    """
+    A `_SoftTreeModule` of `depth` that copies the sklearn classification tree `t`.
+
+    `columns[j]` is the class index (0..n_classes-1) of column j of the
+    tree's value array, so a tree that saw only some of the classes still
+    lands in the right outputs. See `SoftDecisionTree.from_hard_tree`.
+    """
+    module = _SoftTreeModule(n_features=len(spread), n_classes=n_classes, depth=depth,
+                             penalty_coef=penalty_coef, learn_temperature=learn_temperature)
+    cols = np.asarray(columns, dtype=int)
+
+    def node_row(node):
+        dist = np.zeros(n_classes)
+        dist[cols] = np.asarray(t.value[node][0], dtype=np.float64)
+        dist = dist / dist.sum() if dist.sum() > 0 else np.full(n_classes, 1.0 / n_classes)
+        return np.log(dist + 1e-3)
+
+    return _copy_cart(t, module, spread, sharpness, node_row)
+
+
+def _pruned_cart(make_tree, X, Y, w, prune, seed, score, folds):
+    """
+    `make_tree(alpha)` fitted on (X, Y, w), with the cost-complexity strength
+    chosen by cross-validation over `folds` when `prune` is true: up to 12
+    candidates along the pruning path, `score(model, X, Y, w)` higher is
+    better, ties go to the larger alpha (the smaller tree). Returns the tree
+    and the chosen alpha.
+    """
+    if not prune or folds is None:
+        return make_tree(0.0).fit(X, Y, sample_weight=w), 0.0
+    path = make_tree(0.0).cost_complexity_pruning_path(X, Y, sample_weight=w)
+    alphas = np.unique(path.ccp_alphas[:-1])  # the last one prunes to the root
+    if len(alphas) > 12:
+        alphas = np.unique(np.quantile(alphas, np.linspace(0, 1, 12)))
+    if len(alphas) <= 1:
+        return make_tree(0.0).fit(X, Y, sample_weight=w), 0.0
+    scores = []
+    for a in alphas:
+        total = 0.0
+        for tr, te in folds:
+            m = make_tree(a).fit(X[tr], Y[tr], sample_weight=w[tr])
+            total += score(m, X[te], Y[te], w[te])
+        scores.append(total)
+    top = max(scores)
+    best = float(max(a for a, sc in zip(alphas, scores) if sc >= top - 1e-9))
+    return make_tree(best).fit(X, Y, sample_weight=w), best
 
 
 class SoftDecisionTree(ClassifierMixin, BaseEstimator):
@@ -887,32 +931,21 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         from sklearn.model_selection import StratifiedKFold
         from sklearn.tree import DecisionTreeClassifier
 
-        def tree(alpha=0.0):
+        def make(alpha):
             return DecisionTreeClassifier(max_depth=self.depth, ccp_alpha=alpha,
                                           random_state=self.random_state)
 
-        if not self.init_prune or len(y_fit) < 30 or np.bincount(y_fit).min() < 3:
-            return tree().fit(X_fit, y_fit, sample_weight=w_fit)
-        path = tree().cost_complexity_pruning_path(X_fit, y_fit, sample_weight=w_fit)
-        alphas = np.unique(path.ccp_alphas[:-1])  # the last one prunes to the root
-        if len(alphas) > 12:
-            alphas = np.unique(np.quantile(alphas, np.linspace(0, 1, 12)))
-        if len(alphas) <= 1:
-            return tree().fit(X_fit, y_fit, sample_weight=w_fit)
-        folds = list(StratifiedKFold(3, shuffle=True, random_state=self.random_state or 0).split(X_fit, y_fit))
-        score = []
-        for a in alphas:
-            acc = 0.0
-            for tr, te in folds:
-                m = tree(a).fit(X_fit[tr], y_fit[tr], sample_weight=w_fit[tr])
-                hit = (m.predict(X_fit[te]) == y_fit[te]).astype(float)
-                acc += float((hit * w_fit[te]).sum() / w_fit[te].sum())
-            score.append(acc)
-        # the largest alpha among the best scores: the smallest tree that fits as well
-        top = max(score)
-        best = max(a for a, sc in zip(alphas, score) if sc >= top - 1e-9)
-        self.init_ccp_alpha_ = float(best)
-        return tree(best).fit(X_fit, y_fit, sample_weight=w_fit)
+        def accuracy(m, X, y, w):
+            return float(((m.predict(X) == y) * w).sum() / w.sum())
+
+        folds = None
+        if self.init_prune and len(y_fit) >= 30 and np.bincount(y_fit).min() >= 3:
+            folds = list(StratifiedKFold(3, shuffle=True, random_state=self.random_state or 0)
+                         .split(X_fit, y_fit))
+        cart, alpha = _pruned_cart(make, X_fit, y_fit, w_fit, self.init_prune, self.random_state,
+                                   accuracy, folds)
+        self.init_ccp_alpha_ = alpha
+        return cart
 
     def _restrict_split_features(self, loader, X_t, X_val_t, y_val_t) -> None:
         """
