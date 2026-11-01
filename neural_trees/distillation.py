@@ -268,6 +268,16 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
         self.synthetic = synthetic
         self.random_state = random_state
 
+    # NaN is accepted (the student handles it); scikit-learn >= 1.6 reads
+    # __sklearn_tags__, older versions _more_tags.
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.input_tags.allow_nan = True
+        return tags
+
+    def _more_tags(self):
+        return {"allow_nan": True}
+
     def fit(self, X, y, sample_weight=None, X_unlabeled=None) -> DistilledTree:
         """
         Fit the teacher on (X, y), then the student on the teacher's
@@ -281,6 +291,10 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
         and halved its mean gap to the XGBoost teacher (3.3 to 1.45
         points); on Higgs and jannis it reached the teacher. The teacher
         itself sees only (X, y).
+
+        Like `SoftDecisionTree`, this passes scikit-learn's estimator checks
+        except `check_sample_weight_equivalence_on_dense_data`, which no
+        stochastic mini-batch learner can satisfy.
         """
         from sklearn.base import clone
         from sklearn.ensemble import HistGradientBoostingClassifier

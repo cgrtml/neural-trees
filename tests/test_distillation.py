@@ -124,3 +124,12 @@ def test_synthetic_rows_reach_the_student_only():
     for bad in (-1, 1.5, True):
         with pytest.raises(ValueError, match="synthetic"):
             DistilledTree(synthetic=bad).fit(Xtr, ytr)
+
+
+def test_scikit_learn_estimator_checks():
+    from sklearn.utils.estimator_checks import check_estimator
+
+    est = DistilledTree(student=SoftDecisionTree(depth=2, max_epochs=5, random_state=0), synthetic=1,
+                        random_state=0)
+    failed = {r["check_name"] for r in check_estimator(est, on_fail=None) if r["status"] == "failed"}
+    assert failed <= {"check_sample_weight_equivalence_on_dense_data"}
