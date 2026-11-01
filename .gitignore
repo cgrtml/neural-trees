@@ -33,3 +33,4 @@ benchmarks/rakipler-hizli.json
 benchmarks/*.log
 .pt_tmp/
 lightning_logs/
+benchmarks/_distill_cache/
