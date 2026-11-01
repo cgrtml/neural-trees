@@ -34,3 +34,5 @@ benchmarks/*.log
 .pt_tmp/
 lightning_logs/
 benchmarks/_distill_cache/
+benchmarks/_gelistir_teacher/
+benchmarks/gelistir-sonuc.jsonl

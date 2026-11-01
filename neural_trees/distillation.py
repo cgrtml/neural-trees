@@ -22,9 +22,10 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
-from sklearn.utils.validation import check_array, check_is_fitted
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
-__all__ = ["Distilled", "distill", "fidelity"]
+__all__ = ["Distilled", "DistilledTree", "distill", "fidelity"]
 
 
 @dataclass
@@ -159,3 +160,114 @@ def distill(teacher, X, *, student=None, X_eval=None, threshold: float = 0.01,
         features_per_split=_features_per_split(student),
         evaluated_on=evaluated_on,
     )
+
+
+class DistilledTree(ClassifierMixin, BaseEstimator):
+    """
+    One soft tree trained on what a strong model learned: `fit` trains the
+    `teacher` on (X, y), then the `student` tree on the teacher's class
+    probabilities on the same rows (mixed with the true labels by `alpha`).
+    Prediction, `explain` and every export go through the single student
+    tree, so the deployed model is one readable tree; the teacher is kept
+    only to measure agreement.
+
+    Why: on large tables a single soft tree trained on the labels trails
+    gradient boosting, and the probabilities of a boosted model are a
+    better training signal than the labels. On 20 000-row training sets
+    (one split, depth 8 to 10, XGBoost teacher; benchmarks/gelistir.py) this
+    moved MiniBooNE from 0.914 to 0.926, jannis from 0.737 to 0.764 and
+    MagicTelescope (10 000 rows) from 0.833 to 0.848, against 0.939, 0.783
+    and 0.859 for the teacher; it did not help where the tree is short of
+    capacity (electricity). See the documentation for the full measurement.
+
+    Parameters
+    ----------
+    teacher : classifier with predict_proba, default=None
+        Cloned and fitted on (X, y). None uses scikit-learn's
+        `HistGradientBoostingClassifier()`; XGBoost or LightGBM work the same.
+    student : SoftDecisionTree, default=None
+        Cloned and fitted on the teacher's probabilities. None uses
+        ``SoftDecisionTree(depth=8, init="cart", learn_temperature=True,
+        max_epochs=60, batch_size=256)``.
+    alpha : float, default=0.0
+        Weight of the true labels against the teacher's probabilities in the
+        student's loss; 0 learns the teacher only.
+    threshold : float, default=0.01
+        A class enters a row's soft target only with at least this teacher
+        probability.
+
+    Attributes
+    ----------
+    teacher_, student_ : the fitted models
+    classes_, n_features_in_
+    """
+
+    def __init__(self, teacher=None, student=None, alpha: float = 0.0, threshold: float = 0.01):
+        self.teacher = teacher
+        self.student = student
+        self.alpha = alpha
+        self.threshold = threshold
+
+    def fit(self, X, y, sample_weight=None) -> DistilledTree:
+        from sklearn.base import clone
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        from sklearn.utils.multiclass import check_classification_targets
+
+        from neural_trees import SoftDecisionTree
+        from neural_trees._missing import allow_nan
+
+        if not 0.0 <= self.alpha <= 1.0:
+            raise ValueError(f"alpha must be in [0, 1], got {self.alpha!r}")
+        if not 0.0 <= self.threshold < 1.0:
+            raise ValueError(f"threshold must be in [0, 1), got {self.threshold!r}")
+        X, y = check_X_y(X, y, **allow_nan())
+        check_classification_targets(y)
+        teacher = clone(self.teacher) if self.teacher is not None else HistGradientBoostingClassifier()
+        student = clone(self.student) if self.student is not None else SoftDecisionTree(
+            depth=8, init="cart", learn_temperature=True, max_epochs=60, batch_size=256)
+        if sample_weight is None:
+            teacher.fit(X, y)
+            w = np.ones(len(y))
+        else:
+            teacher.fit(X, y, sample_weight=sample_weight)
+            w = np.asarray(sample_weight, dtype=np.float64)
+        classes = np.asarray(teacher.classes_)
+        P = np.asarray(teacher.predict_proba(X), dtype=np.float64)
+        rows, cols = np.nonzero(P >= max(self.threshold, 1e-12))
+        Xs, ys, ws = [X[rows]], [classes[cols]], [(1.0 - self.alpha) * P[rows, cols] * w[rows]]
+        if self.alpha > 0:
+            Xs.append(X)
+            ys.append(y)
+            ws.append(self.alpha * w)
+        student.fit(np.vstack(Xs), np.concatenate(ys), sample_weight=np.concatenate(ws))
+        self.teacher_, self.student_ = teacher, student
+        self.classes_ = student.classes_
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def predict_proba(self, X):
+        check_is_fitted(self)
+        return self.student_.predict_proba(X)
+
+    def predict(self, X):
+        check_is_fitted(self)
+        return self.student_.predict(X)
+
+    def fidelity(self, X) -> float:
+        """Share of rows of `X` where the student predicts the teacher's class."""
+        check_is_fitted(self)
+        return fidelity(self.teacher_, self.student_, X)
+
+    def explain(self, X, **kwargs):
+        """The student tree's explanation; see `SoftDecisionTree.explain`."""
+        check_is_fitted(self)
+        return self.student_.explain(X, **kwargs)
+
+    def to_numpy(self, **kwargs):
+        return self.student_.to_numpy(**kwargs)
+
+    def to_hard_tree(self, **kwargs):
+        return self.student_.to_hard_tree(**kwargs)
+
+    def to_onnx(self, **kwargs):
+        return self.student_.to_onnx(**kwargs)

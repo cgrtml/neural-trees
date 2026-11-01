@@ -46,3 +46,40 @@ def test_rejects_unfitted_teacher_and_bad_threshold():
     teacher = RandomForestClassifier(10, random_state=0).fit(Xtr, ytr)
     with pytest.raises(ValueError, match="threshold"):
         distill(teacher, Xtr, threshold=1.0)
+
+
+# ── DistilledTree ───────────────────────────────────────────────────────────
+from neural_trees import DistilledTree  # noqa: E402
+
+
+def test_distilled_tree_trains_teacher_then_one_tree():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
+    Xtr, Xte, ytr, yte = _data()
+    m = DistilledTree(student=SoftDecisionTree(depth=3, max_epochs=40, random_state=0)).fit(Xtr, ytr)
+    assert isinstance(m.teacher_, HistGradientBoostingClassifier)
+    assert isinstance(m.student_, SoftDecisionTree)
+    assert (m.predict(Xte) == yte).mean() > 0.85
+    assert m.predict_proba(Xte).shape == (len(Xte), 3)
+    assert 0.8 < m.fidelity(Xte) <= 1.0
+    assert m.to_numpy().predict(Xte).shape == (len(Xte),)
+    assert m.explain(Xte[:1])[0].predicted_class in set(ytr)
+
+
+def test_alpha_mixes_true_labels_and_validation():
+    Xtr, _, ytr, _ = _data(load_iris)
+    teacher = RandomForestClassifier(30, random_state=0)
+    m = DistilledTree(teacher=teacher, student=SoftDecisionTree(depth=2, max_epochs=10, random_state=0),
+                      alpha=0.5).fit(Xtr, ytr)
+    assert m.teacher_ is not teacher                    # cloned, the argument stays unfitted
+    with pytest.raises(ValueError, match="alpha"):
+        DistilledTree(alpha=1.5).fit(Xtr, ytr)
+
+
+def test_distilled_tree_accepts_missing_values():
+    Xtr, Xte, ytr, _ = _data()
+    Xtr = Xtr.copy()
+    Xtr[::5, 2] = np.nan
+    m = DistilledTree(student=SoftDecisionTree(depth=3, max_epochs=20, random_state=0)).fit(Xtr, ytr)
+    assert list(m.student_.missing_columns_) == [2]
+    assert m.predict(Xte).shape == (len(Xte),)
