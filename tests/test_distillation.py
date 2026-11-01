@@ -126,10 +126,38 @@ def test_synthetic_rows_reach_the_student_only():
             DistilledTree(synthetic=bad).fit(Xtr, ytr)
 
 
-def test_scikit_learn_estimator_checks():
+@pytest.mark.parametrize("kind", ["tree", "forest"])
+def test_scikit_learn_estimator_checks(kind):
     from sklearn.utils.estimator_checks import check_estimator
 
-    est = DistilledTree(student=SoftDecisionTree(depth=2, max_epochs=5, random_state=0), synthetic=1,
-                        random_state=0)
+    from neural_trees import DistilledForest
+    student = SoftDecisionTree(depth=2, max_epochs=5, random_state=0)
+    est = (DistilledTree(student=student, synthetic=1, random_state=0) if kind == "tree"
+           else DistilledForest(student=student, n_trees=2, synthetic=1, random_state=0))
     failed = {r["check_name"] for r in check_estimator(est, on_fail=None) if r["status"] == "failed"}
     assert failed <= {"check_sample_weight_equivalence_on_dense_data"}
+
+
+def test_distilled_forest_fits_a_group_and_predicts_with_it():
+    from neural_trees import DistilledForest
+    Xtr, Xte, ytr, yte = _data()
+    m = DistilledForest(student=SoftDecisionTree(depth=3, max_epochs=10, random_state=0), n_trees=3,
+                        synthetic=1, random_state=0).fit(Xtr, ytr)
+    assert len(m.estimators_) == 3
+    P = m.predict_proba(Xte)
+    assert P.shape == (len(Xte), len(m.classes_)) and np.allclose(P.sum(axis=1), 1)
+    # the group's prediction is the argmax of the summed log probabilities of its trees
+    L = sum(np.log(t.predict_proba(Xte)) for t in m.estimators_)
+    assert (m.predict(Xte) == m.classes_[L.argmax(axis=1)]).all()
+    # the same through the torch-free exports
+    Ln = sum(t.predict_log_proba(Xte) for t in m.to_numpy())
+    assert (m.classes_[Ln.argmax(axis=1)] == m.predict(Xte)).mean() > 0.99
+    assert 0.0 <= m.fidelity(Xte) <= 1.0
+    # bootstrap samples and seeds differ, so the trees do
+    W = [t.model_.gates.weight.detach().numpy() for t in m.estimators_]
+    assert not np.allclose(W[0], W[1])
+    for bad in (0, -1, 2.0, True):
+        with pytest.raises(ValueError, match="n_trees"):
+            DistilledForest(n_trees=bad).fit(Xtr, ytr)
+    with pytest.raises(NotImplementedError):
+        m.explain(Xte)

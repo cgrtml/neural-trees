@@ -45,6 +45,7 @@ Distillation
    :template: autosummary/class.rst
 
    neural_trees.DistilledTree
+   neural_trees.DistilledForest
 
 .. autosummary::
    :toctree: generated

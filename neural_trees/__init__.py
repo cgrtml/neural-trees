@@ -33,6 +33,7 @@ __author__ = "Cagri Temel"
 # name -> module that defines it, for the estimators that need torch
 from neural_trees.distillation import (  # noqa: E402
     Distilled,
+    DistilledForest,
     DistilledTree,
     distill,
     fidelity,
@@ -76,6 +77,7 @@ def __dir__():
 __all__ = [
     "Counterfactual",
     "Distilled",
+    "DistilledForest",
     "DistilledTree",
     "Explanation",
     "GALNetwork",

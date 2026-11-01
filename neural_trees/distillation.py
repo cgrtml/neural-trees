@@ -26,7 +26,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
-__all__ = ["Distilled", "DistilledTree", "distill", "fidelity", "munge"]
+__all__ = ["Distilled", "DistilledForest", "DistilledTree", "distill", "fidelity", "munge"]
 
 
 @dataclass
@@ -298,11 +298,29 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
         except `check_sample_weight_equivalence_on_dense_data`, which no
         stochastic mini-batch learner can satisfy.
         """
+        teacher, Xt, P, wt, X, y, w = self._teacher_rows(X, y, sample_weight, X_unlabeled)
+        student = self._new_student(self.random_state)
+        student.fit(*self._student_rows(teacher, Xt, P, wt, X, y, w))
+        self.teacher_, self.student_ = teacher, student
+        self.classes_ = student.classes_
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def _new_student(self, random_state):
+        from sklearn.base import clone
+
+        from neural_trees import SoftDecisionTree
+        if self.student is not None:
+            return clone(self.student)
+        return SoftDecisionTree(depth=8, init="cart", learn_temperature=True, max_epochs=60, batch_size=256,
+                                random_state=random_state)
+
+    def _teacher_rows(self, X, y, sample_weight, X_unlabeled):
+        """Fit the teacher; return it with the transfer rows, their probabilities and weights."""
         from sklearn.base import clone
         from sklearn.ensemble import HistGradientBoostingClassifier
         from sklearn.utils.multiclass import check_classification_targets
 
-        from neural_trees import SoftDecisionTree
         from neural_trees._missing import allow_nan
 
         if not 0.0 <= self.alpha <= 1.0:
@@ -315,16 +333,12 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
         X, y = check_X_y(X, y, **allow_nan())
         check_classification_targets(y)
         teacher = clone(self.teacher) if self.teacher is not None else HistGradientBoostingClassifier()
-        student = clone(self.student) if self.student is not None else SoftDecisionTree(
-            depth=8, init="cart", learn_temperature=True, max_epochs=60, batch_size=256,
-            random_state=self.random_state)
         if sample_weight is None:
             teacher.fit(X, y)
             w = np.ones(len(y))
         else:
             teacher.fit(X, y, sample_weight=sample_weight)
             w = np.asarray(sample_weight, dtype=np.float64)
-        classes = np.asarray(teacher.classes_)
         P = np.asarray(teacher.predict_proba(X), dtype=np.float64)
         extra = [munge(X, passes=int(self.synthetic), random_state=self.random_state)]
         if X_unlabeled is not None:
@@ -338,17 +352,18 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
             Xt = np.vstack([X, Xe])
             P = np.vstack([P, np.asarray(teacher.predict_proba(Xe), dtype=np.float64)])
             wt = np.concatenate([w, np.full(len(Xe), float(np.mean(w)))])
+        return teacher, Xt, P, wt, X, y, w
+
+    def _student_rows(self, teacher, Xt, P, wt, X, y, w):
+        """(X, y, sample_weight) for the student: one row per class above `threshold`, plus labels by `alpha`."""
+        classes = np.asarray(teacher.classes_)
         rows, cols = np.nonzero(P >= max(self.threshold, 1e-12))
         Xs, ys, ws = [Xt[rows]], [classes[cols]], [(1.0 - self.alpha) * P[rows, cols] * wt[rows]]
         if self.alpha > 0:
             Xs.append(X)
             ys.append(y)
             ws.append(self.alpha * w)
-        student.fit(np.vstack(Xs), np.concatenate(ys), sample_weight=np.concatenate(ws))
-        self.teacher_, self.student_ = teacher, student
-        self.classes_ = student.classes_
-        self.n_features_in_ = X.shape[1]
-        return self
+        return np.vstack(Xs), np.concatenate(ys), np.concatenate(ws)
 
     def predict_proba(self, X):
         check_is_fitted(self)
@@ -376,3 +391,85 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
 
     def to_onnx(self, **kwargs):
         return self.student_.to_onnx(**kwargs)
+
+
+class DistilledForest(DistilledTree):
+    """
+    A few soft trees trained on what a strong model learned: the same
+    teacher and transfer rows as `DistilledTree`, then `n_trees` students,
+    each on its own bootstrap sample of those rows. The group predicts with
+    the sum of the trees' log probabilities.
+
+    Use it when accuracy matters more than having one tree to read. Each
+    tree is still a `SoftDecisionTree` and can be explained and exported on
+    its own (`estimators_`), but the prediction is the group's.
+
+    Parameters are those of `DistilledTree`, plus
+
+    n_trees : int, default=3
+        Number of student trees.
+
+    Attributes
+    ----------
+    teacher_ : the fitted teacher
+    estimators_ : list of the fitted student trees
+    classes_, n_features_in_
+    """
+
+    def __init__(self, teacher=None, student=None, n_trees: int = 3, alpha: float = 0.0,
+                 threshold: float = 0.01, synthetic: int = 2, random_state: Optional[int] = None):
+        super().__init__(teacher=teacher, student=student, alpha=alpha, threshold=threshold,
+                         synthetic=synthetic, random_state=random_state)
+        self.n_trees = n_trees
+
+    def fit(self, X, y, sample_weight=None, X_unlabeled=None) -> DistilledForest:
+        """Fit the teacher, then `n_trees` students on bootstrap samples of the transfer rows."""
+        if not isinstance(self.n_trees, (int, np.integer)) or isinstance(self.n_trees, bool) \
+                or self.n_trees < 1:
+            raise ValueError(f"n_trees must be a positive int, got {self.n_trees!r}")
+        teacher, Xt, P, wt, X, y, w = self._teacher_rows(X, y, sample_weight, X_unlabeled)
+        rng = np.random.default_rng(self.random_state)
+        estimators = []
+        for k in range(int(self.n_trees)):
+            b = rng.integers(0, len(Xt), len(Xt))
+            seed = None if self.random_state is None else int(self.random_state) + k
+            student = self._new_student(seed)
+            if self.student is not None and seed is not None and "random_state" in student.get_params():
+                student.set_params(random_state=seed)
+            Xs, ys, ws = self._student_rows(teacher, Xt[b], P[b], wt[b], X, y, w)
+            estimators.append(student.fit(Xs, ys, sample_weight=ws))
+        self.teacher_, self.estimators_ = teacher, estimators
+        self.classes_ = estimators[0].classes_
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def predict_proba(self, X):
+        check_is_fitted(self)
+        with np.errstate(divide="ignore"):
+            L = sum(np.log(t.predict_proba(X)) for t in self.estimators_)
+        L = L - L.max(axis=1, keepdims=True)
+        P = np.exp(L)
+        return P / P.sum(axis=1, keepdims=True)
+
+    def predict(self, X):
+        check_is_fitted(self)
+        return self.classes_[np.argmax(self.predict_proba(X), axis=1)]
+
+    def fidelity(self, X) -> float:
+        """Share of rows of `X` where the group predicts the teacher's class."""
+        check_is_fitted(self)
+        return float(np.mean(self.predict(X) == self.teacher_.predict(X)))
+
+    def explain(self, X, **kwargs):
+        raise NotImplementedError("a group has no single explanation; explain each tree in estimators_")
+
+    def to_numpy(self, **kwargs):
+        """One `NumpySoftTree` per tree; sum their `predict_log_proba` to predict like the group."""
+        check_is_fitted(self)
+        return [t.to_numpy(**kwargs) for t in self.estimators_]
+
+    def to_hard_tree(self, **kwargs):
+        raise NotImplementedError("export each tree in estimators_")
+
+    def to_onnx(self, **kwargs):
+        raise NotImplementedError("export each tree in estimators_")
