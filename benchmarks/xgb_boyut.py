@@ -65,12 +65,13 @@ def ozet(out):
         hucre = {}
         for k in out:
             ad, n, s, t = k.split("__")
+            t = int(t)
             yol = KOK / klasor / f"{ad}__{n}__{s}{ek}"
             if not yol.exists():
                 continue
             r = json.loads(yol.read_text())
             r = r[anahtar] if anahtar else r
-            h = hucre.setdefault(f"{ad}__{n}", {"acc": {}, "splits": {}, t: [], f"s{t}": []})
+            h = hucre.setdefault(f"{ad}__{n}", {"acc": {}, "splits": {}})
             h.setdefault(t, []).append(out[k]["acc"])
             h.setdefault(f"s{t}", []).append(out[k]["splits"])
             h["acc"][s], h["splits"][s] = r["acc"], r["splits"]
