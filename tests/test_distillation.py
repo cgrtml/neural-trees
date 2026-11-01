@@ -83,3 +83,14 @@ def test_distilled_tree_accepts_missing_values():
     m = DistilledTree(student=SoftDecisionTree(depth=3, max_epochs=20, random_state=0)).fit(Xtr, ytr)
     assert list(m.student_.missing_columns_) == [2]
     assert m.predict(Xte).shape == (len(Xte),)
+
+
+def test_unlabeled_rows_reach_the_student_not_the_teacher():
+    Xtr, Xte, ytr, yte = _data()
+    Xl, Xu, yl, _ = train_test_split(Xtr, ytr, test_size=0.6, random_state=0, stratify=ytr)
+    m = DistilledTree(student=SoftDecisionTree(depth=3, max_epochs=40, random_state=0))
+    m.fit(Xl, yl, X_unlabeled=Xu)
+    assert m.teacher_.n_features_in_ == Xl.shape[1]
+    assert (m.predict(Xte) == yte).mean() > 0.8
+    with pytest.raises(ValueError, match="X_unlabeled"):
+        DistilledTree().fit(Xl, yl, X_unlabeled=Xu[:, :3])

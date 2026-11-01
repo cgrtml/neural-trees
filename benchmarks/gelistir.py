@@ -42,6 +42,18 @@ def veri(ad, n):
     return sc.transform(Xp[idx]), yp[idx], sc.transform(Xte), yte
 
 
+def veri_ek(ad, n, k):
+    """Up to k further training-pool rows (not test rows), scaled like the training set, labels dropped."""
+    import olcek
+    X, y = olcek.yukle(ad)
+    n_te = min(20_000, len(y) // 5)
+    Xp, _, yp, _ = train_test_split(X, y, test_size=n_te, random_state=0, stratify=y)
+    perm = np.random.default_rng(0).permutation(len(yp))
+    idx, rest = perm[:n], perm[n:n + k]
+    sc = StandardScaler().fit(Xp[idx])
+    return sc.transform(Xp[rest])
+
+
 def _sharpen(m, Xv, yv):
     """Scale every gate's logit by the factor in GRID that is best on (Xv, yv)."""
     import torch
@@ -95,6 +107,24 @@ def calistir(config, Xtr, ytr, Xte, yte, seed=0):
         ym = np.concatenate([classes[yi], classes[c]])
         wm = np.concatenate([np.full(len(yi), 0.5), 0.5 * P[i, c]])
         return SoftDecisionTree(**base).fit(Xm, ym, sample_weight=wm), {}
+    if config.startswith(("tdistil", "adistil", "udistil")):
+        P = np.load(os.environ["GELISTIR_TEACHER"])
+        classes = np.unique(ytr)
+        Xs = Xtr
+        if config.startswith("tdistil"):                # soften the teacher: p^(1/T), T = 2
+            P = P ** 0.5
+            P = P / P.sum(axis=1, keepdims=True)
+        if config.startswith(("adistil", "udistil")):
+            Pextra = np.load(os.environ["GELISTIR_TEACHER"].replace(".npy", "_extra.npy"))
+            Xextra = np.load(os.environ["GELISTIR_TEACHER"].replace(".npy", "_extraX.npy")) \
+                if config.startswith("udistil") else None
+            if config.startswith("adistil"):            # two jittered copies, teacher-labelled
+                Xextra = np.load(os.environ["GELISTIR_TEACHER"].replace(".npy", "_augX.npy"))
+                Pextra = np.load(os.environ["GELISTIR_TEACHER"].replace(".npy", "_aug.npy"))
+            Xs = np.vstack([Xtr, Xextra])
+            P = np.vstack([P, Pextra])
+        i, c = np.nonzero(P >= 0.01)
+        return SoftDecisionTree(**base).fit(Xs[i], classes[c], sample_weight=P[i, c]), {}
     if config.startswith("pdistil"):                     # per-leaf growth on the teacher's probabilities
         P = np.load(os.environ["GELISTIR_TEACHER"])
         i, c = np.nonzero(P >= 0.01)
@@ -202,6 +232,13 @@ def main():
             Xtr, ytr, Xte, yte = veri(ad, a.n)
             m, _ = calistir("xgb", Xtr, ytr, Xte, yte)
             np.save(ogr / f"{ad}_{a.n}.npy", m.predict_proba(Xtr))
+            rng = np.random.default_rng(1)
+            aug = np.vstack([Xtr + rng.normal(0, 0.15, Xtr.shape) for _ in range(2)])
+            np.save(ogr / f"{ad}_{a.n}_augX.npy", aug)
+            np.save(ogr / f"{ad}_{a.n}_aug.npy", m.predict_proba(aug))
+            extra = veri_ek(ad, a.n, 2 * a.n)
+            np.save(ogr / f"{ad}_{a.n}_extraX.npy", extra)
+            np.save(ogr / f"{ad}_{a.n}_extra.npy", m.predict_proba(extra))
             print(ad, "teacher test", round(float((m.predict(Xte) == yte).mean()), 4), flush=True)
         return
     isler = []

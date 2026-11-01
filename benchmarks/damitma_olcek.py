@@ -12,6 +12,10 @@ Models, all on the same training rows:
     soft d8      SoftDecisionTree(depth=8, init="cart", learn_temperature=True,
                  max_epochs=60, batch_size=256) on the labels
     distilled d8 the same tree on XGBoost's probabilities (DistilledTree, alpha=0)
+    + unlabeled  the same, plus up to 2n further pool rows whose labels are
+                 dropped and which XGBoost labels (DistilledTree X_unlabeled);
+                 XGBoost cannot use these rows, so this column answers a
+                 different question and is reported apart
 
 Phase 1 fits the teachers (xgboost only), phase 2 the trees (torch only):
 the two libraries can deadlock on libomp in one process.
@@ -41,7 +45,7 @@ KUMELER = ("electricity", "MagicTelescope", "jannis", "MiniBooNE", "covertype", 
 BOYUTLAR = (5_000, 20_000, 100_000)
 
 
-def bolum(ad, n, seed):
+def bolum(ad, n, seed, ek=False):
     import olcek
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
@@ -50,8 +54,11 @@ def bolum(ad, n, seed):
     Xp, Xte, yp, yte = train_test_split(X, y, test_size=n_te, random_state=0, stratify=y)
     if n > len(yp):
         return None
-    idx = np.random.default_rng(seed).permutation(len(yp))[:n]
+    perm = np.random.default_rng(seed).permutation(len(yp))
+    idx = perm[:n]
     sc = StandardScaler().fit(Xp[idx])
+    if ek:                                        # unlabeled pool rows for the student
+        return sc.transform(Xp[perm[n:3 * n]]).astype(np.float32)
     return sc.transform(Xp[idx]).astype(np.float32), yp[idx], sc.transform(Xte).astype(np.float32), yte
 
 
@@ -79,8 +86,9 @@ def ogretmen():
                 t0 = time.time()
                 m = xgb.XGBClassifier(n_estimators=300, max_depth=6, learning_rate=0.1, random_state=s,
                                       n_jobs=4, verbosity=0).fit(Xtr, ytr)
-                np.savez_compressed(yol, Ptr=m.predict_proba(Xtr), acc=float((m.predict(Xte) == yte).mean()),
-                                    sn=time.time() - t0)
+                Xek = bolum(ad, n, s, ek=True)
+                np.savez_compressed(yol, Ptr=m.predict_proba(Xtr), Pek=m.predict_proba(Xek),
+                                    acc=float((m.predict(Xte) == yte).mean()), sn=time.time() - t0)
                 print(f"{ad:14s} n={n:6d} seed {s}  XGB {float((m.predict(Xte) == yte).mean()):.4f}", flush=True)
 
 
@@ -99,10 +107,14 @@ def _ogrenci(yol, isim):
     if isim == "soft d8":
         m.fit(Xtr, ytr)
     else:
-        P = np.load(yol)["Ptr"]
+        d = np.load(yol)
+        P, Xs = d["Ptr"], Xtr
+        if isim == "unlabeled d8":
+            Xs = np.vstack([Xtr, bolum(ad, int(n), int(s), ek=True)])
+            P = np.vstack([P, d["Pek"]])
         classes = np.unique(ytr)
         i, c = np.nonzero(P >= 0.01)
-        m.fit(Xtr[i], classes[c], sample_weight=P[i, c])
+        m.fit(Xs[i], classes[c], sample_weight=P[i, c])
     out.write_text(json.dumps({"acc": float((m.predict(Xte) == yte).mean()), "sn": time.time() - t0,
                                "splits": int(m.model_.is_split.sum())}))
     print(f"{yol.stem:32s} {isim:12s} {float((m.predict(Xte) == yte).mean()):.4f}  {time.time()-t0:.0f} s",
@@ -112,7 +124,8 @@ def _ogrenci(yol, isim):
 def ogrenci(n_jobs):
     from joblib import Parallel, delayed
     yollar = sorted(ARA.glob("*.npz"), key=lambda p: -int(p.stem.split("__")[1]))
-    Parallel(n_jobs=n_jobs)(delayed(_ogrenci)(p, isim) for p in yollar for isim in ("soft d8", "distilled d8"))
+    Parallel(n_jobs=n_jobs)(delayed(_ogrenci)(p, isim) for p in yollar
+                            for isim in ("soft d8", "distilled d8", "unlabeled d8"))
 
 
 def ozet():
@@ -127,20 +140,25 @@ def ozet():
         b = p.with_name(f"{p.stem}__distilled_d8.json")
         if not (a.exists() and b.exists()):
             continue
-        r = S.setdefault(ad, {}).setdefault(n, {"XGBoost": [], "soft d8": [], "distilled d8": []})
+        u = p.with_name(f"{p.stem}__unlabeled_d8.json")
+        r = S.setdefault(ad, {}).setdefault(n, {"XGBoost": [], "soft d8": [], "distilled d8": [],
+                                                "unlabeled d8": []})
         r["XGBoost"].append(float(np.load(p)["acc"]))
         r["soft d8"].append(json.loads(a.read_text())["acc"])
         r["distilled d8"].append(json.loads(b.read_text())["acc"])
+        if u.exists():
+            r["unlabeled d8"].append(json.loads(u.read_text())["acc"])
     print(f"{'dataset':14s} {'n':>6s}  {'XGBoost':>8s} {'soft d8':>8s} {'distilled':>9s}  gap soft -> distilled")
     for ad in KUMELER:
         for n, r in sorted(S.get(ad, {}).items(), key=lambda kv: int(kv[0])):
-            m = {k: float(np.mean(v)) for k, v in r.items()}
+            m = {k: float(np.mean(v)) for k, v in r.items() if v}
+            m.setdefault("unlabeled d8", float("nan"))
             r.update({f"{k} mean": round(v, 4) for k, v in m.items()})
             farklar["soft"].append(m["soft d8"] - m["XGBoost"])
             farklar["distilled"].append(m["distilled d8"] - m["XGBoost"])
             print(f"{ad:14s} {n:>6s}  {m['XGBoost']:8.4f} {m['soft d8']:8.4f} {m['distilled d8']:9.4f}  "
-                  f"{(m['soft d8']-m['XGBoost'])*100:+.2f} -> {(m['distilled d8']-m['XGBoost'])*100:+.2f} "
-                  f"({len(r['XGBoost'])} seeds)")
+                  f"{(m['soft d8']-m['XGBoost'])*100:+.2f} -> {(m['distilled d8']-m['XGBoost'])*100:+.2f}  "
+                  f"+unlabeled {m['unlabeled d8']:.4f} ({len(r['XGBoost'])} seeds)")
     d = np.array(farklar["distilled"]) - np.array(farklar["soft"])
     if len(d) > 1:
         print(f"distilled - soft over {len(d)} dataset x size cells: mean {d.mean()*100:+.2f} pt, "

@@ -1,0 +1,218 @@
+{
+ "texture": {
+  "cart6": 0.736,
+  "cart-k1": 0.8288,
+  "cart-k1_hard": 0.7938,
+  "cart-k2": 0.9076,
+  "cart-k2_hard": 0.8856,
+  "cart-k3": 0.9492,
+  "cart-k3_hard": 0.942
+ },
+ "optdigits": {
+  "cart6": 0.8296,
+  "cart-k1": 0.8632,
+  "cart-k1_hard": 0.8446,
+  "cart-k2": 0.9028,
+  "cart-k2_hard": 0.8862,
+  "cart-k3": 0.9158,
+  "cart-k3_hard": 0.905
+ },
+ "spambase": {
+  "cart6": 0.9205,
+  "cart-k1": 0.9289,
+  "cart-k1_hard": 0.9102,
+  "cart-k2": 0.9452,
+  "cart-k2_hard": 0.9259,
+  "cart-k3": 0.9485,
+  "cart-k3_hard": 0.9298
+ },
+ "ozone-level-8hr": {
+  "cart6": 0.9617,
+  "cart-k1": 0.972,
+  "cart-k1_hard": 0.9672,
+  "cart-k2": 0.97,
+  "cart-k2_hard": 0.9637,
+  "cart-k3": 0.9688,
+  "cart-k3_hard": 0.9621
+ },
+ "satimage": {
+  "cart6": 0.8692,
+  "cart-k1": 0.898,
+  "cart-k1_hard": 0.8884,
+  "cart-k2": 0.9108,
+  "cart-k2_hard": 0.8966,
+  "cart-k3": 0.9138,
+  "cart-k3_hard": 0.8998
+ },
+ "wall-robot-navigation": {
+  "cart6": 0.94,
+  "cart-k1": 0.9684,
+  "cart-k1_hard": 0.9662,
+  "cart-k2": 0.9696,
+  "cart-k2_hard": 0.9692,
+  "cart-k3": 0.972,
+  "cart-k3_hard": 0.9692
+ },
+ "pendigits": {
+  "cart6": 0.8666,
+  "cart-k1": 0.8894,
+  "cart-k1_hard": 0.8792,
+  "cart-k2": 0.919,
+  "cart-k2_hard": 0.9126,
+  "cart-k3": 0.9476,
+  "cart-k3_hard": 0.9402
+ },
+ "Digits": {
+  "cart6": 0.7824,
+  "cart-k1": 0.8169,
+  "cart-k1_hard": 0.7941,
+  "cart-k2": 0.8659,
+  "cart-k2_hard": 0.8403,
+  "cart-k3": 0.8959,
+  "cart-k3_hard": 0.8753
+ },
+ "pc3": {
+  "cart6": 0.9392,
+  "cart-k1": 0.9443,
+  "cart-k1_hard": 0.9443,
+  "cart-k2": 0.9443,
+  "cart-k2_hard": 0.9443,
+  "cart-k3": 0.9443,
+  "cart-k3_hard": 0.9443
+ },
+ "steel-plates-fault": {
+  "cart6": 1.0,
+  "cart-k1": 1.0,
+  "cart-k1_hard": 1.0,
+  "cart-k2": 1.0,
+  "cart-k2_hard": 1.0,
+  "cart-k3": 1.0,
+  "cart-k3_hard": 1.0
+ },
+ "segment": {
+  "cart6": 0.9165,
+  "cart-k1": 0.9273,
+  "cart-k1_hard": 0.9212,
+  "cart-k2": 0.9515,
+  "cart-k2_hard": 0.9411,
+  "cart-k3": 0.9506,
+  "cart-k3_hard": 0.942
+ },
+ "kc1": {
+  "cart6": 0.9294,
+  "cart-k1": 0.9246,
+  "cart-k1_hard": 0.9227,
+  "cart-k2": 0.9237,
+  "cart-k2_hard": 0.9161,
+  "cart-k3": 0.9246,
+  "cart-k3_hard": 0.9213
+ },
+ "phoneme": {
+  "cart6": 0.886,
+  "cart-k1": 0.8936,
+  "cart-k1_hard": 0.8788,
+  "cart-k2": 0.909,
+  "cart-k2_hard": 0.895,
+  "cart-k3": 0.9098,
+  "cart-k3_hard": 0.8976
+ },
+ "qsar-biodeg": {
+  "cart6": 0.8967,
+  "cart-k1": 0.91,
+  "cart-k1_hard": 0.9014,
+  "cart-k2": 0.91,
+  "cart-k2_hard": 0.8853,
+  "cart-k3": 0.9118,
+  "cart-k3_hard": 0.8967
+ },
+ "pc1": {
+  "cart6": 0.9666,
+  "cart-k1": 0.9639,
+  "cart-k1_hard": 0.9612,
+  "cart-k2": 0.9621,
+  "cart-k2_hard": 0.9612,
+  "cart-k3": 0.9657,
+  "cart-k3_hard": 0.9594
+ },
+ "Cancer": {
+  "cart6": 0.9543,
+  "cart-k1": 0.9736,
+  "cart-k1_hard": 0.9701,
+  "cart-k2": 0.9683,
+  "cart-k2_hard": 0.9666,
+  "cart-k3": 0.9737,
+  "cart-k3_hard": 0.9736
+ },
+ "vehicle": {
+  "cart6": 0.7625,
+  "cart-k1": 0.8074,
+  "cart-k1_hard": 0.766,
+  "cart-k2": 0.8109,
+  "cart-k2_hard": 0.7979,
+  "cart-k3": 0.8179,
+  "cart-k3_hard": 0.8097
+ },
+ "climate-model-simulation-crashes": {
+  "cart6": 0.9574,
+  "cart-k1": 0.9722,
+  "cart-k1_hard": 0.963,
+  "cart-k2": 0.9611,
+  "cart-k2_hard": 0.9574,
+  "cart-k3": 0.963,
+  "cart-k3_hard": 0.9611
+ },
+ "banknote-authentication": {
+  "cart6": 0.9869,
+  "cart-k1": 0.9949,
+  "cart-k1_hard": 0.9956,
+  "cart-k2": 0.9978,
+  "cart-k2_hard": 0.9964,
+  "cart-k3": 0.9993,
+  "cart-k3_hard": 0.9993
+ },
+ "diabetes": {
+  "cart6": 0.8411,
+  "cart-k1": 0.8619,
+  "cart-k1_hard": 0.8437,
+  "cart-k2": 0.8606,
+  "cart-k2_hard": 0.8333,
+  "cart-k3": 0.8671,
+  "cart-k3_hard": 0.8515
+ },
+ "ilpd": {
+  "cart6": 0.8063,
+  "cart-k1": 0.8011,
+  "cart-k1_hard": 0.7685,
+  "cart-k2": 0.7943,
+  "cart-k2_hard": 0.7719,
+  "cart-k3": 0.8028,
+  "cart-k3_hard": 0.7856
+ },
+ "blood-transfusion-service-center": {
+  "cart6": 0.8957,
+  "cart-k1": 0.8837,
+  "cart-k1_hard": 0.873,
+  "cart-k2": 0.877,
+  "cart-k2_hard": 0.873,
+  "cart-k3": 0.8823,
+  "cart-k3_hard": 0.873
+ },
+ "Wine": {
+  "cart6": 0.9494,
+  "cart-k1": 0.9437,
+  "cart-k1_hard": 0.9437,
+  "cart-k2": 0.9717,
+  "cart-k2_hard": 0.9663,
+  "cart-k3": 0.9665,
+  "cart-k3_hard": 0.9554
+ },
+ "Iris": {
+  "cart6": 1.0,
+  "cart-k1": 0.9867,
+  "cart-k1_hard": 0.9733,
+  "cart-k2": 0.9667,
+  "cart-k2_hard": 0.9733,
+  "cart-k3": 0.9733,
+  "cart-k3_hard": 0.9667
+ }
+}
