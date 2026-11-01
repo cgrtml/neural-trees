@@ -224,7 +224,9 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
     cells each (Wilcoxon p=0.0002 and 0.0005; benchmarks/munge.py), and
     cut the mean gap to XGBoost from 3.3 to 1.8 points, at about three
     times the fit time. With the default teacher the gain was smaller
-    (+0.5 points, 8 of 12 fits higher, none lower; benchmarks/munge_lib.py).
+    (+0.5 points, 8 of 12 fits higher, none lower; benchmarks/munge_lib.py),
+    with a LightGBM teacher about the same (+0.9 over plain distillation, 9
+    of 11 cells higher, none lower; benchmarks/munge_lgbm.py).
     Real unlabelled rows (`X_unlabeled` in `fit`) do a
     little better again. Below about 1 000 rows use
     ``SoftDecisionTree(growth="per_leaf")`` instead: on the 24 datasets of

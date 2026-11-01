@@ -99,6 +99,12 @@ can feed many features per split.
 
 It fits in about 1.5 times the time of the unrestricted student.
 
+With a LightGBM teacher (300 trees of 31 leaves, the 11 cells up to 20 000
+rows; ``benchmarks/munge_lgbm.py``) the result is the same: the MUNGE rows
+add 0.9 points over plain distillation (9 cells higher, none lower,
+p=0.001) and 1.6 over the tree on labels (11 of 11, p=0.001), and the gap
+to the teacher falls from 3.7 to 2.1 points.
+
 The same check through the library itself (``DistilledTree`` with its default
 teacher, scikit-learn's ``HistGradientBoostingClassifier``, 20 000 rows of
 jannis, Higgs, covertype and electricity, three seeds;
