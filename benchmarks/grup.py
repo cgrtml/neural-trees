@@ -2,22 +2,21 @@
 """
 A few soft trees instead of one. munge.py left the single distilled tree
 1.8 points below XGBoost on average (13 cells), with the largest gaps where
-one depth-8 tree lacks capacity (electricity, covertype). Here the student
-is a short sum of soft regression trees fitted to the teacher's logits, one
-after another on the residual (gradient boosting with squared loss on
-logits; logit matching as in Ba and Caruana, NIPS 2014):
+one tree lacks capacity (electricity, covertype). Here the student is a
+small group of distilled soft trees, each fitted like the munge.py student
+(teacher probabilities on the training rows plus two MUNGE passes, CART
+start, learnt temperature, 60 epochs) on its own bootstrap sample of those
+rows, and the group predicts with the sum of the trees' log probabilities:
 
-    logit d8   one depth-8 regression tree on the teacher's logits
-    group3 d6  three depth-6 trees, each on the residual of the previous
-    group5 d6  five depth-6 trees
+    group3 d6  three depth-6 trees
+    group3 d8  three depth-8 trees
 
-Logits: log p clipped at 1e-4, centred per row (binary: one column,
-log p1 - log p0). Prediction: argmax of the summed logits. Rows: the
-training rows plus two MUNGE passes, labelled by the same XGBoost teacher
-as in munge.py (its cached probabilities), so the comparison with the
-"munge d8" column there is like for like.
+A pilot on three 5k cells (seed 0) found no gain from five trees over three,
+nor from fine-tuning the summed group jointly afterwards, nor from boosting
+soft regression trees on the teacher's logits; those are not in this run.
 
-Same datasets, sizes, seeds, test sets and teacher as damitma_olcek.py.
+Same datasets, sizes, seeds, test sets and teacher as damitma_olcek.py; the
+"munge d8" column is the single tree from munge.py.
 
     python3 benchmarks/grup.py ogrenci [--n-jobs 8] [--en-buyuk 20000]
     python3 benchmarks/grup.py ozet
@@ -41,14 +40,7 @@ DAMITMA = KOK / "_damitma_cache"
 MUNGE = KOK / "_munge_cache"
 ARA = KOK / "_grup_cache"
 CIKTI = KOK / "grup-sonuc.json"
-OGRENCILER = {"logit d8": (1, 8), "group3 d6": (3, 6), "group5 d6": (5, 6)}
-
-
-def logits(P):
-    L = np.log(np.clip(P, 1e-4, 1.0))
-    if P.shape[1] == 2:
-        return L[:, 1] - L[:, 0]
-    return L - L.mean(axis=1, keepdims=True)
+OGRENCILER = {"group3 d6": (3, 6), "group3 d8": (3, 8)}
 
 
 def _ogrenci(stem):
@@ -57,7 +49,7 @@ def _ogrenci(stem):
     import damitma_olcek as D
     import munge as Mu
 
-    from neural_trees import SoftDecisionTreeRegressor
+    from neural_trees import SoftDecisionTree
     out = ARA / f"{stem}.json"
     if out.exists():
         return
@@ -66,21 +58,21 @@ def _ogrenci(stem):
     classes = np.unique(ytr)
     P = np.vstack([np.load(DAMITMA / f"{stem}.npz")["Ptr"], np.load(MUNGE / f"{stem}.npz")["Pm"]])
     Xs = np.vstack([Xtr, Mu.munge(Xtr, int(s))])
-    T = logits(P)
+    Xt = torch.tensor(Xte)
     res = {}
     for name, (k, depth) in OGRENCILER.items():
         t0 = time.time()
-        F, Fte, splits = np.zeros_like(T), 0.0, 0
+        rng = np.random.default_rng(int(s))
+        L, splits = 0.0, 0
         for j in range(k):
-            m = SoftDecisionTreeRegressor(depth=depth, init="cart", max_epochs=60, batch_size=256,
-                                          learning_rate=0.01, random_state=int(s) + j).fit(Xs, T - F)
-            F = F + m.predict(Xs)
-            Fte = Fte + m.predict(Xte)
+            b = rng.integers(0, len(Xs), len(Xs))
+            i, c = np.nonzero(P[b] >= 0.01)
+            m = SoftDecisionTree(depth=depth, init="cart", learn_temperature=True, max_epochs=60, batch_size=256,
+                                 random_state=int(s) + j).fit(Xs[b][i], classes[c], sample_weight=P[b][i, c])
+            with torch.no_grad():
+                L = L + m.model_.log_forward(Xt).numpy()
             splits += int(m.model_.is_split.sum())
-        if np.ndim(Fte) == 1:
-            pred = classes[(Fte > 0).astype(int)]
-        else:
-            pred = classes[np.argmax(Fte, axis=1)]
+        pred = classes[np.argmax(L, axis=1)]
         res[name] = {"acc": float((pred == yte).mean()), "sn": time.time() - t0, "splits": splits}
         print(f"{stem:32s} {name:10s} {res[name]['acc']:.4f}  {splits:4d} splits  {res[name]['sn']:.0f} s", flush=True)
     out.write_text(json.dumps(res))
