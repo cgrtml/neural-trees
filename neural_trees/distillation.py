@@ -226,8 +226,11 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
     times the fit time. With the default teacher the gain was smaller
     (+0.5 points, 8 of 12 fits higher, none lower; benchmarks/munge_lib.py).
     Real unlabelled rows (`X_unlabeled` in `fit`) do a
-    little better again. The documentation page "Large tables" has the
-    full tables.
+    little better again. Below about 1 000 rows use
+    ``SoftDecisionTree(growth="per_leaf")`` instead: on the 24 datasets of
+    benchmarks/rakipler.py it was 1.2 points better there (7 of 8,
+    p=0.016; benchmarks/damitma_kucuk.py). The documentation page "Large
+    tables" has the full tables.
 
     Parameters
     ----------

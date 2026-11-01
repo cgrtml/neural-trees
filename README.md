@@ -190,6 +190,35 @@ split at 1 000 rows was chosen after seeing the data. Full tables and the caveat
 [Against the field](https://cagritemel.com/neural-trees/benchmarks.html)
 page.
 
+### Larger tables: one tree trained by a boosted model
+
+Above a few thousand rows a single tree trained on the labels stays behind
+boosting, by 2 to 7 points on six OpenML tables from 5 000 to 500 000 rows,
+and a deeper or longer-trained tree does not close that. `DistilledTree`
+fits a teacher (scikit-learn's `HistGradientBoostingClassifier` by default;
+XGBoost or LightGBM work the same) and then one soft tree on the teacher's
+probabilities, on the training rows and on synthetic rows near them that
+the teacher labels too (MUNGE, Bucila et al. 2006). The deployed model,
+its rules, explanations and ONNX file are that one tree.
+
+```python
+from neural_trees import DistilledTree
+
+model = DistilledTree().fit(X_train, y_train)
+model.predict(X_test)     # one soft tree
+model.fidelity(X_test)    # agreement with the teacher
+```
+
+With an XGBoost teacher on 13 dataset and size cells from 5 000 to 100 000
+rows, this put the tree 1.5 points above the same tree trained on the
+labels, higher in 12 of 13 cells (Wilcoxon p=0.0002), and halved its gap to
+XGBoost from 3.3 to 1.8 points; with real unlabelled rows passed as
+`fit(X, y, X_unlabeled=...)` the gap was 1.45 and on two tables the tree
+reached its teacher. Below 1 000 rows it is the wrong tool: the per-leaf
+soft tree is 1.2 points better there. Tables, the cases where it does not
+help and what was tried and dropped are on the
+[Large tables](https://cagritemel.com/neural-trees/large_tables.html) page.
+
 ## Algorithms
 
 These implementations start from the published algorithms below and depart
