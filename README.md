@@ -214,7 +214,10 @@ rows, this put the tree 1.5 points above the same tree trained on the
 labels, higher in 12 of 13 cells (Wilcoxon p=0.0002), and halved its gap to
 XGBoost from 3.3 to 1.8 points; with real unlabelled rows passed as
 `fit(X, y, X_unlabeled=...)` the gap was 1.45 and on two tables the tree
-reached its teacher. Below 1 000 rows it is the wrong tool: the per-leaf
+reached its teacher. Limiting the student to three features per split
+(`student=SoftDecisionTree(depth=8, init="cart", split_features=3,
+learn_temperature=True)`) cost 0.13 points and kept it 1.6 points above the
+unrestricted tree trained on the labels. Below 1 000 rows it is the wrong tool: the per-leaf
 soft tree is 1.2 points better there. Tables, the cases where it does not
 help and what was tried and dropped are on the
 [Large tables](https://cagritemel.com/neural-trees/large_tables.html) page.

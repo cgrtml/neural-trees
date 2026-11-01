@@ -80,6 +80,23 @@ Accuracy on the test set. Over the 13 cells:
   single tree reaches its teacher. Read the section on unlabelled rows
   before comparing this column with XGBoost.
 
+Readable rules cost almost nothing here. The same MUNGE student limited to
+three features per split (``split_features=3``, started from CART; the 11
+cells up to 20 000 rows, ``benchmarks/munge_seyrek.py``) lost 0.13 points
+against the unrestricted student (2 cells higher, 6 lower, p=0.28) and was
+1.6 points above the unrestricted tree trained on the labels (10 higher, 1
+lower, p=0.002), 1.9 points behind XGBoost:
+
+.. code-block:: python
+
+   from neural_trees import DistilledTree, SoftDecisionTree
+
+   model = DistilledTree(student=SoftDecisionTree(
+       depth=8, init="cart", split_features=3, learn_temperature=True,
+       max_epochs=60, batch_size=256))
+
+It fits in about 1.5 times the time of the unrestricted student.
+
 The same check through the library itself (``DistilledTree`` with its default
 teacher, scikit-learn's ``HistGradientBoostingClassifier``, 20 000 rows of
 jannis, Higgs, covertype and electricity, three seeds;
