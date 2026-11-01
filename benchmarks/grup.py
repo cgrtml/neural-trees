@@ -16,7 +16,8 @@ nor from fine-tuning the summed group jointly afterwards, nor from boosting
 soft regression trees on the teacher's logits; those are not in this run.
 
 Same datasets, sizes, seeds, test sets and teacher as damitma_olcek.py; the
-"munge d8" column is the single tree from munge.py.
+"munge d8" column is the single tree from munge.py. MUNGE_PASSES=10 in the
+environment runs the same with munge.py's 10-pass rows and teacher labels.
 
     python3 benchmarks/grup.py ogrenci [--n-jobs 8] [--en-buyuk 20000]
     python3 benchmarks/grup.py ozet
@@ -37,9 +38,11 @@ import numpy as np
 KOK = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(KOK))
 DAMITMA = KOK / "_damitma_cache"
-MUNGE = KOK / "_munge_cache"
-ARA = KOK / "_grup_cache"
-CIKTI = KOK / "grup-sonuc.json"
+PASSES = int(os.environ.get("MUNGE_PASSES", "2"))   # as in munge.py: 10 reads its 10-pass cache
+EK = "" if PASSES == 2 else f"_p{PASSES}"
+MUNGE = KOK / f"_munge_cache{EK}"
+ARA = KOK / f"_grup_cache{EK}"
+CIKTI = KOK / f"grup{EK}-sonuc.json"
 OGRENCILER = {"group3 d6": (3, 6), "group3 d8": (3, 8)}
 
 
