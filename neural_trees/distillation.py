@@ -174,12 +174,14 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
 
     Why: on large tables a single soft tree trained on the labels trails
     gradient boosting, and the probabilities of a boosted model are a
-    better training signal than the labels. On 20 000-row training sets
-    (one split, depth 8 to 10, XGBoost teacher; benchmarks/gelistir.py) this
-    moved MiniBooNE from 0.914 to 0.926, jannis from 0.737 to 0.764 and
-    MagicTelescope (10 000 rows) from 0.833 to 0.848, against 0.939, 0.783
-    and 0.859 for the teacher; it did not help where the tree is short of
-    capacity (electricity). See the documentation for the full measurement.
+    better training signal than the labels where the tree overfits them.
+    On six OpenML tables at 5 000 to 100 000 rows (XGBoost teacher, depth-8
+    student; benchmarks/damitma_olcek.py) this raised Higgs by 0.9 to 2.1
+    points and jannis at 20 000 rows by 2.7, and did nothing where the tree
+    is short of capacity (electricity, covertype); +0.6 points on average
+    over 13 cells, not significant. Unlabelled rows (`X_unlabeled`) are
+    what moves it: see `fit`. The documentation page "Large tables" has
+    the full table.
 
     Parameters
     ----------
@@ -216,10 +218,12 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
         label, from the same population, that the teacher labels for the
         student. Labels are often scarcer than rows (every customer is in
         the table, few have an outcome), and the teacher can pass on what it
-        learned from the labelled rows through the unlabelled ones; on
-        20 000-row training sets with twice as many unlabelled rows this put
-        a depth-8 tree level with its XGBoost teacher on jannis (0.786
-        against 0.783). The teacher itself sees only (X, y).
+        learned from the labelled rows through the unlabelled ones. With
+        twice as many unlabelled rows as labelled ones the depth-8 tree
+        gained 1.85 points over the same tree on labels, in 13 of 13 cells,
+        and halved its mean gap to the XGBoost teacher (3.3 to 1.45
+        points); on Higgs and jannis it reached the teacher. The teacher
+        itself sees only (X, y).
         """
         from sklearn.base import clone
         from sklearn.ensemble import HistGradientBoostingClassifier

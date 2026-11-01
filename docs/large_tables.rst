@@ -4,7 +4,7 @@ Large tables, ensembles and missing values
 A single soft tree is a strong model on small tables: on the eight datasets
 under 1 000 rows of the :doc:`benchmarks` it matches or beats XGBoost. On
 larger tables it is not. With 5 000 to 20 000 training rows a depth-6 to
-depth-10 tree trained on the labels trails 300 boosted trees by 3 to 7
+depth-10 tree trained on the labels trails 300 boosted trees by 2 to 7
 points, and neither a deeper tree nor a longer fit closes that: a sum of
 hundreds of trees has far more capacity than one tree, and one tree is the
 point of this library. This page is about what does help, measured, and
@@ -35,7 +35,42 @@ single tree.
    model.fidelity(X_test)         # agreement with the teacher
    model.explain(X_test[:1])      # rules and a counterfactual, from the tree
 
-.. SCALE-RESULTS: filled in from benchmarks/damitma_olcek.py
+Measured on six OpenML tables from the Grinsztajn et al. (2022) benchmark
+(``benchmarks/damitma_olcek.py``; fixed test set of up to 20 000 rows;
+three training samples per size, one at 100 000 rows, marked ``*``). Every
+tree is ``SoftDecisionTree(depth=8, init="cart", learn_temperature=True,
+max_epochs=60)``; the teacher is 300 XGBoost trees of depth 6.
+
+================  =========  =========  ===============  ===========  =================
+dataset           rows       XGBoost    tree on labels   distilled    + 2n unlabelled
+================  =========  =========  ===============  ===========  =================
+electricity       5 000      0.841      0.797            0.797        0.805
+electricity       20 000     0.873      0.810            0.810        0.814
+MagicTelescope    5 000      0.850      0.830            0.835        0.844
+jannis            5 000      0.764      0.717            0.715        0.753
+jannis            20 000     0.786      0.743            0.770        0.786
+MiniBooNE         5 000      0.930      0.902            0.904        0.920
+MiniBooNE         20 000     0.939      0.920            0.924        0.931
+covertype         5 000      0.788      0.759            0.765        0.774
+covertype         20 000     0.822      0.790            0.787        0.797
+covertype         100 000 *  0.847      0.818            0.810        0.821
+Higgs             5 000      0.695      0.659            0.674        0.700
+Higgs             20 000     0.714      0.688            0.709        0.717
+Higgs             100 000 *  0.731      0.718            0.727        0.730
+================  =========  =========  ===============  ===========  =================
+
+Accuracy on the test set. Over the 13 cells:
+
+* Distilled against the tree on labels: +0.6 points on average, higher in 7
+  cells, lower in 3 (Wilcoxon p=0.09). It helps where the tree overfits the
+  labels (Higgs +0.9 to +2.1, jannis at 20 000 rows +2.7) and not where it
+  is short of capacity (electricity, covertype): the teacher's probabilities
+  are a better target, not a bigger tree.
+* With twice as many unlabelled rows: +1.85 points over the tree on labels,
+  higher in all 13 cells (p=0.0002), and the mean gap to XGBoost halves,
+  from 3.3 to 1.45 points. On Higgs at 5 000 and 20 000 rows and on jannis
+  at 20 000 the single tree reaches its teacher. Read the next section
+  before comparing this column with XGBoost.
 
 Most of the gain is regularisation: mixing the true labels back in
 (``alpha=0.5``) brought the overfitting back and lost most of it (jannis,
