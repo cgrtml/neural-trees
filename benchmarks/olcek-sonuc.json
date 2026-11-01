@@ -1,0 +1,436 @@
+{
+ "_protokol": "Scale curve: how the gap between soft trees and boosting moves as the\ntraining set grows from 1 000 to 500 000 rows.\n\nGrinsztajn, Oyallon & Varoquaux (NeurIPS 2022) report that the gap between\nneural networks and trees tends to shrink with more data and leave the\nmeasurement open. This measures it for soft trees, on the numerical versions\nof their datasets (OpenML), with the same test set at every size.\n\nPer dataset: a fixed stratified test set of min(20 000, 20 %) rows; training\nsets of 1k, 5k, 20k, 100k, 500k rows drawn from the rest (nested, so a larger\nset contains the smaller ones), as far as the data allows. StandardScaler on\nthe training set. Models:\n\n    CART d6        sklearn, depth 6\n    XGBoost        300 trees x depth 6, learning rate 0.1 (as rakipler.py)\n    soft per-leaf  depth <= 6, per-leaf growth, residual init\n    soft cart      init=\"cart\", depth 6, learned temperature, sharpness\n                   chosen on 20 % of the training set from (4, 10, 30, 100)\n\nThe soft trees use batch size 64 below 20 000 rows and 1 024 from there, and\nmax(10, 60 * 5 000 / n) epochs capped at 60, so the number of optimiser steps\nstays bounded; the budget is recorded with every result. One seed per size\n(the test set is large), three below 20 000 rows.",
+ "_commit": "a395a40",
+ "electricity": {
+  "n_total": 38474,
+  "n_test": 7694,
+  "K": 2,
+  "1000": {
+   "CART d6": 0.7517,
+   "CART d6 sn": 0.1,
+   "XGBoost": 0.792,
+   "XGBoost sn": 0.2,
+   "soft per-leaf": 0.7405,
+   "soft per-leaf sn": 1.6,
+   "soft cart": 0.7774,
+   "soft cart sn": 10.7,
+   "sharpness": [
+    30.0,
+    4.0,
+    4.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "5000": {
+   "CART d6": 0.7768,
+   "CART d6 sn": 0.2,
+   "XGBoost": 0.8429,
+   "XGBoost sn": 0.2,
+   "soft per-leaf": 0.7469,
+   "soft per-leaf sn": 11.5,
+   "soft cart": 0.7943,
+   "soft cart sn": 48.2,
+   "sharpness": [
+    100.0,
+    30.0,
+    10.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "20000": {
+   "CART d6": 0.7557,
+   "CART d6 sn": 0.2,
+   "XGBoost": 0.87,
+   "XGBoost sn": 0.5,
+   "soft per-leaf": 0.7671,
+   "soft per-leaf sn": 15.2,
+   "soft cart": 0.7967,
+   "soft cart sn": 49.4,
+   "sharpness": [
+    100.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 15
+   },
+   "seeds": 1
+  }
+ },
+ "MagicTelescope": {
+  "n_total": 13376,
+  "n_test": 2675,
+  "K": 2,
+  "1000": {
+   "CART d6": 0.7693,
+   "CART d6 sn": 0.0,
+   "XGBoost": 0.8086,
+   "XGBoost sn": 0.2,
+   "soft per-leaf": 0.8077,
+   "soft per-leaf sn": 2.7,
+   "soft cart": 0.7995,
+   "soft cart sn": 10.6,
+   "sharpness": [
+    4.0,
+    4.0,
+    10.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "5000": {
+   "CART d6": 0.8032,
+   "CART d6 sn": 0.0,
+   "XGBoost": 0.8493,
+   "XGBoost sn": 0.3,
+   "soft per-leaf": 0.8259,
+   "soft per-leaf sn": 13.3,
+   "soft cart": 0.8349,
+   "soft cart sn": 47.5,
+   "sharpness": [
+    10.0,
+    4.0,
+    4.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  }
+ },
+ "jannis": {
+  "n_total": 57580,
+  "n_test": 11516,
+  "K": 2,
+  "1000": {
+   "CART d6": 0.6898,
+   "CART d6 sn": 0.0,
+   "XGBoost": 0.737,
+   "XGBoost sn": 0.9,
+   "soft per-leaf": 0.71,
+   "soft per-leaf sn": 0.9,
+   "soft cart": 0.7058,
+   "soft cart sn": 12.6,
+   "sharpness": [
+    30.0,
+    10.0,
+    10.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "5000": {
+   "CART d6": 0.7134,
+   "CART d6 sn": 0.1,
+   "XGBoost": 0.7622,
+   "XGBoost sn": 1.9,
+   "soft per-leaf": 0.7275,
+   "soft per-leaf sn": 5.1,
+   "soft cart": 0.7162,
+   "soft cart sn": 57.7,
+   "sharpness": [
+    10.0,
+    30.0,
+    30.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "20000": {
+   "CART d6": 0.7275,
+   "CART d6 sn": 0.6,
+   "XGBoost": 0.7826,
+   "XGBoost sn": 3.0,
+   "soft per-leaf": 0.7561,
+   "soft per-leaf sn": 6.2,
+   "soft cart": 0.7483,
+   "soft cart sn": 89.8,
+   "sharpness": [
+    4.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 15
+   },
+   "seeds": 1
+  }
+ },
+ "MiniBooNE": {
+  "n_total": 72998,
+  "n_test": 14599,
+  "K": 2,
+  "1000": {
+   "CART d6": 0.8429,
+   "CART d6 sn": 0.0,
+   "XGBoost": 0.908,
+   "XGBoost sn": 0.5,
+   "soft per-leaf": 0.8664,
+   "soft per-leaf sn": 3.5,
+   "soft cart": 0.8761,
+   "soft cart sn": 11.8,
+   "sharpness": [
+    4.0,
+    10.0,
+    100.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "5000": {
+   "CART d6": 0.8796,
+   "CART d6 sn": 0.1,
+   "XGBoost": 0.9305,
+   "XGBoost sn": 1.5,
+   "soft per-leaf": 0.9015,
+   "soft per-leaf sn": 21.8,
+   "soft cart": 0.9036,
+   "soft cart sn": 57.2,
+   "sharpness": [
+    10.0,
+    10.0,
+    10.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "20000": {
+   "CART d6": 0.8873,
+   "CART d6 sn": 0.5,
+   "XGBoost": 0.939,
+   "XGBoost sn": 2.6,
+   "soft per-leaf": 0.9015,
+   "soft per-leaf sn": 17.9,
+   "soft cart": 0.9059,
+   "soft cart sn": 86.4,
+   "sharpness": [
+    4.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 15
+   },
+   "seeds": 1
+  }
+ },
+ "covertype": {
+  "n_total": 566602,
+  "n_test": 20000,
+  "K": 2,
+  "1000": {
+   "CART d6": 0.6998,
+   "CART d6 sn": 0.0,
+   "XGBoost": 0.7412,
+   "XGBoost sn": 0.2,
+   "soft per-leaf": 0.6876,
+   "soft per-leaf sn": 1.7,
+   "soft cart": 0.7239,
+   "soft cart sn": 10.8,
+   "sharpness": [
+    30.0,
+    100.0,
+    4.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "5000": {
+   "CART d6": 0.7471,
+   "CART d6 sn": 0.0,
+   "XGBoost": 0.7926,
+   "XGBoost sn": 0.3,
+   "soft per-leaf": 0.7552,
+   "soft per-leaf sn": 9.9,
+   "soft cart": 0.7562,
+   "soft cart sn": 49.0,
+   "sharpness": [
+    100.0,
+    10.0,
+    4.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "20000": {
+   "CART d6": 0.7597,
+   "CART d6 sn": 0.1,
+   "XGBoost": 0.8194,
+   "XGBoost sn": 0.5,
+   "soft per-leaf": 0.7615,
+   "soft per-leaf sn": 9.5,
+   "soft cart": 0.7841,
+   "soft cart sn": 51.1,
+   "sharpness": [
+    4.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 15
+   },
+   "seeds": 1
+  },
+  "100000": {
+   "CART d6": 0.7555,
+   "CART d6 sn": 0.3,
+   "XGBoost": 0.8474,
+   "XGBoost sn": 1.2,
+   "soft per-leaf": 0.7875,
+   "soft per-leaf sn": 95.3,
+   "soft cart": 0.7872,
+   "soft cart sn": 72.3,
+   "sharpness": [
+    4.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 10
+   },
+   "seeds": 1
+  },
+  "500000": {
+   "CART d6": 0.7565,
+   "CART d6 sn": 1.5,
+   "XGBoost": 0.8532,
+   "XGBoost sn": 4.2,
+   "soft per-leaf": 0.7966,
+   "soft per-leaf sn": 390.5,
+   "soft cart": 0.7995,
+   "soft cart sn": 304.3,
+   "sharpness": [
+    4.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 10
+   },
+   "seeds": 1
+  }
+ },
+ "Higgs": {
+  "n_total": 940160,
+  "n_test": 20000,
+  "K": 2,
+  "1000": {
+   "CART d6": 0.5939,
+   "CART d6 sn": 0.0,
+   "XGBoost": 0.6613,
+   "XGBoost sn": 0.3,
+   "soft per-leaf": 0.5976,
+   "soft per-leaf sn": 0.9,
+   "soft cart": 0.6177,
+   "soft cart sn": 7.0,
+   "sharpness": [
+    30.0,
+    4.0,
+    30.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "5000": {
+   "CART d6": 0.6624,
+   "CART d6 sn": 0.1,
+   "XGBoost": 0.6941,
+   "XGBoost sn": 0.7,
+   "soft per-leaf": 0.6658,
+   "soft per-leaf sn": 4.8,
+   "soft cart": 0.6709,
+   "soft cart sn": 34.6,
+   "sharpness": [
+    30.0,
+    4.0,
+    30.0
+   ],
+   "budget": {
+    "batch_size": 64,
+    "max_epochs": 60
+   },
+   "seeds": 3
+  },
+  "20000": {
+   "CART d6": 0.6727,
+   "CART d6 sn": 0.3,
+   "XGBoost": 0.7126,
+   "XGBoost sn": 1.0,
+   "soft per-leaf": 0.6819,
+   "soft per-leaf sn": 6.0,
+   "soft cart": 0.6903,
+   "soft cart sn": 47.9,
+   "sharpness": [
+    30.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 15
+   },
+   "seeds": 1
+  },
+  "100000": {
+   "CART d6": 0.6796,
+   "CART d6 sn": 1.2,
+   "XGBoost": 0.731,
+   "XGBoost sn": 2.1,
+   "soft per-leaf": 0.7043,
+   "soft per-leaf sn": 25.9,
+   "soft cart": 0.7161,
+   "soft cart sn": 135.1,
+   "sharpness": [
+    4.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 10
+   },
+   "seeds": 1
+  },
+  "500000": {
+   "CART d6": 0.6854,
+   "CART d6 sn": 5.4,
+   "XGBoost": 0.7388,
+   "XGBoost sn": 7.0,
+   "soft per-leaf": 0.7196,
+   "soft per-leaf sn": 174.9,
+   "soft cart": 0.7257,
+   "soft cart sn": 654.4,
+   "sharpness": [
+    4.0
+   ],
+   "budget": {
+    "batch_size": 1024,
+    "max_epochs": 10
+   },
+   "seeds": 1
+  }
+ }
+}
