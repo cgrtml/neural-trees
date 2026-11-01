@@ -40,6 +40,8 @@ torch in one process can deadlock on libomp (see rakipler.py).
     python3 benchmarks/distill.py ogretmen [--hizli]
     python3 benchmarks/distill.py ogrenci  [--hizli] [--n-jobs 10]
     python3 benchmarks/distill.py ozet
+    python3 benchmarks/distill.py istatistik      # paired tests over datasets
+    python3 benchmarks/distill.py seyrek          # fidelity vs split_features
 """
 from __future__ import annotations
 
@@ -232,15 +234,94 @@ def ozet():
               f"{m.get('soft', {}).get('feat90', 0):.1f}  ({r['n_folds']} folds)")
 
 
+def istatistik():
+    """Paired Wilcoxon tests over the dataset x teacher pairs of distill-sonuc.json."""
+    from scipy.stats import wilcoxon
+    S = json.loads(CIKTI.read_text(encoding="utf-8"))
+    rows = [(ad, t, r["mean"]) for ad, tt in S.items() if not ad.startswith("_") for t, r in tt.items()]
+
+    def fark(a, b, metric="fid", secim=lambda ad, t, m: True, etiket=""):
+        d = np.array([m[a][metric] - m[b][metric] for ad, t, m in rows if secim(ad, t, m) and a in m and b in m])
+        w, lo = int((d > 0.005).sum()), int((d < -0.005).sum())
+        p = wilcoxon(d).pvalue if np.any(d != 0) else 1.0
+        print(f"{etiket:24s} {metric:3s} {a:>10s} - {b:<10s} mean {d.mean()*100:+.2f} pt  median "
+              f"{np.median(d)*100:+.2f}  higher/tie/lower {w}/{len(d)-w-lo}/{lo}  p={p:.4f}  n={len(d)}")
+
+    for a, b in [("soft", "cart6"), ("soft", "cart_eq"), ("soft_prob", "cart6"), ("soft_hard", "cart6"),
+                 ("multi6", "cart6"), ("soft", "multi6"), ("soft_prob", "soft"), ("soft_hard", "soft")]:
+        fark(a, b)
+    fark("soft", "soft_noaug", secim=lambda ad, t, m: t == "XGBoost", etiket="XGBoost teacher")
+    for T in ("XGBoost", "LightGBM", "RandomForest"):
+        fark("soft_prob", "cart6", secim=lambda ad, t, m, T=T: t == T, etiket=T)
+    fark("soft_prob", "cart6", secim=lambda ad, t, m: m["soft"]["feat90"] >= 20, etiket="soft feat90 >= 20")
+    fark("soft_prob", "cart6", secim=lambda ad, t, m: m["soft"]["feat90"] < 10, etiket="soft feat90 < 10")
+    fark("soft_prob", "cart6", metric="tv", etiket="TV, lower is closer")
+    for a in ("cart6", "multi6", "soft", "soft_prob", "soft_hard"):
+        print(f"{a:10s} fidelity {np.mean([m[a]['fid'] for _, _, m in rows]):.4f}  accuracy - teacher "
+              f"{np.mean([m[a]['acc'] - m['teacher']['acc'] for _, _, m in rows])*100:+.2f} pt  "
+              f"TV {np.mean([m[a]['tv'] for _, _, m in rows]):.3f}  ECE {np.mean([m[a]['ece'] for _, _, m in rows]):.3f}")
+    print(f"CART depth 6 leaves {np.mean([m['cart6']['leaves'] for _, _, m in rows]):.1f}, "
+          f"soft tree splits {np.mean([m['soft']['splits'] for _, _, m in rows]):.1f}")
+
+
+SEYREK_K = (1, 2, 3, 5)
+SEYREK_CIKTI = KOK / "distill-seyrek.json"
+
+
+def _seyrek_bir(yol, k):
+    import torch
+    torch.set_num_threads(1)
+    from neural_trees import SoftDecisionTree
+    out = yol.with_name(f"{yol.stem}__k{k}.seyrek.json")
+    if out.exists():
+        return
+    d = np.load(yol)
+    Xa, Pa, Xte, Pte, K = d["Xa"], d["Pa"], d["Xte"], d["Pte"], int(d["K"])
+    k_eff = min(k, Xa.shape[1])
+    i, c = np.nonzero(Pa >= 0.01)
+    m = SoftDecisionTree(depth=6, max_epochs=180, growth="per_leaf", growth_init="residual",
+                         split_features=k_eff, random_state=SEED).fit(Xa[i], c, sample_weight=Pa[i, c])
+    P = _tam(m.predict_proba(Xte), m.classes_, K)
+    hard = m.to_hard_tree().predict(Xte)
+    out.write_text(json.dumps({"fid": float(np.mean(P.argmax(1) == Pte.argmax(1))),
+                               "fid_hard": float(np.mean(hard == Pte.argmax(1))),
+                               "splits": len(m.get_split_weights())}))
+
+
+def seyrek(n_jobs):
+    """Fidelity of the soft-target student under split_features=k, XGBoost teacher."""
+    from joblib import Parallel, delayed
+    yollar = sorted(ARA.glob("*__XGBoost__*.npz"), key=lambda p: -p.stat().st_size)
+    Parallel(n_jobs=n_jobs)(delayed(_seyrek_bir)(p, k) for p in yollar for k in SEYREK_K)
+    S = {}
+    for p in yollar:
+        ad, _, kat = p.stem.split("__")
+        tam = json.loads(p.with_suffix(".json").read_text())
+        r = S.setdefault(ad, {"cart6": [], "dense": []})
+        r["cart6"].append(tam["cart6"]["fid"])
+        r["dense"].append(tam["soft_prob"]["fid"])
+        for k in SEYREK_K:
+            js = json.loads(p.with_name(f"{p.stem}__k{k}.seyrek.json").read_text())
+            r.setdefault(f"k{k}", []).append(js["fid"])
+            r.setdefault(f"k{k}_hard", []).append(js["fid_hard"])
+    S = {ad: {k: round(float(np.mean(v)), 4) for k, v in r.items()} for ad, r in S.items()}
+    SEYREK_CIKTI.write_text(json.dumps(S, indent=1), encoding="utf-8")
+    cols = ["cart6"] + [f"k{k}" for k in SEYREK_K] + ["dense"]
+    print(f"{'dataset':26s} " + " ".join(f"{c:>7s}" for c in cols))
+    for ad, r in S.items():
+        print(f"{ad[:26]:26s} " + " ".join(f"{r[c]:7.3f}" for c in cols))
+    print(f"{'mean':26s} " + " ".join(f"{np.mean([r[c] for r in S.values()]):7.3f}" for c in cols))
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("asama", choices=["ogretmen", "ogrenci", "ozet"])
+    ap.add_argument("asama", choices=["ogretmen", "ogrenci", "ozet", "istatistik", "seyrek"])
     ap.add_argument("--hizli", action="store_true")
     ap.add_argument("--n-jobs", type=int, default=10)
     a = ap.parse_args()
     {"ogretmen": lambda: ogretmen_asamasi(a.hizli),
      "ogrenci": lambda: ogrenci_asamasi(a.hizli, a.n_jobs),
-     "ozet": ozet}[a.asama]()
+     "ozet": ozet, "istatistik": istatistik, "seyrek": lambda: seyrek(a.n_jobs)}[a.asama]()
 
 
 if __name__ == "__main__":

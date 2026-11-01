@@ -1,0 +1,4395 @@
+{
+ "_protokol": "Distil a tree ensemble (XGBoost, LightGBM, RandomForest) into one tree, and\nmeasure how faithfully the single tree reproduces the ensemble.\n\nQuestion: as a readable surrogate of an ensemble a company already runs, does\na soft tree copy the teacher more faithfully than a hard tree trained on\nexactly the same data, and where does the difference come from?\n\nProtocol, per dataset (the 24 of rakipler.py), seed 0, 5 stratified folds:\n  * StandardScaler on the training fold.\n  * Teacher fitted on the true training labels.\n  * Transfer set = training rows + 2 perturbed copies, labelled by the\n    teacher. Continuous columns get Gaussian noise (sd 0.15, standardised\n    units); columns with at most 10 distinct training values are categorical\n    or ordinal codes, so instead of noise each cell is swapped, with\n    probability 0.3, for the value of a random training row. Noise on a code\n    would create values that never occur.\n  * Students, all on the transfer set:\n      cart6      CART depth 6 on teacher labels\n      cart_eq    CART with as many leaves as the soft tree has (equal budget)\n      multi6     hard oblique tree depth 6 (MultivariateDecisionTree), which\n                 separates \"oblique splits\" from \"soft routing\"\n      soft       soft tree per-leaf depth <= 6 on teacher labels\n      soft_hard  the same soft tree read as hard rules (to_hard_tree), which\n                 is what a person would actually read\n      soft_prob  soft tree on the teacher's probabilities (each row repeated\n                 per class with weight = teacher probability, which is exactly\n                 the soft-target cross-entropy)\n      soft_noaug soft tree on the training rows only (XGBoost teacher only),\n                 to see what the perturbed copies are worth\n  * On the test fold: fidelity (label agreement with the teacher), accuracy,\n    total-variation distance to the teacher's probabilities, top-label ECE,\n    and for soft trees the mean number of features that carry 90 % of a\n    split's weight (the readability baseline for the sparsity experiment).",
+ "Cancer": {
+  "LightGBM": {
+   "n_train": 455,
+   "mean": {
+    "teacher": {
+     "acc": 0.9701,
+     "ece": 0.0277
+    },
+    "cart6": {
+     "fid": 0.956,
+     "acc": 0.9438,
+     "tv": 0.0463,
+     "ece": 0.0523,
+     "sn": 0.0,
+     "leaves": 24.8
+    },
+    "cart_eq": {
+     "fid": 0.9649,
+     "acc": 0.9455,
+     "tv": 0.0559,
+     "ece": 0.0352,
+     "sn": 0.0,
+     "leaves": 10.0
+    },
+    "multi6": {
+     "fid": 0.9614,
+     "acc": 0.9666,
+     "tv": 0.044,
+     "ece": 0.0241,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9684,
+     "acc": 0.9701,
+     "tv": 0.0329,
+     "ece": 0.0265,
+     "sn": 7.14,
+     "splits": 9.0,
+     "feat90": 20.673
+    },
+    "soft_hard": {
+     "fid": 0.9684,
+     "acc": 0.9701,
+     "tv": 0.0316,
+     "ece": 0.0299,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9736,
+     "acc": 0.9824,
+     "tv": 0.0296,
+     "ece": 0.0242,
+     "sn": 5.82,
+     "splits": 6.6,
+     "feat90": 20.7397
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 455,
+   "mean": {
+    "teacher": {
+     "acc": 0.9578,
+     "ece": 0.0501
+    },
+    "cart6": {
+     "fid": 0.9631,
+     "acc": 0.9526,
+     "tv": 0.0739,
+     "ece": 0.0451,
+     "sn": 0.0,
+     "leaves": 23.8
+    },
+    "cart_eq": {
+     "fid": 0.9561,
+     "acc": 0.928,
+     "tv": 0.0699,
+     "ece": 0.0337,
+     "sn": 0.0,
+     "leaves": 4.6
+    },
+    "multi6": {
+     "fid": 0.9596,
+     "acc": 0.9631,
+     "tv": 0.0729,
+     "ece": 0.0267,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9596,
+     "acc": 0.9772,
+     "tv": 0.0551,
+     "ece": 0.0238,
+     "sn": 3.78,
+     "splits": 3.6,
+     "feat90": 20.8381
+    },
+    "soft_hard": {
+     "fid": 0.9596,
+     "acc": 0.9772,
+     "tv": 0.0738,
+     "ece": 0.0228,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9561,
+     "acc": 0.9701,
+     "tv": 0.0376,
+     "ece": 0.0436,
+     "sn": 4.04,
+     "splits": 2.0,
+     "feat90": 20.873
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 455,
+   "mean": {
+    "teacher": {
+     "acc": 0.9754,
+     "ece": 0.0219
+    },
+    "cart6": {
+     "fid": 0.9543,
+     "acc": 0.9437,
+     "tv": 0.0501,
+     "ece": 0.0548,
+     "sn": 0.0,
+     "leaves": 26.2
+    },
+    "cart_eq": {
+     "fid": 0.9526,
+     "acc": 0.935,
+     "tv": 0.078,
+     "ece": 0.0318,
+     "sn": 0.0,
+     "leaves": 4.4
+    },
+    "multi6": {
+     "fid": 0.9719,
+     "acc": 0.9684,
+     "tv": 0.0441,
+     "ece": 0.0206,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9771,
+     "acc": 0.9807,
+     "tv": 0.0316,
+     "ece": 0.0262,
+     "sn": 3.86,
+     "splits": 3.4,
+     "feat90": 20.8571
+    },
+    "soft_hard": {
+     "fid": 0.9771,
+     "acc": 0.9807,
+     "tv": 0.0334,
+     "ece": 0.0193,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9719,
+     "acc": 0.9754,
+     "tv": 0.0311,
+     "ece": 0.0294,
+     "sn": 5.26,
+     "splits": 4.8,
+     "feat90": 20.7714
+    },
+    "soft_noaug": {
+     "fid": 0.9736,
+     "acc": 0.9772,
+     "tv": 0.0345,
+     "ece": 0.0272,
+     "sn": 2.0
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "Digits": {
+  "LightGBM": {
+   "n_train": 1437,
+   "mean": {
+    "teacher": {
+     "acc": 0.9733,
+     "ece": 0.0198
+    },
+    "cart6": {
+     "fid": 0.7863,
+     "acc": 0.7869,
+     "tv": 0.2713,
+     "ece": 0.0616,
+     "sn": 0.1,
+     "leaves": 51.6
+    },
+    "cart_eq": {
+     "fid": 0.7284,
+     "acc": 0.7245,
+     "tv": 0.3878,
+     "ece": 0.0456,
+     "sn": 0.1,
+     "leaves": 13.6
+    },
+    "multi6": {
+     "fid": 0.9444,
+     "acc": 0.9444,
+     "tv": 0.0786,
+     "ece": 0.0314,
+     "sn": 0.18
+    },
+    "soft": {
+     "fid": 0.9265,
+     "acc": 0.9277,
+     "tv": 0.0852,
+     "ece": 0.0507,
+     "sn": 35.86,
+     "splits": 12.6,
+     "feat90": 42.0762
+    },
+    "soft_hard": {
+     "fid": 0.9265,
+     "acc": 0.9271,
+     "tv": 0.0781,
+     "ece": 0.0729,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9237,
+     "acc": 0.9243,
+     "tv": 0.0893,
+     "ece": 0.045,
+     "sn": 38.86,
+     "splits": 13.0,
+     "feat90": 41.981
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 1437,
+   "mean": {
+    "teacher": {
+     "acc": 0.9755,
+     "ece": 0.2038
+    },
+    "cart6": {
+     "fid": 0.7875,
+     "acc": 0.7852,
+     "tv": 0.2771,
+     "ece": 0.0647,
+     "sn": 0.1,
+     "leaves": 51.8
+    },
+    "cart_eq": {
+     "fid": 0.7407,
+     "acc": 0.7368,
+     "tv": 0.3116,
+     "ece": 0.0506,
+     "sn": 0.1,
+     "leaves": 13.8
+    },
+    "multi6": {
+     "fid": 0.9438,
+     "acc": 0.9444,
+     "tv": 0.2253,
+     "ece": 0.033,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.9249,
+     "acc": 0.9282,
+     "tv": 0.2349,
+     "ece": 0.0449,
+     "sn": 37.54,
+     "splits": 12.8,
+     "feat90": 41.9333
+    },
+    "soft_hard": {
+     "fid": 0.9238,
+     "acc": 0.9271,
+     "tv": 0.2558,
+     "ece": 0.0729,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9382,
+     "acc": 0.9382,
+     "tv": 0.1563,
+     "ece": 0.1473,
+     "sn": 193.06,
+     "splits": 10.8,
+     "feat90": 41.8444
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 1437,
+   "mean": {
+    "teacher": {
+     "acc": 0.9666,
+     "ece": 0.0211
+    },
+    "cart6": {
+     "fid": 0.7824,
+     "acc": 0.7824,
+     "tv": 0.2723,
+     "ece": 0.0665,
+     "sn": 0.1,
+     "leaves": 51.0
+    },
+    "cart_eq": {
+     "fid": 0.7123,
+     "acc": 0.7139,
+     "tv": 0.3872,
+     "ece": 0.0526,
+     "sn": 0.1,
+     "leaves": 13.8
+    },
+    "multi6": {
+     "fid": 0.9377,
+     "acc": 0.9455,
+     "tv": 0.0917,
+     "ece": 0.0275,
+     "sn": 0.18
+    },
+    "soft": {
+     "fid": 0.9126,
+     "acc": 0.9221,
+     "tv": 0.1072,
+     "ece": 0.048,
+     "sn": 38.26,
+     "splits": 12.8,
+     "feat90": 41.9238
+    },
+    "soft_hard": {
+     "fid": 0.9082,
+     "acc": 0.9176,
+     "tv": 0.1085,
+     "ece": 0.0824,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9332,
+     "acc": 0.9371,
+     "tv": 0.0873,
+     "ece": 0.0307,
+     "sn": 49.46,
+     "splits": 13.2,
+     "feat90": 41.673
+    },
+    "soft_noaug": {
+     "fid": 0.9182,
+     "acc": 0.9227,
+     "tv": 0.1037,
+     "ece": 0.0437,
+     "sn": 11.3
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "Iris": {
+  "LightGBM": {
+   "n_train": 120,
+   "mean": {
+    "teacher": {
+     "acc": 0.94,
+     "ece": 0.0582
+    },
+    "cart6": {
+     "fid": 0.98,
+     "acc": 0.9333,
+     "tv": 0.0199,
+     "ece": 0.065,
+     "sn": 0.0,
+     "leaves": 9.4
+    },
+    "cart_eq": {
+     "fid": 0.98,
+     "acc": 0.9333,
+     "tv": 0.0216,
+     "ece": 0.0667,
+     "sn": 0.0,
+     "leaves": 9.6
+    },
+    "multi6": {
+     "fid": 0.96,
+     "acc": 0.9667,
+     "tv": 0.0761,
+     "ece": 0.0388,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9667,
+     "acc": 0.96,
+     "tv": 0.0593,
+     "ece": 0.0645,
+     "sn": 4.76,
+     "splits": 21.6,
+     "feat90": 3.3841
+    },
+    "soft_hard": {
+     "fid": 0.9533,
+     "acc": 0.9467,
+     "tv": 0.0482,
+     "ece": 0.0533,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9533,
+     "acc": 0.96,
+     "tv": 0.0601,
+     "ece": 0.0639,
+     "sn": 4.32,
+     "splits": 19.2,
+     "feat90": 3.2508
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 120,
+   "mean": {
+    "teacher": {
+     "acc": 0.94,
+     "ece": 0.0607
+    },
+    "cart6": {
+     "fid": 0.98,
+     "acc": 0.9333,
+     "tv": 0.0413,
+     "ece": 0.0667,
+     "sn": 0.0,
+     "leaves": 11.8
+    },
+    "cart_eq": {
+     "fid": 0.9867,
+     "acc": 0.9267,
+     "tv": 0.0396,
+     "ece": 0.0733,
+     "sn": 0.0,
+     "leaves": 12.2
+    },
+    "multi6": {
+     "fid": 0.9667,
+     "acc": 0.96,
+     "tv": 0.0669,
+     "ece": 0.0379,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9867,
+     "acc": 0.9533,
+     "tv": 0.0351,
+     "ece": 0.0574,
+     "sn": 4.98,
+     "splits": 23.6,
+     "feat90": 3.3841
+    },
+    "soft_hard": {
+     "fid": 0.9533,
+     "acc": 0.9467,
+     "tv": 0.0596,
+     "ece": 0.0533,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.98,
+     "acc": 0.96,
+     "tv": 0.0356,
+     "ece": 0.0649,
+     "sn": 3.4,
+     "splits": 15.8,
+     "feat90": 3.3683
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 120,
+   "mean": {
+    "teacher": {
+     "acc": 0.92,
+     "ece": 0.0671
+    },
+    "cart6": {
+     "fid": 1.0,
+     "acc": 0.92,
+     "tv": 0.0183,
+     "ece": 0.08,
+     "sn": 0.0,
+     "leaves": 10.2
+    },
+    "cart_eq": {
+     "fid": 1.0,
+     "acc": 0.92,
+     "tv": 0.0185,
+     "ece": 0.079,
+     "sn": 0.0,
+     "leaves": 9.8
+    },
+    "multi6": {
+     "fid": 0.9533,
+     "acc": 0.9667,
+     "tv": 0.0791,
+     "ece": 0.0323,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9533,
+     "acc": 0.9533,
+     "tv": 0.0703,
+     "ece": 0.0615,
+     "sn": 4.38,
+     "splits": 20.6,
+     "feat90": 3.346
+    },
+    "soft_hard": {
+     "fid": 0.9533,
+     "acc": 0.94,
+     "tv": 0.0556,
+     "ece": 0.06,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9733,
+     "acc": 0.9467,
+     "tv": 0.0617,
+     "ece": 0.0582,
+     "sn": 4.38,
+     "splits": 17.0,
+     "feat90": 3.3841
+    },
+    "soft_noaug": {
+     "fid": 0.9667,
+     "acc": 0.94,
+     "tv": 0.0576,
+     "ece": 0.0598,
+     "sn": 2.82
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "Wine": {
+  "LightGBM": {
+   "n_train": 142,
+   "mean": {
+    "teacher": {
+     "acc": 0.9775,
+     "ece": 0.0253
+    },
+    "cart6": {
+     "fid": 0.9606,
+     "acc": 0.9495,
+     "tv": 0.0451,
+     "ece": 0.0505,
+     "sn": 0.0,
+     "leaves": 12.6
+    },
+    "cart_eq": {
+     "fid": 0.9773,
+     "acc": 0.9662,
+     "tv": 0.0305,
+     "ece": 0.0338,
+     "sn": 0.0,
+     "leaves": 12.4
+    },
+    "multi6": {
+     "fid": 0.9773,
+     "acc": 0.9887,
+     "tv": 0.0399,
+     "ece": 0.0152,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.961,
+     "acc": 0.9721,
+     "tv": 0.0452,
+     "ece": 0.0324,
+     "sn": 4.42,
+     "splits": 18.6,
+     "feat90": 9.2667
+    },
+    "soft_hard": {
+     "fid": 0.961,
+     "acc": 0.9721,
+     "tv": 0.0427,
+     "ece": 0.0279,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9944,
+     "acc": 0.9719,
+     "tv": 0.0238,
+     "ece": 0.0346,
+     "sn": 3.26,
+     "splits": 11.4,
+     "feat90": 9.3683
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 142,
+   "mean": {
+    "teacher": {
+     "acc": 0.9776,
+     "ece": 0.1086
+    },
+    "cart6": {
+     "fid": 0.9603,
+     "acc": 0.9379,
+     "tv": 0.126,
+     "ece": 0.0621,
+     "sn": 0.0,
+     "leaves": 12.4
+    },
+    "cart_eq": {
+     "fid": 0.9492,
+     "acc": 0.9268,
+     "tv": 0.1213,
+     "ece": 0.0623,
+     "sn": 0.0,
+     "leaves": 9.6
+    },
+    "multi6": {
+     "fid": 0.9719,
+     "acc": 0.9943,
+     "tv": 0.1147,
+     "ece": 0.0062,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9778,
+     "acc": 0.9776,
+     "tv": 0.102,
+     "ece": 0.028,
+     "sn": 3.94,
+     "splits": 16.6,
+     "feat90": 9.3873
+    },
+    "soft_hard": {
+     "fid": 0.9778,
+     "acc": 0.9776,
+     "tv": 0.1149,
+     "ece": 0.0224,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9776,
+     "acc": 0.9663,
+     "tv": 0.0665,
+     "ece": 0.0734,
+     "sn": 2.74,
+     "splits": 4.0,
+     "feat90": 9.5079
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 142,
+   "mean": {
+    "teacher": {
+     "acc": 0.9494,
+     "ece": 0.0459
+    },
+    "cart6": {
+     "fid": 0.9494,
+     "acc": 0.9327,
+     "tv": 0.0744,
+     "ece": 0.0673,
+     "sn": 0.0,
+     "leaves": 13.4
+    },
+    "cart_eq": {
+     "fid": 0.9324,
+     "acc": 0.9157,
+     "tv": 0.085,
+     "ece": 0.0759,
+     "sn": 0.0,
+     "leaves": 10.0
+    },
+    "multi6": {
+     "fid": 0.9494,
+     "acc": 0.9889,
+     "tv": 0.0673,
+     "ece": 0.0096,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9551,
+     "acc": 0.9721,
+     "tv": 0.0657,
+     "ece": 0.0331,
+     "sn": 2.9,
+     "splits": 11.4,
+     "feat90": 9.3683
+    },
+    "soft_hard": {
+     "fid": 0.9551,
+     "acc": 0.9721,
+     "tv": 0.066,
+     "ece": 0.0279,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9494,
+     "acc": 0.9663,
+     "tv": 0.0488,
+     "ece": 0.043,
+     "sn": 2.88,
+     "splits": 8.2,
+     "feat90": 9.4159
+    },
+    "soft_noaug": {
+     "fid": 0.9551,
+     "acc": 0.9721,
+     "tv": 0.062,
+     "ece": 0.0395,
+     "sn": 1.32
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "banknote-authentication": {
+  "LightGBM": {
+   "n_train": 1097,
+   "mean": {
+    "teacher": {
+     "acc": 0.9956,
+     "ece": 0.0044
+    },
+    "cart6": {
+     "fid": 0.9913,
+     "acc": 0.9869,
+     "tv": 0.0111,
+     "ece": 0.0123,
+     "sn": 0.0,
+     "leaves": 35.4
+    },
+    "cart_eq": {
+     "fid": 0.9344,
+     "acc": 0.9315,
+     "tv": 0.1167,
+     "ece": 0.0285,
+     "sn": 0.0,
+     "leaves": 5.4
+    },
+    "multi6": {
+     "fid": 0.9796,
+     "acc": 0.9825,
+     "tv": 0.0401,
+     "ece": 0.0096,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9803,
+     "acc": 0.9818,
+     "tv": 0.031,
+     "ece": 0.0248,
+     "sn": 10.36,
+     "splits": 4.4,
+     "feat90": 3.4381
+    },
+    "soft_hard": {
+     "fid": 0.9803,
+     "acc": 0.9818,
+     "tv": 0.0198,
+     "ece": 0.0182,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.984,
+     "acc": 0.9869,
+     "tv": 0.0251,
+     "ece": 0.0191,
+     "sn": 24.08,
+     "splits": 13.6,
+     "feat90": 3.3841
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 1097,
+   "mean": {
+    "teacher": {
+     "acc": 0.9913,
+     "ece": 0.0217
+    },
+    "cart6": {
+     "fid": 0.9912,
+     "acc": 0.9869,
+     "tv": 0.0252,
+     "ece": 0.0127,
+     "sn": 0.0,
+     "leaves": 32.8
+    },
+    "cart_eq": {
+     "fid": 0.9475,
+     "acc": 0.9387,
+     "tv": 0.084,
+     "ece": 0.0251,
+     "sn": 0.0,
+     "leaves": 6.8
+    },
+    "multi6": {
+     "fid": 0.9738,
+     "acc": 0.9825,
+     "tv": 0.0478,
+     "ece": 0.0075,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.973,
+     "acc": 0.9803,
+     "tv": 0.0388,
+     "ece": 0.022,
+     "sn": 12.1,
+     "splits": 5.8,
+     "feat90": 3.4032
+    },
+    "soft_hard": {
+     "fid": 0.973,
+     "acc": 0.9803,
+     "tv": 0.0418,
+     "ece": 0.0197,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.984,
+     "acc": 0.9898,
+     "tv": 0.0296,
+     "ece": 0.0325,
+     "sn": 22.92,
+     "splits": 8.8,
+     "feat90": 3.3746
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 1097,
+   "mean": {
+    "teacher": {
+     "acc": 0.9964,
+     "ece": 0.006
+    },
+    "cart6": {
+     "fid": 0.9869,
+     "acc": 0.9832,
+     "tv": 0.0177,
+     "ece": 0.0139,
+     "sn": 0.0,
+     "leaves": 33.0
+    },
+    "cart_eq": {
+     "fid": 0.938,
+     "acc": 0.9343,
+     "tv": 0.1045,
+     "ece": 0.0259,
+     "sn": 0.0,
+     "leaves": 6.2
+    },
+    "multi6": {
+     "fid": 0.9818,
+     "acc": 0.984,
+     "tv": 0.039,
+     "ece": 0.0086,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9818,
+     "acc": 0.9825,
+     "tv": 0.0298,
+     "ece": 0.0221,
+     "sn": 11.46,
+     "splits": 5.2,
+     "feat90": 3.4063
+    },
+    "soft_hard": {
+     "fid": 0.9818,
+     "acc": 0.9825,
+     "tv": 0.024,
+     "ece": 0.0175,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9912,
+     "acc": 0.9934,
+     "tv": 0.0169,
+     "ece": 0.0142,
+     "sn": 25.64,
+     "splits": 13.2,
+     "feat90": 3.3302
+    },
+    "soft_noaug": {
+     "fid": 0.9861,
+     "acc": 0.9883,
+     "tv": 0.0211,
+     "ece": 0.0128,
+     "sn": 21.1
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "blood-transfusion-service-center": {
+  "LightGBM": {
+   "n_train": 598,
+   "mean": {
+    "teacher": {
+     "acc": 0.7393,
+     "ece": 0.1486
+    },
+    "cart6": {
+     "fid": 0.8837,
+     "acc": 0.7379,
+     "tv": 0.1427,
+     "ece": 0.1676,
+     "sn": 0.0,
+     "leaves": 42.2
+    },
+    "cart_eq": {
+     "fid": 0.8568,
+     "acc": 0.7807,
+     "tv": 0.1537,
+     "ece": 0.0894,
+     "sn": 0.0,
+     "leaves": 6.0
+    },
+    "multi6": {
+     "fid": 0.8195,
+     "acc": 0.7674,
+     "tv": 0.2063,
+     "ece": 0.058,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8395,
+     "acc": 0.7901,
+     "tv": 0.1521,
+     "ece": 0.0926,
+     "sn": 6.1,
+     "splits": 5.0,
+     "feat90": 3.3905
+    },
+    "soft_hard": {
+     "fid": 0.8542,
+     "acc": 0.7673,
+     "tv": 0.2061,
+     "ece": 0.2327,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8409,
+     "acc": 0.7807,
+     "tv": 0.1583,
+     "ece": 0.0807,
+     "sn": 8.8,
+     "splits": 3.8,
+     "feat90": 3.4381
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 598,
+   "mean": {
+    "teacher": {
+     "acc": 0.75,
+     "ece": 0.1124
+    },
+    "cart6": {
+     "fid": 0.8997,
+     "acc": 0.7674,
+     "tv": 0.1413,
+     "ece": 0.1824,
+     "sn": 0.0,
+     "leaves": 44.6
+    },
+    "cart_eq": {
+     "fid": 0.8851,
+     "acc": 0.7714,
+     "tv": 0.1368,
+     "ece": 0.1361,
+     "sn": 0.0,
+     "leaves": 9.4
+    },
+    "multi6": {
+     "fid": 0.8463,
+     "acc": 0.7674,
+     "tv": 0.1784,
+     "ece": 0.0879,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8703,
+     "acc": 0.7807,
+     "tv": 0.134,
+     "ece": 0.1107,
+     "sn": 8.88,
+     "splits": 8.4,
+     "feat90": 3.3143
+    },
+    "soft_hard": {
+     "fid": 0.873,
+     "acc": 0.7887,
+     "tv": 0.2064,
+     "ece": 0.2113,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8649,
+     "acc": 0.778,
+     "tv": 0.1359,
+     "ece": 0.0783,
+     "sn": 13.42,
+     "splits": 6.4,
+     "feat90": 3.4063
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 598,
+   "mean": {
+    "teacher": {
+     "acc": 0.7553,
+     "ece": 0.1164
+    },
+    "cart6": {
+     "fid": 0.8957,
+     "acc": 0.7553,
+     "tv": 0.1356,
+     "ece": 0.1639,
+     "sn": 0.0,
+     "leaves": 42.4
+    },
+    "cart_eq": {
+     "fid": 0.8877,
+     "acc": 0.7794,
+     "tv": 0.1415,
+     "ece": 0.1341,
+     "sn": 0.0,
+     "leaves": 13.0
+    },
+    "multi6": {
+     "fid": 0.8382,
+     "acc": 0.7727,
+     "tv": 0.1832,
+     "ece": 0.0891,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8676,
+     "acc": 0.7807,
+     "tv": 0.1386,
+     "ece": 0.1145,
+     "sn": 11.82,
+     "splits": 12.0,
+     "feat90": 3.3206
+    },
+    "soft_hard": {
+     "fid": 0.8595,
+     "acc": 0.7807,
+     "tv": 0.2084,
+     "ece": 0.2193,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8689,
+     "acc": 0.7874,
+     "tv": 0.1275,
+     "ece": 0.0753,
+     "sn": 19.6,
+     "splits": 10.6,
+     "feat90": 3.327
+    },
+    "soft_noaug": {
+     "fid": 0.8756,
+     "acc": 0.786,
+     "tv": 0.1461,
+     "ece": 0.1036,
+     "sn": 2.46
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "climate-model-simulation-crashes": {
+  "LightGBM": {
+   "n_train": 432,
+   "mean": {
+    "teacher": {
+     "acc": 0.9389,
+     "ece": 0.0593
+    },
+    "cart6": {
+     "fid": 0.9593,
+     "acc": 0.9241,
+     "tv": 0.0445,
+     "ece": 0.0752,
+     "sn": 0.0,
+     "leaves": 26.4
+    },
+    "cart_eq": {
+     "fid": 0.9556,
+     "acc": 0.9167,
+     "tv": 0.0502,
+     "ece": 0.0674,
+     "sn": 0.0,
+     "leaves": 16.0
+    },
+    "multi6": {
+     "fid": 0.9722,
+     "acc": 0.9519,
+     "tv": 0.056,
+     "ece": 0.0152,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9315,
+     "acc": 0.9333,
+     "tv": 0.0693,
+     "ece": 0.0574,
+     "sn": 10.58,
+     "splits": 15.0,
+     "feat90": 12.6984
+    },
+    "soft_hard": {
+     "fid": 0.9278,
+     "acc": 0.9296,
+     "tv": 0.0709,
+     "ece": 0.0704,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9352,
+     "acc": 0.937,
+     "tv": 0.0657,
+     "ece": 0.0507,
+     "sn": 9.26,
+     "splits": 12.6,
+     "feat90": 12.781
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 432,
+   "mean": {
+    "teacher": {
+     "acc": 0.9222,
+     "ece": 0.0645
+    },
+    "cart6": {
+     "fid": 0.9407,
+     "acc": 0.9074,
+     "tv": 0.112,
+     "ece": 0.0869,
+     "sn": 0.0,
+     "leaves": 30.2
+    },
+    "cart_eq": {
+     "fid": 0.9815,
+     "acc": 0.9296,
+     "tv": 0.0734,
+     "ece": 0.0419,
+     "sn": 0.0,
+     "leaves": 7.0
+    },
+    "multi6": {
+     "fid": 0.9833,
+     "acc": 0.9315,
+     "tv": 0.0727,
+     "ece": 0.0386,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9667,
+     "acc": 0.9407,
+     "tv": 0.0798,
+     "ece": 0.0494,
+     "sn": 5.14,
+     "splits": 6.0,
+     "feat90": 12.8667
+    },
+    "soft_hard": {
+     "fid": 0.9574,
+     "acc": 0.9463,
+     "tv": 0.1052,
+     "ece": 0.0537,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9833,
+     "acc": 0.9352,
+     "tv": 0.0425,
+     "ece": 0.0686,
+     "sn": 4.84,
+     "splits": 2.2,
+     "feat90": 12.8095
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 432,
+   "mean": {
+    "teacher": {
+     "acc": 0.9407,
+     "ece": 0.0462
+    },
+    "cart6": {
+     "fid": 0.9574,
+     "acc": 0.9167,
+     "tv": 0.0511,
+     "ece": 0.0816,
+     "sn": 0.0,
+     "leaves": 27.0
+    },
+    "cart_eq": {
+     "fid": 0.9593,
+     "acc": 0.9185,
+     "tv": 0.0554,
+     "ece": 0.0629,
+     "sn": 0.0,
+     "leaves": 12.0
+    },
+    "multi6": {
+     "fid": 0.9722,
+     "acc": 0.9463,
+     "tv": 0.0567,
+     "ece": 0.0231,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9519,
+     "acc": 0.9407,
+     "tv": 0.0543,
+     "ece": 0.0481,
+     "sn": 8.2,
+     "splits": 11.0,
+     "feat90": 12.727
+    },
+    "soft_hard": {
+     "fid": 0.9426,
+     "acc": 0.9426,
+     "tv": 0.0645,
+     "ece": 0.0574,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9611,
+     "acc": 0.95,
+     "tv": 0.0461,
+     "ece": 0.0434,
+     "sn": 8.46,
+     "splits": 9.2,
+     "feat90": 12.7873
+    },
+    "soft_noaug": {
+     "fid": 0.9593,
+     "acc": 0.9444,
+     "tv": 0.0565,
+     "ece": 0.0435,
+     "sn": 1.76
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "diabetes": {
+  "LightGBM": {
+   "n_train": 614,
+   "mean": {
+    "teacher": {
+     "acc": 0.7239,
+     "ece": 0.2216
+    },
+    "cart6": {
+     "fid": 0.832,
+     "acc": 0.7514,
+     "tv": 0.1779,
+     "ece": 0.1428,
+     "sn": 0.0,
+     "leaves": 44.8
+    },
+    "cart_eq": {
+     "fid": 0.8098,
+     "acc": 0.7527,
+     "tv": 0.2316,
+     "ece": 0.0748,
+     "sn": 0.0,
+     "leaves": 6.0
+    },
+    "multi6": {
+     "fid": 0.8423,
+     "acc": 0.7722,
+     "tv": 0.2406,
+     "ece": 0.0542,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8528,
+     "acc": 0.7618,
+     "tv": 0.1896,
+     "ece": 0.0955,
+     "sn": 6.14,
+     "splits": 5.0,
+     "feat90": 6.0254
+    },
+    "soft_hard": {
+     "fid": 0.8202,
+     "acc": 0.7318,
+     "tv": 0.1919,
+     "ece": 0.2682,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8501,
+     "acc": 0.7618,
+     "tv": 0.1869,
+     "ece": 0.0847,
+     "sn": 8.88,
+     "splits": 6.0,
+     "feat90": 5.9905
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 614,
+   "mean": {
+    "teacher": {
+     "acc": 0.7539,
+     "ece": 0.0714
+    },
+    "cart6": {
+     "fid": 0.8698,
+     "acc": 0.7591,
+     "tv": 0.1689,
+     "ece": 0.1483,
+     "sn": 0.0,
+     "leaves": 45.4
+    },
+    "cart_eq": {
+     "fid": 0.8737,
+     "acc": 0.7474,
+     "tv": 0.1465,
+     "ece": 0.0767,
+     "sn": 0.0,
+     "leaves": 6.8
+    },
+    "multi6": {
+     "fid": 0.9023,
+     "acc": 0.7761,
+     "tv": 0.1476,
+     "ece": 0.0623,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.884,
+     "acc": 0.7761,
+     "tv": 0.1186,
+     "ece": 0.0909,
+     "sn": 6.86,
+     "splits": 5.8,
+     "feat90": 6.0127
+    },
+    "soft_hard": {
+     "fid": 0.8815,
+     "acc": 0.7657,
+     "tv": 0.2643,
+     "ece": 0.2343,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8944,
+     "acc": 0.7735,
+     "tv": 0.0813,
+     "ece": 0.0772,
+     "sn": 9.42,
+     "splits": 3.4,
+     "feat90": 6.0381
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 614,
+   "mean": {
+    "teacher": {
+     "acc": 0.7317,
+     "ece": 0.1693
+    },
+    "cart6": {
+     "fid": 0.8411,
+     "acc": 0.7552,
+     "tv": 0.1496,
+     "ece": 0.1356,
+     "sn": 0.0,
+     "leaves": 45.8
+    },
+    "cart_eq": {
+     "fid": 0.8462,
+     "acc": 0.7474,
+     "tv": 0.1747,
+     "ece": 0.0772,
+     "sn": 0.0,
+     "leaves": 7.2
+    },
+    "multi6": {
+     "fid": 0.8449,
+     "acc": 0.7748,
+     "tv": 0.2028,
+     "ece": 0.0599,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8514,
+     "acc": 0.7735,
+     "tv": 0.1473,
+     "ece": 0.1032,
+     "sn": 7.18,
+     "splits": 6.2,
+     "feat90": 6.0032
+    },
+    "soft_hard": {
+     "fid": 0.8215,
+     "acc": 0.767,
+     "tv": 0.1962,
+     "ece": 0.233,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8489,
+     "acc": 0.7761,
+     "tv": 0.1612,
+     "ece": 0.0987,
+     "sn": 7.92,
+     "splits": 3.4,
+     "feat90": 6.0413
+    },
+    "soft_noaug": {
+     "fid": 0.8411,
+     "acc": 0.7709,
+     "tv": 0.1741,
+     "ece": 0.0776,
+     "sn": 2.06
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "ilpd": {
+  "LightGBM": {
+   "n_train": 466,
+   "mean": {
+    "teacher": {
+     "acc": 0.7307,
+     "ece": 0.2073
+    },
+    "cart6": {
+     "fid": 0.7976,
+     "acc": 0.6827,
+     "tv": 0.199,
+     "ece": 0.1649,
+     "sn": 0.0,
+     "leaves": 44.8
+    },
+    "cart_eq": {
+     "fid": 0.7977,
+     "acc": 0.7067,
+     "tv": 0.2231,
+     "ece": 0.0789,
+     "sn": 0.0,
+     "leaves": 5.6
+    },
+    "multi6": {
+     "fid": 0.7582,
+     "acc": 0.7084,
+     "tv": 0.2987,
+     "ece": 0.0531,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.7754,
+     "acc": 0.7256,
+     "tv": 0.2171,
+     "ece": 0.0828,
+     "sn": 4.5,
+     "splits": 4.6,
+     "feat90": 7.4095
+    },
+    "soft_hard": {
+     "fid": 0.7565,
+     "acc": 0.6896,
+     "tv": 0.2529,
+     "ece": 0.3104,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.7874,
+     "acc": 0.7204,
+     "tv": 0.2172,
+     "ece": 0.0884,
+     "sn": 5.62,
+     "splits": 4.2,
+     "feat90": 7.3873
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 466,
+   "mean": {
+    "teacher": {
+     "acc": 0.7307,
+     "ece": 0.0774
+    },
+    "cart6": {
+     "fid": 0.7907,
+     "acc": 0.6929,
+     "tv": 0.1569,
+     "ece": 0.1609,
+     "sn": 0.0,
+     "leaves": 42.0
+    },
+    "cart_eq": {
+     "fid": 0.8252,
+     "acc": 0.7102,
+     "tv": 0.1302,
+     "ece": 0.0981,
+     "sn": 0.0,
+     "leaves": 5.6
+    },
+    "multi6": {
+     "fid": 0.8132,
+     "acc": 0.7119,
+     "tv": 0.1849,
+     "ece": 0.0837,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8372,
+     "acc": 0.729,
+     "tv": 0.1103,
+     "ece": 0.1096,
+     "sn": 4.58,
+     "splits": 4.6,
+     "feat90": 7.381
+    },
+    "soft_hard": {
+     "fid": 0.8047,
+     "acc": 0.7102,
+     "tv": 0.2994,
+     "ece": 0.2898,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8234,
+     "acc": 0.7118,
+     "tv": 0.0946,
+     "ece": 0.0554,
+     "sn": 7.42,
+     "splits": 3.6,
+     "feat90": 7.3746
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 466,
+   "mean": {
+    "teacher": {
+     "acc": 0.717,
+     "ece": 0.1912
+    },
+    "cart6": {
+     "fid": 0.8063,
+     "acc": 0.6913,
+     "tv": 0.1685,
+     "ece": 0.1713,
+     "sn": 0.0,
+     "leaves": 47.4
+    },
+    "cart_eq": {
+     "fid": 0.8028,
+     "acc": 0.7119,
+     "tv": 0.1819,
+     "ece": 0.0903,
+     "sn": 0.0,
+     "leaves": 7.4
+    },
+    "multi6": {
+     "fid": 0.7754,
+     "acc": 0.7153,
+     "tv": 0.2573,
+     "ece": 0.0547,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.7857,
+     "acc": 0.7393,
+     "tv": 0.177,
+     "ece": 0.0899,
+     "sn": 5.72,
+     "splits": 6.4,
+     "feat90": 7.3714
+    },
+    "soft_hard": {
+     "fid": 0.7617,
+     "acc": 0.7016,
+     "tv": 0.264,
+     "ece": 0.2984,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.7857,
+     "acc": 0.7153,
+     "tv": 0.18,
+     "ece": 0.0776,
+     "sn": 8.94,
+     "splits": 5.8,
+     "feat90": 7.3651
+    },
+    "soft_noaug": {
+     "fid": 0.7789,
+     "acc": 0.7187,
+     "tv": 0.199,
+     "ece": 0.072,
+     "sn": 1.68
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "kc1": {
+  "LightGBM": {
+   "n_train": 1687,
+   "mean": {
+    "teacher": {
+     "acc": 0.8516,
+     "ece": 0.1059
+    },
+    "cart6": {
+     "fid": 0.9099,
+     "acc": 0.8506,
+     "tv": 0.1189,
+     "ece": 0.0767,
+     "sn": 0.0,
+     "leaves": 46.2
+    },
+    "cart_eq": {
+     "fid": 0.9037,
+     "acc": 0.8502,
+     "tv": 0.127,
+     "ece": 0.0571,
+     "sn": 0.0,
+     "leaves": 8.8
+    },
+    "multi6": {
+     "fid": 0.9123,
+     "acc": 0.8615,
+     "tv": 0.1365,
+     "ece": 0.053,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9132,
+     "acc": 0.8634,
+     "tv": 0.1188,
+     "ece": 0.0619,
+     "sn": 24.44,
+     "splits": 7.8,
+     "feat90": 14.546
+    },
+    "soft_hard": {
+     "fid": 0.889,
+     "acc": 0.8412,
+     "tv": 0.1272,
+     "ece": 0.1588,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9066,
+     "acc": 0.8578,
+     "tv": 0.1265,
+     "ece": 0.0487,
+     "sn": 31.1,
+     "splits": 7.0,
+     "feat90": 14.6
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 1687,
+   "mean": {
+    "teacher": {
+     "acc": 0.8606,
+     "ece": 0.0458
+    },
+    "cart6": {
+     "fid": 0.9431,
+     "acc": 0.8511,
+     "tv": 0.0999,
+     "ece": 0.0798,
+     "sn": 0.0,
+     "leaves": 39.2
+    },
+    "cart_eq": {
+     "fid": 0.9398,
+     "acc": 0.8516,
+     "tv": 0.0966,
+     "ece": 0.0636,
+     "sn": 0.0,
+     "leaves": 6.8
+    },
+    "multi6": {
+     "fid": 0.9384,
+     "acc": 0.8578,
+     "tv": 0.1253,
+     "ece": 0.0681,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9303,
+     "acc": 0.8516,
+     "tv": 0.0884,
+     "ece": 0.0689,
+     "sn": 18.98,
+     "splits": 5.8,
+     "feat90": 14.5524
+    },
+    "soft_hard": {
+     "fid": 0.9232,
+     "acc": 0.8502,
+     "tv": 0.1453,
+     "ece": 0.1498,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9393,
+     "acc": 0.8615,
+     "tv": 0.1534,
+     "ece": 0.1084,
+     "sn": 41.86,
+     "splits": 7.4,
+     "feat90": 14.5175
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 1687,
+   "mean": {
+    "teacher": {
+     "acc": 0.8568,
+     "ece": 0.072
+    },
+    "cart6": {
+     "fid": 0.9294,
+     "acc": 0.8525,
+     "tv": 0.0979,
+     "ece": 0.083,
+     "sn": 0.0,
+     "leaves": 43.4
+    },
+    "cart_eq": {
+     "fid": 0.9203,
+     "acc": 0.8502,
+     "tv": 0.1023,
+     "ece": 0.0574,
+     "sn": 0.0,
+     "leaves": 7.6
+    },
+    "multi6": {
+     "fid": 0.9218,
+     "acc": 0.8592,
+     "tv": 0.1177,
+     "ece": 0.0589,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9161,
+     "acc": 0.8582,
+     "tv": 0.0959,
+     "ece": 0.0653,
+     "sn": 20.96,
+     "splits": 6.6,
+     "feat90": 14.5619
+    },
+    "soft_hard": {
+     "fid": 0.9109,
+     "acc": 0.8454,
+     "tv": 0.128,
+     "ece": 0.1546,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.926,
+     "acc": 0.8625,
+     "tv": 0.1093,
+     "ece": 0.0359,
+     "sn": 32.68,
+     "splits": 5.6,
+     "feat90": 14.6286
+    },
+    "soft_noaug": {
+     "fid": 0.9222,
+     "acc": 0.8606,
+     "tv": 0.1098,
+     "ece": 0.0452,
+     "sn": 5.24
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "optdigits": {
+  "LightGBM": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9808,
+     "ece": 0.015
+    },
+    "cart6": {
+     "fid": 0.8266,
+     "acc": 0.8222,
+     "tv": 0.234,
+     "ece": 0.0362,
+     "sn": 0.2,
+     "leaves": 62.2
+    },
+    "cart_eq": {
+     "fid": 0.7052,
+     "acc": 0.7,
+     "tv": 0.4247,
+     "ece": 0.0271,
+     "sn": 0.2,
+     "leaves": 14.8
+    },
+    "multi6": {
+     "fid": 0.9478,
+     "acc": 0.9464,
+     "tv": 0.0832,
+     "ece": 0.0176,
+     "sn": 0.4
+    },
+    "soft": {
+     "fid": 0.9426,
+     "acc": 0.9442,
+     "tv": 0.071,
+     "ece": 0.0281,
+     "sn": 104.92,
+     "splits": 13.8,
+     "feat90": 41.9333
+    },
+    "soft_hard": {
+     "fid": 0.94,
+     "acc": 0.942,
+     "tv": 0.0614,
+     "ece": 0.058,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9488,
+     "acc": 0.9494,
+     "tv": 0.0645,
+     "ece": 0.0219,
+     "sn": 101.34,
+     "splits": 13.0,
+     "feat90": 41.7905
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9826,
+     "ece": 0.1529
+    },
+    "cart6": {
+     "fid": 0.8294,
+     "acc": 0.8214,
+     "tv": 0.2259,
+     "ece": 0.0403,
+     "sn": 0.22,
+     "leaves": 62.0
+    },
+    "cart_eq": {
+     "fid": 0.698,
+     "acc": 0.6912,
+     "tv": 0.3748,
+     "ece": 0.0241,
+     "sn": 0.2,
+     "leaves": 12.0
+    },
+    "multi6": {
+     "fid": 0.9286,
+     "acc": 0.9282,
+     "tv": 0.1753,
+     "ece": 0.0289,
+     "sn": 0.4
+    },
+    "soft": {
+     "fid": 0.9422,
+     "acc": 0.9402,
+     "tv": 0.1725,
+     "ece": 0.0229,
+     "sn": 87.7,
+     "splits": 11.0,
+     "feat90": 42.0635
+    },
+    "soft_hard": {
+     "fid": 0.9408,
+     "acc": 0.9388,
+     "tv": 0.1949,
+     "ece": 0.0612,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9474,
+     "acc": 0.943,
+     "tv": 0.1393,
+     "ece": 0.126,
+     "sn": 442.0,
+     "splits": 10.8,
+     "feat90": 41.8381
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9762,
+     "ece": 0.0104
+    },
+    "cart6": {
+     "fid": 0.8296,
+     "acc": 0.826,
+     "tv": 0.2263,
+     "ece": 0.0378,
+     "sn": 0.2,
+     "leaves": 61.8
+    },
+    "cart_eq": {
+     "fid": 0.7126,
+     "acc": 0.708,
+     "tv": 0.4099,
+     "ece": 0.022,
+     "sn": 0.2,
+     "leaves": 14.6
+    },
+    "multi6": {
+     "fid": 0.9258,
+     "acc": 0.926,
+     "tv": 0.106,
+     "ece": 0.0174,
+     "sn": 0.32
+    },
+    "soft": {
+     "fid": 0.944,
+     "acc": 0.9454,
+     "tv": 0.073,
+     "ece": 0.0235,
+     "sn": 102.64,
+     "splits": 13.6,
+     "feat90": 41.6952
+    },
+    "soft_hard": {
+     "fid": 0.9418,
+     "acc": 0.943,
+     "tv": 0.068,
+     "ece": 0.057,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.951,
+     "acc": 0.9538,
+     "tv": 0.0652,
+     "ece": 0.0203,
+     "sn": 126.74,
+     "splits": 14.4,
+     "feat90": 41.4667
+    },
+    "soft_noaug": {
+     "fid": 0.942,
+     "acc": 0.9454,
+     "tv": 0.0741,
+     "ece": 0.0252,
+     "sn": 32.2
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "ozone-level-8hr": {
+  "LightGBM": {
+   "n_train": 2027,
+   "mean": {
+    "teacher": {
+     "acc": 0.9436,
+     "ece": 0.0506
+    },
+    "cart6": {
+     "fid": 0.9692,
+     "acc": 0.9341,
+     "tv": 0.0482,
+     "ece": 0.0442,
+     "sn": 0.2,
+     "leaves": 44.4
+    },
+    "cart_eq": {
+     "fid": 0.9665,
+     "acc": 0.9313,
+     "tv": 0.0568,
+     "ece": 0.0275,
+     "sn": 0.1,
+     "leaves": 9.4
+    },
+    "multi6": {
+     "fid": 0.9744,
+     "acc": 0.9384,
+     "tv": 0.0626,
+     "ece": 0.0225,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.9629,
+     "acc": 0.9309,
+     "tv": 0.0433,
+     "ece": 0.0465,
+     "sn": 31.8,
+     "splits": 8.4,
+     "feat90": 49.0095
+    },
+    "soft_hard": {
+     "fid": 0.9593,
+     "acc": 0.9274,
+     "tv": 0.041,
+     "ece": 0.0726,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9629,
+     "acc": 0.9373,
+     "tv": 0.0447,
+     "ece": 0.0348,
+     "sn": 21.66,
+     "splits": 4.8,
+     "feat90": 49.3397
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 2027,
+   "mean": {
+    "teacher": {
+     "acc": 0.9436,
+     "ece": 0.0234
+    },
+    "cart6": {
+     "fid": 0.9767,
+     "acc": 0.9384,
+     "tv": 0.0581,
+     "ece": 0.0444,
+     "sn": 0.2,
+     "leaves": 38.2
+    },
+    "cart_eq": {
+     "fid": 0.9834,
+     "acc": 0.9325,
+     "tv": 0.0538,
+     "ece": 0.0324,
+     "sn": 0.1,
+     "leaves": 3.6
+    },
+    "multi6": {
+     "fid": 0.9854,
+     "acc": 0.9369,
+     "tv": 0.0633,
+     "ece": 0.0335,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.9882,
+     "acc": 0.942,
+     "tv": 0.0451,
+     "ece": 0.0365,
+     "sn": 14.26,
+     "splits": 2.6,
+     "feat90": 49.673
+    },
+    "soft_hard": {
+     "fid": 0.9818,
+     "acc": 0.9404,
+     "tv": 0.0689,
+     "ece": 0.0596,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9913,
+     "acc": 0.9412,
+     "tv": 0.0325,
+     "ece": 0.0313,
+     "sn": 21.38,
+     "splits": 2.2,
+     "feat90": 49.6413
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 2027,
+   "mean": {
+    "teacher": {
+     "acc": 0.944,
+     "ece": 0.0407
+    },
+    "cart6": {
+     "fid": 0.9617,
+     "acc": 0.9309,
+     "tv": 0.0509,
+     "ece": 0.0496,
+     "sn": 0.2,
+     "leaves": 47.8
+    },
+    "cart_eq": {
+     "fid": 0.9661,
+     "acc": 0.9353,
+     "tv": 0.0596,
+     "ece": 0.0268,
+     "sn": 0.1,
+     "leaves": 5.0
+    },
+    "multi6": {
+     "fid": 0.9732,
+     "acc": 0.9376,
+     "tv": 0.061,
+     "ece": 0.0252,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.9728,
+     "acc": 0.9428,
+     "tv": 0.0347,
+     "ece": 0.0348,
+     "sn": 18.68,
+     "splits": 4.0,
+     "feat90": 49.4095
+    },
+    "soft_hard": {
+     "fid": 0.9724,
+     "acc": 0.9432,
+     "tv": 0.0373,
+     "ece": 0.0568,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9736,
+     "acc": 0.9436,
+     "tv": 0.0361,
+     "ece": 0.0291,
+     "sn": 15.64,
+     "splits": 2.4,
+     "feat90": 49.6222
+    },
+    "soft_noaug": {
+     "fid": 0.9688,
+     "acc": 0.9388,
+     "tv": 0.0447,
+     "ece": 0.026,
+     "sn": 5.88
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "pc1": {
+  "LightGBM": {
+   "n_train": 887,
+   "mean": {
+    "teacher": {
+     "acc": 0.9378,
+     "ece": 0.0588
+    },
+    "cart6": {
+     "fid": 0.9711,
+     "acc": 0.9306,
+     "tv": 0.0502,
+     "ece": 0.0499,
+     "sn": 0.0,
+     "leaves": 20.0
+    },
+    "cart_eq": {
+     "fid": 0.9666,
+     "acc": 0.9315,
+     "tv": 0.0608,
+     "ece": 0.0392,
+     "sn": 0.0,
+     "leaves": 6.8
+    },
+    "multi6": {
+     "fid": 0.9639,
+     "acc": 0.9324,
+     "tv": 0.0613,
+     "ece": 0.038,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9648,
+     "acc": 0.9333,
+     "tv": 0.0568,
+     "ece": 0.0455,
+     "sn": 9.76,
+     "splits": 5.8,
+     "feat90": 14.7016
+    },
+    "soft_hard": {
+     "fid": 0.9594,
+     "acc": 0.9297,
+     "tv": 0.045,
+     "ece": 0.0703,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9685,
+     "acc": 0.9369,
+     "tv": 0.0588,
+     "ece": 0.0406,
+     "sn": 8.14,
+     "splits": 4.0,
+     "feat90": 14.7206
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 887,
+   "mean": {
+    "teacher": {
+     "acc": 0.9405,
+     "ece": 0.0305
+    },
+    "cart6": {
+     "fid": 0.9702,
+     "acc": 0.927,
+     "tv": 0.0663,
+     "ece": 0.0612,
+     "sn": 0.0,
+     "leaves": 19.8
+    },
+    "cart_eq": {
+     "fid": 0.9684,
+     "acc": 0.9306,
+     "tv": 0.0711,
+     "ece": 0.0504,
+     "sn": 0.0,
+     "leaves": 7.6
+    },
+    "multi6": {
+     "fid": 0.9739,
+     "acc": 0.9306,
+     "tv": 0.0711,
+     "ece": 0.0524,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9748,
+     "acc": 0.9351,
+     "tv": 0.0597,
+     "ece": 0.0477,
+     "sn": 10.74,
+     "splits": 6.6,
+     "feat90": 14.6159
+    },
+    "soft_hard": {
+     "fid": 0.9721,
+     "acc": 0.9324,
+     "tv": 0.0747,
+     "ece": 0.0676,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9702,
+     "acc": 0.9306,
+     "tv": 0.1038,
+     "ece": 0.0698,
+     "sn": 14.14,
+     "splits": 4.2,
+     "feat90": 14.6603
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 887,
+   "mean": {
+    "teacher": {
+     "acc": 0.9351,
+     "ece": 0.0507
+    },
+    "cart6": {
+     "fid": 0.9666,
+     "acc": 0.9342,
+     "tv": 0.0507,
+     "ece": 0.0543,
+     "sn": 0.0,
+     "leaves": 23.4
+    },
+    "cart_eq": {
+     "fid": 0.963,
+     "acc": 0.9306,
+     "tv": 0.0575,
+     "ece": 0.0413,
+     "sn": 0.0,
+     "leaves": 8.0
+    },
+    "multi6": {
+     "fid": 0.9639,
+     "acc": 0.9297,
+     "tv": 0.0604,
+     "ece": 0.0427,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.963,
+     "acc": 0.936,
+     "tv": 0.0494,
+     "ece": 0.046,
+     "sn": 11.3,
+     "splits": 7.0,
+     "feat90": 14.5238
+    },
+    "soft_hard": {
+     "fid": 0.9558,
+     "acc": 0.9306,
+     "tv": 0.0536,
+     "ece": 0.0694,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9639,
+     "acc": 0.9351,
+     "tv": 0.0596,
+     "ece": 0.0362,
+     "sn": 8.92,
+     "splits": 3.6,
+     "feat90": 14.6603
+    },
+    "soft_noaug": {
+     "fid": 0.9684,
+     "acc": 0.936,
+     "tv": 0.0662,
+     "ece": 0.0313,
+     "sn": 4.04
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "pc3": {
+  "LightGBM": {
+   "n_train": 1250,
+   "mean": {
+    "teacher": {
+     "acc": 0.8957,
+     "ece": 0.0923
+    },
+    "cart6": {
+     "fid": 0.9424,
+     "acc": 0.8855,
+     "tv": 0.0775,
+     "ece": 0.0737,
+     "sn": 0.0,
+     "leaves": 37.6
+    },
+    "cart_eq": {
+     "fid": 0.9437,
+     "acc": 0.8932,
+     "tv": 0.0905,
+     "ece": 0.0446,
+     "sn": 0.0,
+     "leaves": 5.2
+    },
+    "multi6": {
+     "fid": 0.9456,
+     "acc": 0.8976,
+     "tv": 0.1125,
+     "ece": 0.0324,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9494,
+     "acc": 0.8912,
+     "tv": 0.0776,
+     "ece": 0.0594,
+     "sn": 11.48,
+     "splits": 4.2,
+     "feat90": 25.6032
+    },
+    "soft_hard": {
+     "fid": 0.9411,
+     "acc": 0.8739,
+     "tv": 0.0675,
+     "ece": 0.1261,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9488,
+     "acc": 0.8944,
+     "tv": 0.0779,
+     "ece": 0.052,
+     "sn": 11.88,
+     "splits": 3.8,
+     "feat90": 25.6317
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 1250,
+   "mean": {
+    "teacher": {
+     "acc": 0.9021,
+     "ece": 0.0323
+    },
+    "cart6": {
+     "fid": 0.9565,
+     "acc": 0.8957,
+     "tv": 0.092,
+     "ece": 0.0731,
+     "sn": 0.04,
+     "leaves": 35.4
+    },
+    "cart_eq": {
+     "fid": 0.968,
+     "acc": 0.8983,
+     "tv": 0.0827,
+     "ece": 0.0533,
+     "sn": 0.0,
+     "leaves": 5.0
+    },
+    "multi6": {
+     "fid": 0.9699,
+     "acc": 0.8976,
+     "tv": 0.1033,
+     "ece": 0.0443,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.961,
+     "acc": 0.8963,
+     "tv": 0.0761,
+     "ece": 0.065,
+     "sn": 11.06,
+     "splits": 4.0,
+     "feat90": 25.6984
+    },
+    "soft_hard": {
+     "fid": 0.9443,
+     "acc": 0.8874,
+     "tv": 0.1222,
+     "ece": 0.1126,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.968,
+     "acc": 0.897,
+     "tv": 0.0914,
+     "ece": 0.0709,
+     "sn": 13.12,
+     "splits": 1.8,
+     "feat90": 25.7683
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 1250,
+   "mean": {
+    "teacher": {
+     "acc": 0.8919,
+     "ece": 0.0695
+    },
+    "cart6": {
+     "fid": 0.9392,
+     "acc": 0.8746,
+     "tv": 0.0757,
+     "ece": 0.0882,
+     "sn": 0.02,
+     "leaves": 40.2
+    },
+    "cart_eq": {
+     "fid": 0.9392,
+     "acc": 0.8887,
+     "tv": 0.0821,
+     "ece": 0.0628,
+     "sn": 0.0,
+     "leaves": 5.4
+    },
+    "multi6": {
+     "fid": 0.9443,
+     "acc": 0.8976,
+     "tv": 0.1036,
+     "ece": 0.0358,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9469,
+     "acc": 0.8963,
+     "tv": 0.0657,
+     "ece": 0.0598,
+     "sn": 11.88,
+     "splits": 4.4,
+     "feat90": 25.6159
+    },
+    "soft_hard": {
+     "fid": 0.9443,
+     "acc": 0.8912,
+     "tv": 0.077,
+     "ece": 0.1088,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9462,
+     "acc": 0.8931,
+     "tv": 0.0733,
+     "ece": 0.0447,
+     "sn": 13.16,
+     "splits": 3.2,
+     "feat90": 25.6413
+    },
+    "soft_noaug": {
+     "fid": 0.9398,
+     "acc": 0.9034,
+     "tv": 0.0873,
+     "ece": 0.0382,
+     "sn": 3.54
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "pendigits": {
+  "LightGBM": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9878,
+     "ece": 0.0099
+    },
+    "cart6": {
+     "fid": 0.8702,
+     "acc": 0.8666,
+     "tv": 0.1927,
+     "ece": 0.0236,
+     "sn": 0.1,
+     "leaves": 56.2
+    },
+    "cart_eq": {
+     "fid": 0.8542,
+     "acc": 0.8502,
+     "tv": 0.2274,
+     "ece": 0.025,
+     "sn": 0.1,
+     "leaves": 24.8
+    },
+    "multi6": {
+     "fid": 0.9758,
+     "acc": 0.9774,
+     "tv": 0.0456,
+     "ece": 0.0077,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.9754,
+     "acc": 0.9746,
+     "tv": 0.038,
+     "ece": 0.0088,
+     "sn": 170.92,
+     "splits": 23.8,
+     "feat90": 11.0508
+    },
+    "soft_hard": {
+     "fid": 0.9736,
+     "acc": 0.973,
+     "tv": 0.027,
+     "ece": 0.027,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9716,
+     "acc": 0.9722,
+     "tv": 0.052,
+     "ece": 0.0164,
+     "sn": 164.42,
+     "splits": 18.8,
+     "feat90": 11.0889
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9884,
+     "ece": 0.0745
+    },
+    "cart6": {
+     "fid": 0.8762,
+     "acc": 0.87,
+     "tv": 0.1731,
+     "ece": 0.0233,
+     "sn": 0.1,
+     "leaves": 55.2
+    },
+    "cart_eq": {
+     "fid": 0.8354,
+     "acc": 0.8298,
+     "tv": 0.2294,
+     "ece": 0.0242,
+     "sn": 0.1,
+     "leaves": 18.8
+    },
+    "multi6": {
+     "fid": 0.9776,
+     "acc": 0.9788,
+     "tv": 0.0902,
+     "ece": 0.0071,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.974,
+     "acc": 0.9704,
+     "tv": 0.0884,
+     "ece": 0.0119,
+     "sn": 140.52,
+     "splits": 17.8,
+     "feat90": 11.219
+    },
+    "soft_hard": {
+     "fid": 0.973,
+     "acc": 0.9692,
+     "tv": 0.098,
+     "ece": 0.0308,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9822,
+     "acc": 0.9798,
+     "tv": 0.0802,
+     "ece": 0.0877,
+     "sn": 483.86,
+     "splits": 21.8,
+     "feat90": 10.8825
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.985,
+     "ece": 0.0077
+    },
+    "cart6": {
+     "fid": 0.8666,
+     "acc": 0.864,
+     "tv": 0.201,
+     "ece": 0.0269,
+     "sn": 0.1,
+     "leaves": 57.4
+    },
+    "cart_eq": {
+     "fid": 0.8554,
+     "acc": 0.8494,
+     "tv": 0.235,
+     "ece": 0.0248,
+     "sn": 0.1,
+     "leaves": 22.0
+    },
+    "multi6": {
+     "fid": 0.9702,
+     "acc": 0.9744,
+     "tv": 0.0561,
+     "ece": 0.0146,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.9722,
+     "acc": 0.973,
+     "tv": 0.0461,
+     "ece": 0.0131,
+     "sn": 155.06,
+     "splits": 21.0,
+     "feat90": 11.1175
+    },
+    "soft_hard": {
+     "fid": 0.9714,
+     "acc": 0.9726,
+     "tv": 0.0364,
+     "ece": 0.0274,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9734,
+     "acc": 0.9748,
+     "tv": 0.0487,
+     "ece": 0.0185,
+     "sn": 250.34,
+     "splits": 23.2,
+     "feat90": 11.019
+    },
+    "soft_noaug": {
+     "fid": 0.9424,
+     "acc": 0.9454,
+     "tv": 0.0863,
+     "ece": 0.0148,
+     "sn": 47.48
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "phoneme": {
+  "LightGBM": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.899,
+     "ece": 0.0444
+    },
+    "cart6": {
+     "fid": 0.8742,
+     "acc": 0.8436,
+     "tv": 0.1368,
+     "ece": 0.0497,
+     "sn": 0.0,
+     "leaves": 53.0
+    },
+    "cart_eq": {
+     "fid": 0.8576,
+     "acc": 0.8254,
+     "tv": 0.1625,
+     "ece": 0.0417,
+     "sn": 0.0,
+     "leaves": 17.8
+    },
+    "multi6": {
+     "fid": 0.821,
+     "acc": 0.7932,
+     "tv": 0.2408,
+     "ece": 0.0239,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8776,
+     "acc": 0.8458,
+     "tv": 0.132,
+     "ece": 0.0365,
+     "sn": 106.12,
+     "splits": 16.8,
+     "feat90": 3.9651
+    },
+    "soft_hard": {
+     "fid": 0.8676,
+     "acc": 0.8362,
+     "tv": 0.145,
+     "ece": 0.1638,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8794,
+     "acc": 0.8492,
+     "tv": 0.1314,
+     "ece": 0.0245,
+     "sn": 168.24,
+     "splits": 18.8,
+     "feat90": 3.8603
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9092,
+     "ece": 0.0413
+    },
+    "cart6": {
+     "fid": 0.8988,
+     "acc": 0.842,
+     "tv": 0.1054,
+     "ece": 0.0563,
+     "sn": 0.0,
+     "leaves": 50.4
+    },
+    "cart_eq": {
+     "fid": 0.8766,
+     "acc": 0.8242,
+     "tv": 0.1211,
+     "ece": 0.0515,
+     "sn": 0.0,
+     "leaves": 20.0
+    },
+    "multi6": {
+     "fid": 0.8312,
+     "acc": 0.792,
+     "tv": 0.1887,
+     "ece": 0.0341,
+     "sn": 0.02
+    },
+    "soft": {
+     "fid": 0.8966,
+     "acc": 0.8454,
+     "tv": 0.0977,
+     "ece": 0.0377,
+     "sn": 114.28,
+     "splits": 19.0,
+     "feat90": 3.8857
+    },
+    "soft_hard": {
+     "fid": 0.887,
+     "acc": 0.8402,
+     "tv": 0.1706,
+     "ece": 0.1598,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8952,
+     "acc": 0.8496,
+     "tv": 0.0938,
+     "ece": 0.0321,
+     "sn": 190.5,
+     "splits": 17.6,
+     "feat90": 3.873
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.895,
+     "ece": 0.0278
+    },
+    "cart6": {
+     "fid": 0.886,
+     "acc": 0.8426,
+     "tv": 0.1188,
+     "ece": 0.0577,
+     "sn": 0.0,
+     "leaves": 51.6
+    },
+    "cart_eq": {
+     "fid": 0.867,
+     "acc": 0.8208,
+     "tv": 0.1471,
+     "ece": 0.0453,
+     "sn": 0.0,
+     "leaves": 14.6
+    },
+    "multi6": {
+     "fid": 0.8272,
+     "acc": 0.793,
+     "tv": 0.2185,
+     "ece": 0.0311,
+     "sn": 0.02
+    },
+    "soft": {
+     "fid": 0.8844,
+     "acc": 0.8458,
+     "tv": 0.1155,
+     "ece": 0.0294,
+     "sn": 87.76,
+     "splits": 13.6,
+     "feat90": 3.9365
+    },
+    "soft_hard": {
+     "fid": 0.8688,
+     "acc": 0.8378,
+     "tv": 0.1527,
+     "ece": 0.1622,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.883,
+     "acc": 0.8448,
+     "tv": 0.1208,
+     "ece": 0.0225,
+     "sn": 158.3,
+     "splits": 16.4,
+     "feat90": 3.9397
+    },
+    "soft_noaug": {
+     "fid": 0.882,
+     "acc": 0.845,
+     "tv": 0.1241,
+     "ece": 0.0254,
+     "sn": 31.22
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "qsar-biodeg": {
+  "LightGBM": {
+   "n_train": 844,
+   "mean": {
+    "teacher": {
+     "acc": 0.8626,
+     "ece": 0.1217
+    },
+    "cart6": {
+     "fid": 0.8853,
+     "acc": 0.8237,
+     "tv": 0.1518,
+     "ece": 0.0968,
+     "sn": 0.0,
+     "leaves": 45.4
+    },
+    "cart_eq": {
+     "fid": 0.8569,
+     "acc": 0.8123,
+     "tv": 0.2074,
+     "ece": 0.0602,
+     "sn": 0.0,
+     "leaves": 8.6
+    },
+    "multi6": {
+     "fid": 0.8957,
+     "acc": 0.8588,
+     "tv": 0.1798,
+     "ece": 0.0421,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.8957,
+     "acc": 0.8664,
+     "tv": 0.122,
+     "ece": 0.0719,
+     "sn": 11.42,
+     "splits": 7.6,
+     "feat90": 28.1302
+    },
+    "soft_hard": {
+     "fid": 0.8834,
+     "acc": 0.854,
+     "tv": 0.1181,
+     "ece": 0.146,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8976,
+     "acc": 0.8664,
+     "tv": 0.128,
+     "ece": 0.0641,
+     "sn": 9.38,
+     "splits": 5.0,
+     "feat90": 28.2889
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 844,
+   "mean": {
+    "teacher": {
+     "acc": 0.872,
+     "ece": 0.0587
+    },
+    "cart6": {
+     "fid": 0.909,
+     "acc": 0.8341,
+     "tv": 0.1377,
+     "ece": 0.1101,
+     "sn": 0.0,
+     "leaves": 47.2
+    },
+    "cart_eq": {
+     "fid": 0.8749,
+     "acc": 0.8057,
+     "tv": 0.1501,
+     "ece": 0.0605,
+     "sn": 0.0,
+     "leaves": 5.2
+    },
+    "multi6": {
+     "fid": 0.9043,
+     "acc": 0.8502,
+     "tv": 0.1469,
+     "ece": 0.0549,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9336,
+     "acc": 0.872,
+     "tv": 0.1074,
+     "ece": 0.0575,
+     "sn": 7.48,
+     "splits": 4.2,
+     "feat90": 28.3714
+    },
+    "soft_hard": {
+     "fid": 0.9308,
+     "acc": 0.8692,
+     "tv": 0.1752,
+     "ece": 0.1308,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9318,
+     "acc": 0.8645,
+     "tv": 0.0943,
+     "ece": 0.0799,
+     "sn": 9.36,
+     "splits": 2.0,
+     "feat90": 28.5778
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 844,
+   "mean": {
+    "teacher": {
+     "acc": 0.8607,
+     "ece": 0.0955
+    },
+    "cart6": {
+     "fid": 0.8967,
+     "acc": 0.8275,
+     "tv": 0.1307,
+     "ece": 0.1037,
+     "sn": 0.0,
+     "leaves": 47.0
+    },
+    "cart_eq": {
+     "fid": 0.8569,
+     "acc": 0.8009,
+     "tv": 0.204,
+     "ece": 0.0594,
+     "sn": 0.0,
+     "leaves": 6.0
+    },
+    "multi6": {
+     "fid": 0.8957,
+     "acc": 0.8588,
+     "tv": 0.1663,
+     "ece": 0.0412,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9081,
+     "acc": 0.8616,
+     "tv": 0.1086,
+     "ece": 0.0563,
+     "sn": 8.46,
+     "splits": 5.0,
+     "feat90": 28.3111
+    },
+    "soft_hard": {
+     "fid": 0.8976,
+     "acc": 0.8569,
+     "tv": 0.1179,
+     "ece": 0.1431,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9128,
+     "acc": 0.8645,
+     "tv": 0.1094,
+     "ece": 0.0481,
+     "sn": 13.46,
+     "splits": 5.6,
+     "feat90": 28.2984
+    },
+    "soft_noaug": {
+     "fid": 0.8929,
+     "acc": 0.8711,
+     "tv": 0.1311,
+     "ece": 0.0455,
+     "sn": 2.52
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "satimage": {
+  "LightGBM": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9264,
+     "ece": 0.0599
+    },
+    "cart6": {
+     "fid": 0.8648,
+     "acc": 0.8424,
+     "tv": 0.1806,
+     "ece": 0.0394,
+     "sn": 0.2,
+     "leaves": 61.2
+    },
+    "cart_eq": {
+     "fid": 0.8384,
+     "acc": 0.8154,
+     "tv": 0.239,
+     "ece": 0.0259,
+     "sn": 0.16,
+     "leaves": 12.6
+    },
+    "multi6": {
+     "fid": 0.8968,
+     "acc": 0.867,
+     "tv": 0.1552,
+     "ece": 0.0373,
+     "sn": 0.22
+    },
+    "soft": {
+     "fid": 0.9064,
+     "acc": 0.8744,
+     "tv": 0.1178,
+     "ece": 0.041,
+     "sn": 86.84,
+     "splits": 11.6,
+     "feat90": 24.7619
+    },
+    "soft_hard": {
+     "fid": 0.904,
+     "acc": 0.8752,
+     "tv": 0.0973,
+     "ece": 0.1248,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.922,
+     "acc": 0.8884,
+     "tv": 0.1061,
+     "ece": 0.0396,
+     "sn": 106.8,
+     "splits": 13.4,
+     "feat90": 24.5651
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.918,
+     "ece": 0.0606
+    },
+    "cart6": {
+     "fid": 0.8814,
+     "acc": 0.842,
+     "tv": 0.1469,
+     "ece": 0.0488,
+     "sn": 0.2,
+     "leaves": 59.8
+    },
+    "cart_eq": {
+     "fid": 0.8616,
+     "acc": 0.8268,
+     "tv": 0.169,
+     "ece": 0.0312,
+     "sn": 0.18,
+     "leaves": 13.4
+    },
+    "multi6": {
+     "fid": 0.9118,
+     "acc": 0.868,
+     "tv": 0.1436,
+     "ece": 0.0482,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.9316,
+     "acc": 0.8852,
+     "tv": 0.1087,
+     "ece": 0.0479,
+     "sn": 92.28,
+     "splits": 12.4,
+     "feat90": 24.727
+    },
+    "soft_hard": {
+     "fid": 0.9298,
+     "acc": 0.885,
+     "tv": 0.1604,
+     "ece": 0.115,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9336,
+     "acc": 0.882,
+     "tv": 0.0854,
+     "ece": 0.047,
+     "sn": 242.6,
+     "splits": 12.0,
+     "feat90": 24.7048
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9176,
+     "ece": 0.0425
+    },
+    "cart6": {
+     "fid": 0.8692,
+     "acc": 0.845,
+     "tv": 0.1654,
+     "ece": 0.0405,
+     "sn": 0.2,
+     "leaves": 61.6
+    },
+    "cart_eq": {
+     "fid": 0.8522,
+     "acc": 0.8278,
+     "tv": 0.1971,
+     "ece": 0.0291,
+     "sn": 0.2,
+     "leaves": 17.0
+    },
+    "multi6": {
+     "fid": 0.9024,
+     "acc": 0.8682,
+     "tv": 0.1382,
+     "ece": 0.0389,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.9184,
+     "acc": 0.883,
+     "tv": 0.0899,
+     "ece": 0.0465,
+     "sn": 114.36,
+     "splits": 16.0,
+     "feat90": 24.654
+    },
+    "soft_hard": {
+     "fid": 0.913,
+     "acc": 0.8778,
+     "tv": 0.0978,
+     "ece": 0.1222,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9232,
+     "acc": 0.8838,
+     "tv": 0.0959,
+     "ece": 0.0363,
+     "sn": 131.2,
+     "splits": 13.2,
+     "feat90": 24.6317
+    },
+    "soft_noaug": {
+     "fid": 0.9146,
+     "acc": 0.8824,
+     "tv": 0.1133,
+     "ece": 0.0222,
+     "sn": 22.84
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "segment": {
+  "LightGBM": {
+   "n_train": 1848,
+   "mean": {
+    "teacher": {
+     "acc": 0.9801,
+     "ece": 0.0181
+    },
+    "cart6": {
+     "fid": 0.91,
+     "acc": 0.9061,
+     "tv": 0.151,
+     "ece": 0.0296,
+     "sn": 0.0,
+     "leaves": 17.4
+    },
+    "cart_eq": {
+     "fid": 0.9377,
+     "acc": 0.932,
+     "tv": 0.1127,
+     "ece": 0.0249,
+     "sn": 0.0,
+     "leaves": 16.2
+    },
+    "multi6": {
+     "fid": 0.9385,
+     "acc": 0.9333,
+     "tv": 0.1279,
+     "ece": 0.0347,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.9494,
+     "acc": 0.9429,
+     "tv": 0.0987,
+     "ece": 0.0404,
+     "sn": 51.5,
+     "splits": 15.2,
+     "feat90": 11.673
+    },
+    "soft_hard": {
+     "fid": 0.9502,
+     "acc": 0.9459,
+     "tv": 0.05,
+     "ece": 0.0541,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9589,
+     "acc": 0.9524,
+     "tv": 0.0835,
+     "ece": 0.0331,
+     "sn": 77.54,
+     "splits": 19.8,
+     "feat90": 11.454
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 1848,
+   "mean": {
+    "teacher": {
+     "acc": 0.9758,
+     "ece": 0.0379
+    },
+    "cart6": {
+     "fid": 0.9117,
+     "acc": 0.9048,
+     "tv": 0.1204,
+     "ece": 0.0252,
+     "sn": 0.0,
+     "leaves": 16.2
+    },
+    "cart_eq": {
+     "fid": 0.9281,
+     "acc": 0.9177,
+     "tv": 0.0974,
+     "ece": 0.0263,
+     "sn": 0.0,
+     "leaves": 13.6
+    },
+    "multi6": {
+     "fid": 0.9515,
+     "acc": 0.9403,
+     "tv": 0.0852,
+     "ece": 0.0187,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.9619,
+     "acc": 0.9519,
+     "tv": 0.0697,
+     "ece": 0.0256,
+     "sn": 42.18,
+     "splits": 12.6,
+     "feat90": 11.9968
+    },
+    "soft_hard": {
+     "fid": 0.9615,
+     "acc": 0.9519,
+     "tv": 0.0772,
+     "ece": 0.0481,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9671,
+     "acc": 0.9545,
+     "tv": 0.1073,
+     "ece": 0.1025,
+     "sn": 148.48,
+     "splits": 17.8,
+     "feat90": 11.1429
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 1848,
+   "mean": {
+    "teacher": {
+     "acc": 0.9766,
+     "ece": 0.0135
+    },
+    "cart6": {
+     "fid": 0.9165,
+     "acc": 0.9078,
+     "tv": 0.1385,
+     "ece": 0.0301,
+     "sn": 0.0,
+     "leaves": 20.0
+    },
+    "cart_eq": {
+     "fid": 0.9416,
+     "acc": 0.9307,
+     "tv": 0.1,
+     "ece": 0.0286,
+     "sn": 0.0,
+     "leaves": 20.0
+    },
+    "multi6": {
+     "fid": 0.9472,
+     "acc": 0.9385,
+     "tv": 0.1163,
+     "ece": 0.0328,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.955,
+     "acc": 0.9476,
+     "tv": 0.0895,
+     "ece": 0.0335,
+     "sn": 61.26,
+     "splits": 19.0,
+     "feat90": 11.5778
+    },
+    "soft_hard": {
+     "fid": 0.9532,
+     "acc": 0.945,
+     "tv": 0.0533,
+     "ece": 0.055,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9641,
+     "acc": 0.9576,
+     "tv": 0.0863,
+     "ece": 0.0449,
+     "sn": 80.66,
+     "splits": 15.8,
+     "feat90": 11.4984
+    },
+    "soft_noaug": {
+     "fid": 0.9506,
+     "acc": 0.9429,
+     "tv": 0.0754,
+     "ece": 0.0171,
+     "sn": 22.2
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "spambase": {
+  "LightGBM": {
+   "n_train": 3680,
+   "mean": {
+    "teacher": {
+     "acc": 0.9591,
+     "ece": 0.0316
+    },
+    "cart6": {
+     "fid": 0.9191,
+     "acc": 0.9031,
+     "tv": 0.1279,
+     "ece": 0.0283,
+     "sn": 0.2,
+     "leaves": 60.2
+    },
+    "cart_eq": {
+     "fid": 0.8648,
+     "acc": 0.8531,
+     "tv": 0.2162,
+     "ece": 0.0691,
+     "sn": 0.1,
+     "leaves": 5.6
+    },
+    "multi6": {
+     "fid": 0.8857,
+     "acc": 0.8761,
+     "tv": 0.1884,
+     "ece": 0.0924,
+     "sn": 0.16
+    },
+    "soft": {
+     "fid": 0.9122,
+     "acc": 0.9009,
+     "tv": 0.1286,
+     "ece": 0.0263,
+     "sn": 36.46,
+     "splits": 4.6,
+     "feat90": 38.5365
+    },
+    "soft_hard": {
+     "fid": 0.9259,
+     "acc": 0.9098,
+     "tv": 0.077,
+     "ece": 0.0902,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9389,
+     "acc": 0.9259,
+     "tv": 0.1078,
+     "ece": 0.0336,
+     "sn": 68.58,
+     "splits": 8.8,
+     "feat90": 37.8508
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 3680,
+   "mean": {
+    "teacher": {
+     "acc": 0.9526,
+     "ece": 0.0488
+    },
+    "cart6": {
+     "fid": 0.9248,
+     "acc": 0.8987,
+     "tv": 0.1056,
+     "ece": 0.0292,
+     "sn": 0.2,
+     "leaves": 53.8
+    },
+    "cart_eq": {
+     "fid": 0.8783,
+     "acc": 0.8531,
+     "tv": 0.1766,
+     "ece": 0.0298,
+     "sn": 0.1,
+     "leaves": 4.2
+    },
+    "multi6": {
+     "fid": 0.93,
+     "acc": 0.9118,
+     "tv": 0.1176,
+     "ece": 0.0265,
+     "sn": 0.12
+    },
+    "soft": {
+     "fid": 0.9437,
+     "acc": 0.925,
+     "tv": 0.0872,
+     "ece": 0.0201,
+     "sn": 29.54,
+     "splits": 3.2,
+     "feat90": 38.7778
+    },
+    "soft_hard": {
+     "fid": 0.9446,
+     "acc": 0.9259,
+     "tv": 0.1123,
+     "ece": 0.0741,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9589,
+     "acc": 0.9346,
+     "tv": 0.1256,
+     "ece": 0.1228,
+     "sn": 66.36,
+     "splits": 4.4,
+     "feat90": 38.3143
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 3680,
+   "mean": {
+    "teacher": {
+     "acc": 0.9546,
+     "ece": 0.0188
+    },
+    "cart6": {
+     "fid": 0.9205,
+     "acc": 0.9007,
+     "tv": 0.1234,
+     "ece": 0.0226,
+     "sn": 0.2,
+     "leaves": 60.8
+    },
+    "cart_eq": {
+     "fid": 0.8655,
+     "acc": 0.8518,
+     "tv": 0.2094,
+     "ece": 0.0523,
+     "sn": 0.12,
+     "leaves": 6.6
+    },
+    "multi6": {
+     "fid": 0.905,
+     "acc": 0.897,
+     "tv": 0.1612,
+     "ece": 0.0839,
+     "sn": 0.22
+    },
+    "soft": {
+     "fid": 0.9105,
+     "acc": 0.8976,
+     "tv": 0.1187,
+     "ece": 0.0249,
+     "sn": 42.88,
+     "splits": 5.6,
+     "feat90": 38.4476
+    },
+    "soft_hard": {
+     "fid": 0.9261,
+     "acc": 0.9102,
+     "tv": 0.0854,
+     "ece": 0.0898,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9278,
+     "acc": 0.915,
+     "tv": 0.1131,
+     "ece": 0.0394,
+     "sn": 69.42,
+     "splits": 6.8,
+     "feat90": 38.0857
+    },
+    "soft_noaug": {
+     "fid": 0.9467,
+     "acc": 0.9313,
+     "tv": 0.0696,
+     "ece": 0.0235,
+     "sn": 10.58
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "steel-plates-fault": {
+  "LightGBM": {
+   "n_train": 1552,
+   "mean": {
+    "teacher": {
+     "acc": 1.0,
+     "ece": 0.0
+    },
+    "cart6": {
+     "fid": 1.0,
+     "acc": 1.0,
+     "tv": 0.0,
+     "ece": 0.0,
+     "sn": 0.0,
+     "leaves": 7.0
+    },
+    "cart_eq": {
+     "fid": 0.9346,
+     "acc": 0.9346,
+     "tv": 0.0985,
+     "ece": 0.0171,
+     "sn": 0.0,
+     "leaves": 5.0
+    },
+    "multi6": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0005,
+     "ece": 0.0005,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0005,
+     "ece": 0.0005,
+     "sn": 13.7,
+     "splits": 4.0,
+     "feat90": 22.5587
+    },
+    "soft_hard": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0005,
+     "ece": 0.0005,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0005,
+     "ece": 0.0005,
+     "sn": 13.74,
+     "splits": 4.0,
+     "feat90": 22.5651
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 1552,
+   "mean": {
+    "teacher": {
+     "acc": 0.9943,
+     "ece": 0.0918
+    },
+    "cart6": {
+     "fid": 0.9943,
+     "acc": 1.0,
+     "tv": 0.0797,
+     "ece": 0.0199,
+     "sn": 0.0,
+     "leaves": 12.6
+    },
+    "cart_eq": {
+     "fid": 0.8902,
+     "acc": 0.8928,
+     "tv": 0.1448,
+     "ece": 0.0245,
+     "sn": 0.0,
+     "leaves": 5.8
+    },
+    "multi6": {
+     "fid": 0.9948,
+     "acc": 0.9954,
+     "tv": 0.0896,
+     "ece": 0.0071,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9948,
+     "acc": 0.9954,
+     "tv": 0.0902,
+     "ece": 0.0095,
+     "sn": 15.52,
+     "splits": 4.8,
+     "feat90": 22.7302
+    },
+    "soft_hard": {
+     "fid": 0.9943,
+     "acc": 0.9948,
+     "tv": 0.0977,
+     "ece": 0.0052,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9948,
+     "acc": 0.9974,
+     "tv": 0.0617,
+     "ece": 0.1257,
+     "sn": 26.78,
+     "splits": 4.2,
+     "feat90": 22.6349
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 1552,
+   "mean": {
+    "teacher": {
+     "acc": 1.0,
+     "ece": 0.0049
+    },
+    "cart6": {
+     "fid": 1.0,
+     "acc": 1.0,
+     "tv": 0.0049,
+     "ece": 0.0,
+     "sn": 0.0,
+     "leaves": 7.0
+    },
+    "cart_eq": {
+     "fid": 0.9346,
+     "acc": 0.9346,
+     "tv": 0.0973,
+     "ece": 0.0171,
+     "sn": 0.0,
+     "leaves": 5.0
+    },
+    "multi6": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0054,
+     "ece": 0.0005,
+     "sn": 0.0
+    },
+    "soft": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0054,
+     "ece": 0.0005,
+     "sn": 13.72,
+     "splits": 4.0,
+     "feat90": 22.5587
+    },
+    "soft_hard": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0054,
+     "ece": 0.0005,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0038,
+     "ece": 0.0024,
+     "sn": 12.54,
+     "splits": 2.6,
+     "feat90": 22.5651
+    },
+    "soft_noaug": {
+     "fid": 0.9995,
+     "acc": 0.9995,
+     "tv": 0.0054,
+     "ece": 0.0005,
+     "sn": 6.36
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "texture": {
+  "LightGBM": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9864,
+     "ece": 0.0094
+    },
+    "cart6": {
+     "fid": 0.7516,
+     "acc": 0.7502,
+     "tv": 0.3309,
+     "ece": 0.0254,
+     "sn": 0.2,
+     "leaves": 38.4
+    },
+    "cart_eq": {
+     "fid": 0.769,
+     "acc": 0.7666,
+     "tv": 0.3456,
+     "ece": 0.0256,
+     "sn": 0.22,
+     "leaves": 12.4
+    },
+    "multi6": {
+     "fid": 0.9832,
+     "acc": 0.9938,
+     "tv": 0.0325,
+     "ece": 0.0111,
+     "sn": 0.24
+    },
+    "soft": {
+     "fid": 0.9788,
+     "acc": 0.9868,
+     "tv": 0.0349,
+     "ece": 0.014,
+     "sn": 92.16,
+     "splits": 11.4,
+     "feat90": 27.1968
+    },
+    "soft_hard": {
+     "fid": 0.9772,
+     "acc": 0.9846,
+     "tv": 0.0242,
+     "ece": 0.0154,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9844,
+     "acc": 0.9914,
+     "tv": 0.0253,
+     "ece": 0.0109,
+     "sn": 128.36,
+     "splits": 15.6,
+     "feat90": 27.019
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9756,
+     "ece": 0.0882
+    },
+    "cart6": {
+     "fid": 0.7614,
+     "acc": 0.7518,
+     "tv": 0.2642,
+     "ece": 0.0261,
+     "sn": 0.2,
+     "leaves": 36.6
+    },
+    "cart_eq": {
+     "fid": 0.7764,
+     "acc": 0.767,
+     "tv": 0.276,
+     "ece": 0.0262,
+     "sn": 0.2,
+     "leaves": 12.2
+    },
+    "multi6": {
+     "fid": 0.9752,
+     "acc": 0.9928,
+     "tv": 0.1081,
+     "ece": 0.0094,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.975,
+     "acc": 0.986,
+     "tv": 0.1055,
+     "ece": 0.01,
+     "sn": 90.4,
+     "splits": 11.2,
+     "feat90": 27.2032
+    },
+    "soft_hard": {
+     "fid": 0.9746,
+     "acc": 0.985,
+     "tv": 0.1178,
+     "ece": 0.015,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.974,
+     "acc": 0.9812,
+     "tv": 0.0813,
+     "ece": 0.1116,
+     "sn": 334.12,
+     "splits": 12.6,
+     "feat90": 27.1429
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9804,
+     "ece": 0.0096
+    },
+    "cart6": {
+     "fid": 0.736,
+     "acc": 0.7316,
+     "tv": 0.3393,
+     "ece": 0.0188,
+     "sn": 0.2,
+     "leaves": 37.2
+    },
+    "cart_eq": {
+     "fid": 0.8022,
+     "acc": 0.7962,
+     "tv": 0.2983,
+     "ece": 0.0225,
+     "sn": 0.24,
+     "leaves": 14.8
+    },
+    "multi6": {
+     "fid": 0.9782,
+     "acc": 0.9924,
+     "tv": 0.0422,
+     "ece": 0.0159,
+     "sn": 0.24
+    },
+    "soft": {
+     "fid": 0.9762,
+     "acc": 0.9886,
+     "tv": 0.0334,
+     "ece": 0.0123,
+     "sn": 107.18,
+     "splits": 13.8,
+     "feat90": 27.0921
+    },
+    "soft_hard": {
+     "fid": 0.975,
+     "acc": 0.9878,
+     "tv": 0.0324,
+     "ece": 0.0122,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9796,
+     "acc": 0.9908,
+     "tv": 0.0311,
+     "ece": 0.0163,
+     "sn": 171.42,
+     "splits": 18.4,
+     "feat90": 26.8381
+    },
+    "soft_noaug": {
+     "fid": 0.9794,
+     "acc": 0.9932,
+     "tv": 0.03,
+     "ece": 0.0079,
+     "sn": 40.26
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "vehicle": {
+  "LightGBM": {
+   "n_train": 676,
+   "mean": {
+    "teacher": {
+     "acc": 0.7731,
+     "ece": 0.1876
+    },
+    "cart6": {
+     "fid": 0.7672,
+     "acc": 0.7081,
+     "tv": 0.2591,
+     "ece": 0.1225,
+     "sn": 0.0,
+     "leaves": 51.0
+    },
+    "cart_eq": {
+     "fid": 0.7329,
+     "acc": 0.6891,
+     "tv": 0.2894,
+     "ece": 0.1084,
+     "sn": 0.0,
+     "leaves": 22.4
+    },
+    "multi6": {
+     "fid": 0.7897,
+     "acc": 0.7637,
+     "tv": 0.2668,
+     "ece": 0.0672,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.8287,
+     "acc": 0.7943,
+     "tv": 0.1935,
+     "ece": 0.0788,
+     "sn": 23.0,
+     "splits": 21.4,
+     "feat90": 12.4095
+    },
+    "soft_hard": {
+     "fid": 0.8263,
+     "acc": 0.7837,
+     "tv": 0.1831,
+     "ece": 0.2163,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8215,
+     "acc": 0.7872,
+     "tv": 0.2119,
+     "ece": 0.0697,
+     "sn": 22.9,
+     "splits": 17.2,
+     "feat90": 12.4667
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 676,
+   "mean": {
+    "teacher": {
+     "acc": 0.7494,
+     "ece": 0.0889
+    },
+    "cart6": {
+     "fid": 0.7719,
+     "acc": 0.7021,
+     "tv": 0.1879,
+     "ece": 0.117,
+     "sn": 0.0,
+     "leaves": 50.6
+    },
+    "cart_eq": {
+     "fid": 0.7364,
+     "acc": 0.6868,
+     "tv": 0.171,
+     "ece": 0.0817,
+     "sn": 0.0,
+     "leaves": 13.6
+    },
+    "multi6": {
+     "fid": 0.7861,
+     "acc": 0.7849,
+     "tv": 0.2066,
+     "ece": 0.0624,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.8204,
+     "acc": 0.7837,
+     "tv": 0.1821,
+     "ece": 0.0612,
+     "sn": 14.72,
+     "splits": 12.6,
+     "feat90": 12.4921
+    },
+    "soft_hard": {
+     "fid": 0.8026,
+     "acc": 0.7754,
+     "tv": 0.3279,
+     "ece": 0.2246,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.8192,
+     "acc": 0.7671,
+     "tv": 0.159,
+     "ece": 0.1271,
+     "sn": 23.32,
+     "splits": 5.6,
+     "feat90": 12.6825
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 676,
+   "mean": {
+    "teacher": {
+     "acc": 0.7589,
+     "ece": 0.1442
+    },
+    "cart6": {
+     "fid": 0.7625,
+     "acc": 0.7116,
+     "tv": 0.2189,
+     "ece": 0.1165,
+     "sn": 0.0,
+     "leaves": 50.6
+    },
+    "cart_eq": {
+     "fid": 0.7294,
+     "acc": 0.6856,
+     "tv": 0.2565,
+     "ece": 0.0827,
+     "sn": 0.0,
+     "leaves": 16.8
+    },
+    "multi6": {
+     "fid": 0.7908,
+     "acc": 0.7766,
+     "tv": 0.2387,
+     "ece": 0.0707,
+     "sn": 0.1
+    },
+    "soft": {
+     "fid": 0.7979,
+     "acc": 0.7896,
+     "tv": 0.1862,
+     "ece": 0.0738,
+     "sn": 17.84,
+     "splits": 15.8,
+     "feat90": 12.4063
+    },
+    "soft_hard": {
+     "fid": 0.7884,
+     "acc": 0.7884,
+     "tv": 0.2264,
+     "ece": 0.2116,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.818,
+     "acc": 0.7896,
+     "tv": 0.1916,
+     "ece": 0.0634,
+     "sn": 27.54,
+     "splits": 13.6,
+     "feat90": 12.4889
+    },
+    "soft_noaug": {
+     "fid": 0.805,
+     "acc": 0.7837,
+     "tv": 0.2026,
+     "ece": 0.0643,
+     "sn": 6.12
+    }
+   },
+   "n_folds": 5
+  }
+ },
+ "wall-robot-navigation": {
+  "LightGBM": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9964,
+     "ece": 0.0038
+    },
+    "cart6": {
+     "fid": 0.9278,
+     "acc": 0.9284,
+     "tv": 0.1085,
+     "ece": 0.0148,
+     "sn": 0.1,
+     "leaves": 25.6
+    },
+    "cart_eq": {
+     "fid": 0.9938,
+     "acc": 0.995,
+     "tv": 0.0142,
+     "ece": 0.0044,
+     "sn": 0.1,
+     "leaves": 23.0
+    },
+    "multi6": {
+     "fid": 0.7774,
+     "acc": 0.7774,
+     "tv": 0.3734,
+     "ece": 0.0723,
+     "sn": 0.2
+    },
+    "soft": {
+     "fid": 0.9272,
+     "acc": 0.9278,
+     "tv": 0.1448,
+     "ece": 0.0569,
+     "sn": 150.68,
+     "splits": 22.0,
+     "feat90": 14.7175
+    },
+    "soft_hard": {
+     "fid": 0.931,
+     "acc": 0.9306,
+     "tv": 0.0686,
+     "ece": 0.0694,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9476,
+     "acc": 0.9476,
+     "tv": 0.1139,
+     "ece": 0.0472,
+     "sn": 210.3,
+     "splits": 31.2,
+     "feat90": 14.0095
+    }
+   },
+   "n_folds": 5
+  },
+  "RandomForest": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9926,
+     "ece": 0.0367
+    },
+    "cart6": {
+     "fid": 0.9666,
+     "acc": 0.9662,
+     "tv": 0.086,
+     "ece": 0.026,
+     "sn": 0.1,
+     "leaves": 32.8
+    },
+    "cart_eq": {
+     "fid": 0.9886,
+     "acc": 0.9878,
+     "tv": 0.0481,
+     "ece": 0.0092,
+     "sn": 0.12,
+     "leaves": 22.4
+    },
+    "multi6": {
+     "fid": 0.7772,
+     "acc": 0.775,
+     "tv": 0.3382,
+     "ece": 0.0573,
+     "sn": 0.26
+    },
+    "soft": {
+     "fid": 0.932,
+     "acc": 0.9272,
+     "tv": 0.1236,
+     "ece": 0.0494,
+     "sn": 141.7,
+     "splits": 21.4,
+     "feat90": 14.873
+    },
+    "soft_hard": {
+     "fid": 0.942,
+     "acc": 0.9376,
+     "tv": 0.0856,
+     "ece": 0.0624,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9406,
+     "acc": 0.9362,
+     "tv": 0.1682,
+     "ece": 0.1255,
+     "sn": 362.4,
+     "splits": 21.2,
+     "feat90": 14.4286
+    }
+   },
+   "n_folds": 5
+  },
+  "XGBoost": {
+   "n_train": 4000,
+   "mean": {
+    "teacher": {
+     "acc": 0.9956,
+     "ece": 0.0034
+    },
+    "cart6": {
+     "fid": 0.94,
+     "acc": 0.9396,
+     "tv": 0.094,
+     "ece": 0.0127,
+     "sn": 0.1,
+     "leaves": 27.6
+    },
+    "cart_eq": {
+     "fid": 0.9914,
+     "acc": 0.9914,
+     "tv": 0.0156,
+     "ece": 0.005,
+     "sn": 0.1,
+     "leaves": 27.6
+    },
+    "multi6": {
+     "fid": 0.7772,
+     "acc": 0.7772,
+     "tv": 0.3699,
+     "ece": 0.0691,
+     "sn": 0.3
+    },
+    "soft": {
+     "fid": 0.9472,
+     "acc": 0.9462,
+     "tv": 0.1203,
+     "ece": 0.0535,
+     "sn": 172.1,
+     "splits": 26.6,
+     "feat90": 14.4508
+    },
+    "soft_hard": {
+     "fid": 0.9506,
+     "acc": 0.95,
+     "tv": 0.0496,
+     "ece": 0.05,
+     "sn": 0.0
+    },
+    "soft_prob": {
+     "fid": 0.9362,
+     "acc": 0.9352,
+     "tv": 0.136,
+     "ece": 0.0589,
+     "sn": 176.64,
+     "splits": 24.0,
+     "feat90": 14.4952
+    },
+    "soft_noaug": {
+     "fid": 0.8852,
+     "acc": 0.8854,
+     "tv": 0.1737,
+     "ece": 0.0257,
+     "sn": 44.94
+    }
+   },
+   "n_folds": 5
+  }
+ }
+}
