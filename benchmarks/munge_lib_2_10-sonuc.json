@@ -1,0 +1,198 @@
+{
+ "_protokol": "Checks the library's DistilledTree (default HistGradientBoosting teacher)\nwith and without its synthetic rows, on the 20 000-row cells of\ndamitma_olcek.py that showed the largest and the smallest gains (jannis,\nHiggs, covertype, electricity), three seeds each. The teacher here is\nscikit-learn's, so xgboost and torch never share the process.\n`--synthetic 2 10` compares two other settings (written to\nmunge_lib_2_10-sonuc.json).\n\n    python3 benchmarks/munge_lib.py [--n-jobs 8] [--synthetic 0 2]",
+ "_commit": "d63c4d0",
+ "fits": [
+  {
+   "ad": "jannis",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.7809135116359848,
+   "teacher": 0.783605418548107,
+   "sn": 353.78884100914
+  },
+  {
+   "ad": "jannis",
+   "seed": 0,
+   "synthetic": 10,
+   "acc": 0.7831712400138937,
+   "teacher": 0.783605418548107,
+   "sn": 1246.3561871051788
+  },
+  {
+   "ad": "jannis",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.781608197290726,
+   "teacher": 0.7836922542549496,
+   "sn": 353.6559810638428
+  },
+  {
+   "ad": "jannis",
+   "seed": 1,
+   "synthetic": 10,
+   "acc": 0.7811740187565127,
+   "teacher": 0.7836922542549496,
+   "sn": 1322.2974910736084
+  },
+  {
+   "ad": "jannis",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.7812608544633554,
+   "teacher": 0.7814345258770407,
+   "sn": 353.9345519542694
+  },
+  {
+   "ad": "jannis",
+   "seed": 2,
+   "synthetic": 10,
+   "acc": 0.7793504689128169,
+   "teacher": 0.7814345258770407,
+   "sn": 1265.614206314087
+  },
+  {
+   "ad": "Higgs",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.71215,
+   "teacher": 0.71485,
+   "sn": 298.3492043018341
+  },
+  {
+   "ad": "Higgs",
+   "seed": 0,
+   "synthetic": 10,
+   "acc": 0.71565,
+   "teacher": 0.71485,
+   "sn": 1033.1327438354492
+  },
+  {
+   "ad": "Higgs",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.71535,
+   "teacher": 0.71575,
+   "sn": 296.2905809879303
+  },
+  {
+   "ad": "Higgs",
+   "seed": 1,
+   "synthetic": 10,
+   "acc": 0.71725,
+   "teacher": 0.71575,
+   "sn": 1086.4063379764557
+  },
+  {
+   "ad": "Higgs",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.70965,
+   "teacher": 0.71445,
+   "sn": 294.29039692878723
+  },
+  {
+   "ad": "Higgs",
+   "seed": 2,
+   "synthetic": 10,
+   "acc": 0.7144,
+   "teacher": 0.71445,
+   "sn": 1080.5978298187256
+  },
+  {
+   "ad": "covertype",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.78965,
+   "teacher": 0.80445,
+   "sn": 252.5899908542633
+  },
+  {
+   "ad": "covertype",
+   "seed": 0,
+   "synthetic": 10,
+   "acc": 0.7962,
+   "teacher": 0.80445,
+   "sn": 952.2927520275116
+  },
+  {
+   "ad": "covertype",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.78885,
+   "teacher": 0.8053,
+   "sn": 249.10391998291016
+  },
+  {
+   "ad": "covertype",
+   "seed": 1,
+   "synthetic": 10,
+   "acc": 0.79345,
+   "teacher": 0.8053,
+   "sn": 918.6297650337219
+  },
+  {
+   "ad": "covertype",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.78775,
+   "teacher": 0.80295,
+   "sn": 269.94332695007324
+  },
+  {
+   "ad": "covertype",
+   "seed": 2,
+   "synthetic": 10,
+   "acc": 0.79115,
+   "teacher": 0.80295,
+   "sn": 875.0902888774872
+  },
+  {
+   "ad": "electricity",
+   "seed": 0,
+   "synthetic": 2,
+   "acc": 0.8157005458799064,
+   "teacher": 0.8610605666753314,
+   "sn": 292.9942500591278
+  },
+  {
+   "ad": "electricity",
+   "seed": 0,
+   "synthetic": 10,
+   "acc": 0.8216792305692747,
+   "teacher": 0.8610605666753314,
+   "sn": 817.3888146877289
+  },
+  {
+   "ad": "electricity",
+   "seed": 1,
+   "synthetic": 2,
+   "acc": 0.8181700025994282,
+   "teacher": 0.8610605666753314,
+   "sn": 295.8392059803009
+  },
+  {
+   "ad": "electricity",
+   "seed": 1,
+   "synthetic": 10,
+   "acc": 0.8177800883805563,
+   "teacher": 0.8610605666753314,
+   "sn": 782.9302730560303
+  },
+  {
+   "ad": "electricity",
+   "seed": 2,
+   "synthetic": 2,
+   "acc": 0.8138809461918378,
+   "teacher": 0.8563815960488692,
+   "sn": 296.6510968208313
+  },
+  {
+   "ad": "electricity",
+   "seed": 2,
+   "synthetic": 10,
+   "acc": 0.820899402131531,
+   "teacher": 0.8563815960488692,
+   "sn": 750.7512242794037
+  }
+ ]
+}
