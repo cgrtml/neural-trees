@@ -41,7 +41,10 @@ def olc():
             for s in D.tohumlar(n):
                 if all(f"{ad}__{n}__{s}__{t}" in out for t in AGACLAR):
                     continue
-                Xtr, ytr, Xte, yte = D.bolum(ad, n, s)
+                r = D.bolum(ad, n, s)
+                if r is None:                          # table smaller than n training rows
+                    continue
+                Xtr, ytr, Xte, yte = r
                 for t in AGACLAR:
                     m = xgb.XGBClassifier(n_estimators=t, max_depth=6, learning_rate=0.3 if t <= 30 else 0.1,
                                           random_state=s, n_jobs=1, verbosity=0).fit(Xtr, ytr)
