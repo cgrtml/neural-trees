@@ -103,7 +103,7 @@ def munge(X, passes: int = 2, p: float = 0.5, s: float = 5.0, random_state=None)
 
     Each pass makes one new row per row of `X`: feature by feature, with
     probability `p`, the value is replaced by one drawn around the row's
-    nearest neighbour's (normal, sd = |difference| / `s`); a feature with at
+    nearest neighbour's (normal, sd = ``abs(difference) / s``); a feature with at
     most ten distinct values copies the neighbour's value instead. Neighbours
     are found on standardised features, so the scale of `X` does not matter.
     A missing value stays missing unless it is replaced by the neighbour's.
