@@ -9,6 +9,7 @@ All notable changes to this project are documented here. This project follows
 - `benchmarks/soft_forest.py`: 25 bagged per-leaf soft trees on the sixteen datasets above 1 000 rows, same folds as the field benchmark. Averaging closes about half the gap to XGBoost (2.3 points to 1.0, Wilcoxon p = 0.32, 4/6/6) at 160 times its fit time and with no readable tree left; documented on the benchmarks page and the playground's field page as a measured answer, not a recommendation.
 
 ### Fixed
+- `SoftDecisionTree` and `SoftDecisionTreeRegressor` dropped the sample weights of the validation split, so the validation loss behind `early_stopping`, `growth="incremental"` and `growth="per_leaf"` was unweighted while training was weighted, and per-leaf growth also chose the leaf to split by unweighted error. With soft targets (each row repeated per class, weighted by its probability) per-leaf growth stopped at the root: 0.20 accuracy on Digits, 0.97 after the fix. With `class_weight` the stopping and growth decisions followed the majority class. Unweighted fits are unchanged, since their weights are all one. Found while distilling tree ensembles into soft trees (`benchmarks/distill.py`).
 - On Intel Macs `pip install neural-trees` pulled NumPy 2 next to torch 2.2.2, the last torch wheel for that platform, and the import failed with "Numpy is not available". NumPy is now pinned below 2 on that platform only. Found while checking the 0.8.0 wheel in a clean environment.
 
 ## [0.8.0] - 2026-10-01

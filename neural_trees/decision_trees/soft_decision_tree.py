@@ -665,9 +665,9 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             )
 
         X_fit, y_fit, w_fit = X, y_enc, weights
-        X_val = y_val = None
+        X_val = y_val = w_val = None
         if needs_validation and self._can_hold_out(y_enc):
-            X_fit, X_val, y_fit, y_val, w_fit, _ = train_test_split(
+            X_fit, X_val, y_fit, y_val, w_fit, w_val = train_test_split(
                 X,
                 y_enc,
                 weights,
@@ -686,6 +686,12 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         w_t = torch.FloatTensor(w_fit).to(device)
         X_val_t = torch.FloatTensor(X_val).to(device) if X_val is not None else None
         y_val_t = torch.LongTensor(y_val).to(device) if X_val is not None else None
+        # Model selection (validation loss, growth decisions, early stopping)
+        # must see the same weights as training, or a weighted fit is judged
+        # by an unweighted criterion: with class_weight that favours the
+        # majority class, and with soft targets (one row per class, weighted
+        # by its probability) every split looks useless.
+        self._w_val_t = torch.FloatTensor(w_val).to(device) if X_val is not None else None
 
         generator = None
         if self.random_state is not None:
@@ -726,6 +732,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.tree_depth_ = self.model_.depth
         self.n_iter_ = len(self.training_history_)
         self.feature_importances_ = self._compute_feature_importances(X_t)
+        self._w_val_t = None  # only needed while fitting
         return self
 
     def _reuse_existing_model(self, n_classes: int) -> bool:
@@ -806,10 +813,14 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                 model.eval()
                 with torch.no_grad():
                     val_log_probs = model.log_forward(X_val_t)
-                    record["val_loss"] = F.nll_loss(val_log_probs, y_val_t).item()
-                    record["val_accuracy"] = (
-                        (val_log_probs.argmax(dim=1) == y_val_t).float().mean().item()
-                    )
+                    w_val_t = getattr(self, "_w_val_t", None)
+                    if w_val_t is None or len(w_val_t) != len(y_val_t):
+                        w_val_t = torch.ones(len(y_val_t), device=y_val_t.device)
+                    w_sum = w_val_t.sum().clamp_min(1e-12)
+                    val_nll = F.nll_loss(val_log_probs, y_val_t, reduction="none")
+                    record["val_loss"] = ((val_nll * w_val_t).sum() / w_sum).item()
+                    hits = (val_log_probs.argmax(dim=1) == y_val_t).float()
+                    record["val_accuracy"] = ((hits * w_val_t).sum() / w_sum).item()
 
                 if record["val_loss"] < best_val_loss - 1e-6:
                     best_val_loss = record["val_loss"]
@@ -890,7 +901,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
 
             if int(model.is_split.sum()) >= max_splits:
                 break
-            victim = self._neediest_leaf(model, X_t, y_t)
+            victim = self._neediest_leaf(model, X_t, y_t, loader.dataset.tensors[2])
             if victim is None:
                 break
             self._initialise_split(model, victim, X_t, y_t, loader.dataset.tensors[2], n_classes)
@@ -951,7 +962,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             model.is_split[victim] = True
 
     @staticmethod
-    def _neediest_leaf(model, X_t, y_t):
+    def _neediest_leaf(model, X_t, y_t, w_t=None):
         """
         The reachable leaf carrying the most expected error, or None if every
         leaf is at the bottom row and cannot be split further.
@@ -968,7 +979,10 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                     continue
                 mu = log_mu[:, internal].exp()                      # (batch, n_here)
                 correct = distributions[indices[internal]][:, y_t]  # (n_here, batch)
-                error_mass = (mu * (1.0 - correct.T)).sum(dim=0)
+                wrong = 1.0 - correct.T                             # (batch, n_here)
+                if w_t is not None:
+                    wrong = wrong * w_t[:, None]
+                error_mass = (mu * wrong).sum(dim=0)
                 position = int(error_mass.argmax())
                 if float(error_mass[position]) > best_mass:
                     best_mass = float(error_mass[position])

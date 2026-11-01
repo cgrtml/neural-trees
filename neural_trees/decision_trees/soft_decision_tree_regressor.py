@@ -257,7 +257,7 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
 
         X_fit, Y_fit, w_fit, X_val, Y_val = X, Ys, weights, None, None
         if needs_validation and len(X) >= 10:
-            X_fit, X_val, Y_fit, Y_val, w_fit, _ = train_test_split(
+            X_fit, X_val, Y_fit, Y_val, w_fit, w_val = train_test_split(
                 X, Ys, weights, test_size=self.validation_fraction, random_state=self.random_state
             )
         # Growth needs held-out evidence to decide anything; without a split
@@ -270,6 +270,8 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
         w_t = torch.FloatTensor(w_fit).to(device)
         X_val_t = torch.FloatTensor(X_val).to(device) if X_val is not None else None
         Y_val_t = torch.FloatTensor(Y_val).to(device) if Y_val is not None else None
+        # validation must be weighted like training (see SoftDecisionTree.fit)
+        self._w_val_t = torch.FloatTensor(w_val).to(device) if X_val is not None else None
 
         loader = TensorBatches(
             (X_t, Y_t, w_t), self.batch_size, torch.Generator().manual_seed(self.random_state or 0)
@@ -298,6 +300,7 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
         # tolerance scikit-learn's subset-invariance check applies.
         self.model_double_ = copy.deepcopy(self.model_).cpu().double()
         self.model_double_.eval()
+        self._w_val_t = None  # only needed while fitting
         return self
 
     # ── training and growth ──
@@ -333,7 +336,11 @@ class SoftDecisionTreeRegressor(RegressorMixin, BaseEstimator):
             if X_val_t is not None:
                 model.eval()
                 with torch.no_grad():
-                    record["val_loss"] = ((model.predict_values(X_val_t) - Y_val_t) ** 2).mean().item()
+                    sq = ((model.predict_values(X_val_t) - Y_val_t) ** 2).mean(dim=1)
+                    w_val_t = getattr(self, "_w_val_t", None)
+                    if w_val_t is None or len(w_val_t) != len(sq):
+                        w_val_t = torch.ones_like(sq)
+                    record["val_loss"] = ((sq * w_val_t).sum() / w_val_t.sum().clamp_min(1e-12)).item()
                 if record["val_loss"] < best_val - 1e-8:
                     best_val, since_best = record["val_loss"], 0
                     best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}

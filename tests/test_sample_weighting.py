@@ -130,3 +130,37 @@ def test_predictions_do_not_depend_on_row_order(make_estimator):
     forward = estimator.predict_proba(X[:40])
     reversed_back = estimator.predict_proba(X[:40][::-1])[::-1]
     np.testing.assert_allclose(forward, reversed_back, rtol=1e-9, atol=1e-12)
+
+
+def test_per_leaf_growth_learns_from_soft_targets():
+    # Soft targets as weighted rows: every input appears once per class with
+    # weight = that class's probability. Growth decisions used to read an
+    # unweighted validation loss, on which no split ever helps, so the tree
+    # stopped at the root (about 0.2 accuracy on Digits). They must follow
+    # the weighted loss the tree is trained on.
+    from sklearn.datasets import make_classification
+    from sklearn.ensemble import RandomForestClassifier
+
+    from neural_trees import SoftDecisionTree
+
+    X, y = make_classification(n_samples=400, n_features=8, n_informative=5,
+                               n_classes=3, n_clusters_per_class=1, random_state=0)
+    P = RandomForestClassifier(100, random_state=0).fit(X, y).predict_proba(X)
+    i, c = np.nonzero(P >= 0.01)
+    m = SoftDecisionTree(depth=4, max_epochs=60, growth="per_leaf", growth_init="residual",
+                         random_state=0).fit(X[i], c, sample_weight=P[i, c])
+    assert len(m.get_split_weights()) >= 2
+    assert (m.predict(X) == y).mean() > 0.8
+    assert m._w_val_t is None
+
+
+def test_validation_loss_is_weighted():
+    from neural_trees import SoftDecisionTree
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(200, 3))
+    y = (X[:, 0] > 0).astype(int)
+    w = np.where(y == 1, 5.0, 1.0)
+    a = SoftDecisionTree(depth=2, max_epochs=3, early_stopping=True, random_state=0).fit(X, y)
+    b = SoftDecisionTree(depth=2, max_epochs=3, early_stopping=True, random_state=0).fit(X, y, sample_weight=w)
+    assert a.training_history_[0]["val_loss"] != b.training_history_[0]["val_loss"]
