@@ -14,6 +14,8 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 
+from neural_trees._missing import augment
+
 
 def _log_sigmoid(z: np.ndarray) -> np.ndarray:
     # stable log(sigmoid(z)) = -softplus(-z)
@@ -23,6 +25,7 @@ def _log_sigmoid(z: np.ndarray) -> np.ndarray:
 def _log_softmax(a: np.ndarray) -> np.ndarray:
     m = a.max(axis=1, keepdims=True)
     return a - m - np.log(np.exp(a - m).sum(axis=1, keepdims=True))
+
 
 
 class NumpySoftTree:
@@ -37,7 +40,8 @@ class NumpySoftTree:
 
     def __init__(self, depth: int, weights, biases, log_beta, node_logits, is_split,
                  classes: Sequence[Any], feature_names: Optional[Sequence[str]] = None,
-                 kind: str = "classifier", y_mean=None, y_scale=None, single_output: bool = True):
+                 kind: str = "classifier", y_mean=None, y_scale=None, single_output: bool = True,
+                 missing_columns: Optional[Sequence[int]] = None):
         if kind not in ("classifier", "regressor"):
             raise ValueError(f"kind must be 'classifier' or 'regressor', got {kind!r}")
         self.kind = kind
@@ -56,7 +60,11 @@ class NumpySoftTree:
         self.feature_names_ = list(feature_names) if feature_names is not None else None
         self.n_internal_ = 2 ** self.depth - 1
         self.n_leaves_ = 2 ** self.depth
-        self.n_features_in_ = self.weights_.shape[1]
+        # features with missing values in training: their indicators are the
+        # last len(missing_columns) gate inputs (see neural_trees._missing)
+        self.missing_columns_ = np.asarray(missing_columns if missing_columns is not None else [],
+                                           dtype=np.int64)
+        self.n_features_in_ = self.weights_.shape[1] - len(self.missing_columns_)
         if self.weights_.shape[0] != self.n_internal_:
             raise ValueError(f"expected {self.n_internal_} gates for depth {self.depth}, got {self.weights_.shape[0]}")
 
@@ -66,6 +74,7 @@ class NumpySoftTree:
         X = np.asarray(X, dtype=np.float64)
         if X.ndim != 2 or X.shape[1] != self.n_features_in_:
             raise ValueError(f"X must have shape (n_samples, {self.n_features_in_})")
+        X = augment(X, self.missing_columns_)
         logits = np.exp(self.log_beta_) * (X @ self.weights_.T + self.biases_)  # (n, n_internal)
         n = X.shape[0]
         log_mu = np.zeros((n, 1))
@@ -106,6 +115,7 @@ class NumpySoftTree:
         X = np.asarray(X, dtype=np.float64)
         if X.ndim != 2 or X.shape[1] != self.n_features_in_:
             raise ValueError(f"X must have shape (n_samples, {self.n_features_in_})")
+        X = augment(X, self.missing_columns_)
         logits = np.exp(self.log_beta_) * (X @ self.weights_.T + self.biases_)  # (n, n_internal)
         log_dist = _log_softmax(self.node_logits_)                               # (n_nodes, K)
         n = X.shape[0]
@@ -171,6 +181,7 @@ class NumpySoftTree:
             "y_mean": None if self.y_mean_ is None else self.y_mean_.tolist(),
             "y_scale": None if self.y_scale_ is None else self.y_scale_.tolist(),
             "single_output": self.single_output_,
+            "missing_columns": self.missing_columns_.tolist(),
         }
 
     def to_json(self, path: Optional[str] = None) -> str:
@@ -187,7 +198,8 @@ class NumpySoftTree:
         return cls(d["depth"], d["weights"], d["biases"], d["log_beta"], d["node_logits"],
                    d["is_split"], d["classes"], d.get("feature_names"),
                    kind=d.get("kind", "classifier"), y_mean=d.get("y_mean"), y_scale=d.get("y_scale"),
-                   single_output=d.get("single_output", True))
+                   single_output=d.get("single_output", True),
+                   missing_columns=d.get("missing_columns"))
 
     @classmethod
     def from_json(cls, text_or_path: str) -> NumpySoftTree:

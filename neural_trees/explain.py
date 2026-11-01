@@ -135,6 +135,15 @@ def explain_soft_tree(
     if len(feature_names) != n_features:
         raise ValueError(
             f"feature_names has {len(feature_names)} entries, expected {n_features}")
+    from neural_trees._missing import augment, augmented_names
+
+    # gates read the augmented input (NaN set to 0 plus one indicator per
+    # feature that had missing values in training); see neural_trees._missing
+    cols = getattr(model, "missing_columns_", None)
+    X_orig = np.asarray(X, dtype=np.float64)
+    X = augment(X_orig, cols)
+    gate_names = augmented_names(feature_names, cols)
+    n_inputs = X.shape[1]
     classes = list(model.classes_)
     bounds = None
     if feature_bounds is not None:
@@ -156,7 +165,7 @@ def explain_soft_tree(
         leaf_mu = np.concatenate([lm.exp().cpu().numpy() for lm, _ in terminal], axis=1)
         # arrival probability at every internal node: product of gate choices
         # down from the root, computed from the path itself below
-    proba_all = model.predict_proba(X)
+    proba_all = model.predict_proba(X_orig)
 
     out: List[Explanation] = []
     for i in range(X_t.shape[0]):
@@ -176,7 +185,7 @@ def explain_soft_tree(
         chain.reverse()
 
         path: List[GateStep] = []
-        attributions = np.zeros(n_features)
+        attributions = np.zeros(n_inputs)
         arrival = 1.0
         for gnode, went in chain:
             p_right = float(gate_p[i, gnode])
@@ -186,7 +195,7 @@ def explain_soft_tree(
             # them before taking the top terms, or they can tie with a used
             # feature whose value is 0 and push it out
             order = [j for j in np.argsort(-np.abs(contrib)) if weights[gnode, j] != 0.0][:max_terms]
-            terms = [{"feature": feature_names[j], "weight": float(weights[gnode, j]),
+            terms = [{"feature": gate_names[j], "weight": float(weights[gnode, j]),
                       "value": float(x[j]), "contribution": float(contrib[j])} for j in order]
             path.append(GateStep(node=int(gnode), went=went, probability=p_went,
                                  terms=terms, arrival=arrival))
@@ -199,8 +208,8 @@ def explain_soft_tree(
             for gnode, _ in chain:
                 w, b = weights[gnode], float(biases[gnode])
                 z = float(w @ x + b)
-                for j in range(n_features):
-                    if w[j] == 0.0:
+                for j in range(n_features):        # original features only, observed ones
+                    if w[j] == 0.0 or np.isnan(X_orig[i, j]):
                         continue
                     # move feature j just past the gate's zero crossing
                     new_val = x[j] - z / w[j] - np.sign(w[j]) * np.sign(z) * 1e-3
@@ -209,7 +218,7 @@ def explain_soft_tree(
                     delta = abs(new_val - x[j])
                     if delta == 0.0 or delta >= best_delta:
                         continue
-                    x_cf = x.copy()
+                    x_cf = X_orig[i].copy()
                     x_cf[j] = new_val
                     p_cf = model.predict_proba(x_cf.reshape(1, -1))[0]
                     k = int(np.argmax(p_cf))
@@ -226,7 +235,7 @@ def explain_soft_tree(
             leaf_probability=float(leaf_mu[i, best]),
             leaf_distribution={classes[k]: float(node_dist[leaf, k]) for k in range(len(classes))},
             path=path,
-            attributions={feature_names[j]: float(attributions[j]) for j in range(n_features)},
+            attributions={gate_names[j]: float(attributions[j]) for j in range(n_inputs)},
             counterfactual=cf,
             feature_names=feature_names,
         ))

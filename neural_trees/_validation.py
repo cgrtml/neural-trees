@@ -22,7 +22,7 @@ def reject_sparse(estimator, X):
     return X
 
 
-def check_predict_input(estimator, X, accept_sparse=False):
+def check_predict_input(estimator, X, accept_sparse=False, allow_nan=False):
     """
     Validate `X` at predict time and reject a feature count that does not match
     the one seen during `fit`.
@@ -32,10 +32,14 @@ def check_predict_input(estimator, X, accept_sparse=False):
     error. With `accept_sparse`, CSR input is validated and returned as CSR;
     without it, sparse input gets a model-specific error naming the fix.
     """
+    kw = {}
+    if allow_nan:
+        from neural_trees._missing import allow_nan as _allow_nan
+        kw = _allow_nan()
     if accept_sparse:
-        X = check_array(X, accept_sparse="csr")
+        X = check_array(X, accept_sparse="csr", **kw)
     else:
-        X = check_array(reject_sparse(estimator, X))
+        X = check_array(reject_sparse(estimator, X), **kw)
     n_features = getattr(estimator, "n_features_in_", None)
     if n_features is not None and X.shape[1] != n_features:
         raise ValueError(

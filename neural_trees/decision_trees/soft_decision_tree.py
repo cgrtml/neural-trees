@@ -50,6 +50,7 @@ from sklearn.utils.validation import (
 )
 
 from neural_trees._batching import TensorBatches
+from neural_trees._missing import allow_nan, augment, missing_columns
 from neural_trees._validation import check_predict_input, reject_sparse, resolve_device
 from neural_trees.decision_trees.hard_tree import HardDecisionTree
 
@@ -664,6 +665,16 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.init_sharpness = init_sharpness
         self.init_prune = init_prune
 
+    # Missing values are accepted (see neural_trees._missing). scikit-learn >= 1.6
+    # reads __sklearn_tags__, older versions _more_tags.
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.input_tags.allow_nan = True
+        return tags
+
+    def _more_tags(self):
+        return {"allow_nan": True}
+
     def fit(self, X, y, sample_weight=None) -> "SoftDecisionTree":
         """
         Fit the Soft Decision Tree.
@@ -724,7 +735,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             )
 
         reject_sparse(self, X)
-        X, y = check_X_y(X, y)
+        X, y = check_X_y(X, y, **allow_nan())
         check_classification_targets(y)
         encoder = LabelEncoder()
         y_enc = encoder.fit_transform(y)
@@ -733,6 +744,12 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         self.classes_ = encoder.classes_
         self.n_features_in_ = X.shape[1]
         n_classes = len(self.classes_)
+        # NaN -> 0 plus an indicator per feature that has missing values (see
+        # neural_trees._missing); a continued fit keeps the columns it started with
+        if not continuing:
+            self.missing_columns_ = missing_columns(X)
+        X = augment(X, getattr(self, "missing_columns_", None))
+        n_inputs = X.shape[1]
 
         weights = _check_sample_weight(sample_weight, X, dtype=np.float64)
         if self.class_weight is not None:
@@ -814,7 +831,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                 ).to(device)
             elif not continuing:
                 self.model_ = _SoftTreeModule(
-                    n_features=self.n_features_in_,
+                    n_features=self._n_inputs(),
                     n_classes=n_classes,
                     depth=self.depth,
                     penalty_coef=self.penalty_coef,
@@ -847,7 +864,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                         self.model_.gates.weight.mul_(lock)
 
         locked = self.init == "cart" and self.split_features == 1 and not continuing and self.growth_ == "none"
-        if self.split_features is not None and self.split_features < self.n_features_in_ and not locked:
+        if self.split_features is not None and self.split_features < n_inputs and not locked:
             self._restrict_split_features(loader, X_t, X_val_t, y_val_t)
 
         self.tree_depth_ = self.model_.depth
@@ -914,7 +931,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         model = self.model_
         assert self.split_features is not None
         k = int(self.split_features)
-        n = self.n_features_in_
+        n = self._n_inputs()
         schedule = []
         kept = n
         while kept > k:
@@ -1010,6 +1027,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         est.le_ = LabelEncoder().fit(tree.classes_)
         est.classes_ = est.le_.classes_
         est.n_features_in_ = n_features
+        est.missing_columns_ = np.zeros(0, dtype=np.int64)
         est.device_ = "cpu"
         est.tree_depth_ = depth
         est.n_iter_ = 0
@@ -1017,6 +1035,14 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         est.feature_importances_ = np.asarray(tree.feature_importances_, dtype=np.float64)
         est._w_val_t = None
         return est
+
+    def _n_inputs(self) -> int:
+        """Width of the gates' input: the features plus one indicator per missing-value column."""
+        return int(self.n_features_in_ + len(getattr(self, "missing_columns_", ())))
+
+    def _augment(self, X):
+        """The gates' input for `X` (see neural_trees._missing)."""
+        return augment(X, getattr(self, "missing_columns_", None))
 
     def _reuse_existing_model(self, n_classes: int, n_features: Optional[int] = None) -> bool:
         """
@@ -1159,7 +1185,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         epochs_per_round = self._epochs_per_round(self.depth * 2)
 
         model = _SoftTreeModule(
-            n_features=self.n_features_in_,
+            n_features=self._n_inputs(),
             n_classes=n_classes,
             depth=self.depth,
             penalty_coef=self.penalty_coef,
@@ -1296,7 +1322,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         epochs_per_round = self._epochs_per_round(self.depth)
 
         model = _SoftTreeModule(
-            n_features=self.n_features_in_,
+            n_features=self._n_inputs(),
             n_classes=n_classes,
             depth=1,
             penalty_coef=self.penalty_coef,
@@ -1338,7 +1364,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
                 )
 
         self.model_ = _SoftTreeModule(
-            n_features=self.n_features_in_,
+            n_features=self._n_inputs(),
             n_classes=n_classes,
             depth=best_depth,
             penalty_coef=self.penalty_coef,
@@ -1359,6 +1385,11 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             importances = (node_mass.unsqueeze(1) * weights).sum(dim=0)
 
         scores = importances.cpu().numpy()
+        cols = getattr(self, "missing_columns_", None)
+        if cols is not None and len(cols) and len(scores) > self.n_features_in_:
+            folded = scores[: self.n_features_in_].copy()
+            np.add.at(folded, np.asarray(cols, dtype=np.int64), scores[self.n_features_in_:])
+            scores = folded  # a feature's importance includes its missing-value term
         total = scores.sum()
         return scores / total if total > 0 else scores
 
@@ -1384,7 +1415,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             to 1.
         """
         check_is_fitted(self)
-        X = check_predict_input(self, X)
+        X = self._augment(check_predict_input(self, X, allow_nan=True))
         device = self.device_
         X_t = torch.FloatTensor(X).to(device)
 
@@ -1455,7 +1486,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
 
         check_is_fitted(self)
         single = np.ndim(X) == 1
-        X = check_predict_input(self, np.atleast_2d(np.asarray(X)))
+        X = check_predict_input(self, np.atleast_2d(np.asarray(X, dtype=np.float64)), allow_nan=True)
         out = explain_soft_tree(self, X, feature_names=feature_names,
                                 max_terms=max_terms, counterfactual=counterfactual,
                                 feature_bounds=feature_bounds)
@@ -1520,6 +1551,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             is_split=m.is_split.detach().cpu().numpy(),
             classes=self.classes_,
             feature_names=feature_names,
+            missing_columns=getattr(self, "missing_columns_", None),
         )
 
     def to_onnx(self, feature_names=None, opset: int = 17):
@@ -1593,6 +1625,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
             is_split=self.model_.is_split.cpu().numpy(),
             log_beta=self.model_.log_beta.detach().cpu().numpy(),
             rule=rule,
+            missing_columns=getattr(self, "missing_columns_", None),
         )
 
     def get_split_weights(self) -> List[np.ndarray]:

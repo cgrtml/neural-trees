@@ -63,8 +63,25 @@ def to_onnx(tree, opset: int = 17, name: str = "neural-trees soft tree"):
         numpy_helper.from_array(b, "gate_biases"),
         numpy_helper.from_array(np.array(1.0, dtype=np.float32), "one"),
     ]
+    # missing values as in neural_trees._missing: NaN -> 0, then one indicator
+    # per feature that had missing values in training, appended to the input
+    inits.append(numpy_helper.from_array(np.array(0.0, dtype=np.float32), "zero"))
     nodes = [
-        helper.make_node("MatMul", ["X", "gate_weights"], ["gate_dot"]),
+        helper.make_node("IsNaN", ["X"], ["x_is_nan"]),
+        helper.make_node("Where", ["x_is_nan", "zero", "X"], ["x_filled"]),
+    ]
+    gate_input = "x_filled"
+    cols = np.asarray(getattr(tree, "missing_columns_", []), dtype=np.int64)
+    if len(cols):
+        inits.append(numpy_helper.from_array(cols, "missing_columns"))
+        nodes += [
+            helper.make_node("Cast", ["x_is_nan"], ["x_nan_float"], to=TensorProto.FLOAT),
+            helper.make_node("Gather", ["x_nan_float", "missing_columns"], ["missing_indicators"], axis=1),
+            helper.make_node("Concat", ["x_filled", "missing_indicators"], ["x_augmented"], axis=1),
+        ]
+        gate_input = "x_augmented"
+    nodes += [
+        helper.make_node("MatMul", [gate_input, "gate_weights"], ["gate_dot"]),
         helper.make_node("Add", ["gate_dot", "gate_biases"], ["gate_logits"]),
         helper.make_node("Sigmoid", ["gate_logits"], ["p_right"]),
         helper.make_node("Sub", ["one", "p_right"], ["p_left"]),

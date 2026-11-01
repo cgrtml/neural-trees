@@ -17,6 +17,8 @@ each sample down a single path, in plain numpy. The result is not the same model
 import numpy as np
 from sklearn.utils.validation import check_array
 
+from neural_trees._missing import allow_nan, augment, augmented_names
+
 
 class HardDecisionTree:
     """
@@ -52,7 +54,7 @@ class HardDecisionTree:
 
     def __init__(
         self, weights, biases, node_distributions, classes, n_features_in, is_split=None,
-        log_beta=None, rule="gate",
+        log_beta=None, rule="gate", missing_columns=None,
     ):
         if rule not in self.RULES:
             raise ValueError(f"rule must be one of {self.RULES}, got {rule!r}")
@@ -66,6 +68,10 @@ class HardDecisionTree:
         self.node_distributions_ = np.asarray(node_distributions, dtype=np.float64)
         self.classes_ = np.asarray(classes)
         self.n_features_in_ = int(n_features_in)
+        # indicators of the features with missing values in training are the last
+        # gate inputs (see neural_trees._missing)
+        self.missing_columns_ = np.asarray(missing_columns if missing_columns is not None else [],
+                                           dtype=np.int64)
         self.n_internal_ = len(self.weights_)
         self.depth = int(np.log2(self.n_internal_ + 1))
         self.is_split_ = (
@@ -145,13 +151,13 @@ class HardDecisionTree:
         """
         Class probabilities of the reached leaf, shape (n_samples, n_classes).
         """
-        X = check_array(X)
+        X = check_array(X, **allow_nan())
         if X.shape[1] != self.n_features_in_:
             raise ValueError(
                 f"X has {X.shape[1]} features, but HardDecisionTree is expecting "
                 f"{self.n_features_in_} features as input."
             )
-        return self.node_distributions_[self._leaf_index(X)]
+        return self.node_distributions_[self._leaf_index(augment(X, self.missing_columns_))]
 
     def predict(self, X) -> np.ndarray:
         """Predicted class labels, shape (n_samples,)."""
@@ -192,6 +198,7 @@ class HardDecisionTree:
                 f"feature_names has {len(feature_names)} entries, expected "
                 f"{self.n_features_in_}"
             )
+        feature_names = augmented_names(feature_names, getattr(self, "missing_columns_", None))
 
         n_internal = self.n_internal_
         lines = []
