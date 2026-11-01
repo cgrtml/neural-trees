@@ -33,9 +33,8 @@ AGACLAR = (3, 10, 30, 100, 300)
 
 
 def olc():
-    import xgboost as xgb
-
     import damitma_olcek as D
+    import xgboost as xgb
     out = json.loads(ARA.read_text()) if ARA.exists() else {}
     for ad in D.KUMELER:
         for n in (5_000, 20_000):
