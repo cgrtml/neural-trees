@@ -8,8 +8,9 @@ probability, weighted by that probability, which is exactly the soft-target
 cross-entropy. Measured on 24 datasets with XGBoost, LightGBM and random
 forest teachers (`benchmarks/distill.py`): agreement with the teacher 0.934
 for this student against 0.901 for CART of depth 6, with about 11 splits
-against 38 leaves; the lead comes from splits that use many features and is
-gone once each split is limited to three or fewer (`split_features`).
+against 38 leaves. The lead comes from splits that use many features; to
+limit each split to a few (`split_features`), start the student from CART
+(`init="cart"`), which keeps it ahead of CART even at one feature per split.
 Perturbed copies of the rows made no measurable difference there, so the
 transfer set is the data passed in.
 
