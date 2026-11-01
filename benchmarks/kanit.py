@@ -109,7 +109,7 @@ def _kur(isim, p, seed, Xv=None, yv=None):
         return lgb.LGBMClassifier(n_estimators=2000, random_state=seed, n_jobs=1, verbose=-1, **p)
     if isim == "CatBoost":
         from catboost import CatBoostClassifier
-        return CatBoostClassifier(iterations=2000, random_seed=seed, thread_count=1, verbose=0,
+        return CatBoostClassifier(iterations=2000, random_seed=seed, thread_count=1, verbose=0, allow_writing_files=False,
                                   early_stopping_rounds=50 if Xv is not None else None, **p)
     if isim == "HistGB":
         from sklearn.ensemble import HistGradientBoostingClassifier
