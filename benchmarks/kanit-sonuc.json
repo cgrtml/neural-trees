@@ -1,0 +1,3328 @@
+{
+ "_protokol": "\nEvidence package: tuned boosting models against the library's distilled\nstudents, on 9 datasets (the 6 Grinsztajn et al. numerical sets used so far,\nplus 3 credit and marketing sets a bank would recognise), 20 000 training\nrows, three seeds, accuracy and ROC AUC on the same held-out test rows.\n\nTwo steps, in separate processes (xgboost and torch never share one):\n\n  rakip    Tuned XGBoost, LightGBM, CatBoost, HistGradientBoosting and a CART\n           on the real training rows. Each gets 20 random configurations,\n           scored on a validation split (20% of the training rows), with\n           early stopping on that split for the boosters; the best one is\n           refitted on all training rows. Model size is the number of\n           internal (split) nodes over all trees.\n  ogrenci  The library as a user would call it: DistilledTree and\n           DistilledForest(n_trees=3) with synthetic=10 and the tuned\n           HistGradientBoosting configuration as teacher, plus the same soft\n           tree trained on the real rows with no teacher.\n\n    python3 benchmarks/kanit.py rakip   [--n-jobs 8]\n    python3 benchmarks/kanit.py ogrenci [--n-jobs 8]\n    python3 benchmarks/kanit.py ozet\n",
+ "_commit": "1c0d877",
+ "datasets": {
+  "electricity": {
+   "XGBoost": {
+    "acc": 0.8835022961615112,
+    "auc": 0.95544783804092,
+    "splits": 115351.33333333333
+   },
+   "LightGBM": {
+    "acc": 0.8831990295468332,
+    "auc": 0.9561136529168158,
+    "splits": 54373.0
+   },
+   "CatBoost": {
+    "acc": 0.8861450480894204,
+    "auc": 0.9562371488392993,
+    "splits": 1417151.0
+   },
+   "HistGB": {
+    "acc": 0.8856251624642578,
+    "auc": 0.9563084805165755,
+    "splits": 32737.333333333332
+   },
+   "CART": {
+    "acc": 0.8363659994801145,
+    "auc": 0.9093247800188058,
+    "splits": 656.3333333333334
+   },
+   "DistilledTree": {
+    "acc": 0.8200329260895934,
+    "auc": 0.9042205446627407,
+    "splits": 169.0
+   },
+   "DistilledForest": {
+    "acc": 0.8250151633307339,
+    "auc": 0.9096541850646424,
+    "splits": 583.6666666666666
+   },
+   "SoftTree": {
+    "acc": 0.8100251278052162,
+    "auc": 0.8955721812945369,
+    "splits": 123.0
+   }
+  },
+  "MagicTelescope": {
+   "XGBoost": {
+    "acc": 0.8595638629283489,
+    "auc": 0.9308799158070166,
+    "splits": 46923.0
+   },
+   "LightGBM": {
+    "acc": 0.8613084112149533,
+    "auc": 0.9319354957722764,
+    "splits": 22060.0
+   },
+   "CatBoost": {
+    "acc": 0.8600623052959501,
+    "auc": 0.9327974751048965,
+    "splits": 24973.0
+   },
+   "HistGB": {
+    "acc": 0.8603115264797507,
+    "auc": 0.9309475549115865,
+    "splits": 15859.0
+   },
+   "CART": {
+    "acc": 0.8119626168224299,
+    "auc": 0.881046945265244,
+    "splits": 192.66666666666666
+   },
+   "DistilledTree": {
+    "acc": 0.8528348909657321,
+    "auc": 0.9255116441743353,
+    "splits": 160.33333333333334
+   },
+   "DistilledForest": {
+    "acc": 0.8547040498442368,
+    "auc": 0.9279955645144762,
+    "splits": 475.0
+   },
+   "SoftTree": {
+    "acc": 0.8412461059190032,
+    "auc": 0.9144942961415152,
+    "splits": 54.0
+   }
+  },
+  "jannis": {
+   "XGBoost": {
+    "acc": 0.788786615723052,
+    "auc": 0.8654896150446537,
+    "splits": 22651.0
+   },
+   "LightGBM": {
+    "acc": 0.7906680560379762,
+    "auc": 0.8665823705800103,
+    "splits": 39918.333333333336
+   },
+   "CatBoost": {
+    "acc": 0.7904943846242909,
+    "auc": 0.8682949854706781,
+    "splits": 420400.6666666667
+   },
+   "HistGB": {
+    "acc": 0.7888155609586662,
+    "auc": 0.8662082340559006,
+    "splits": 55120.666666666664
+   },
+   "CART": {
+    "acc": 0.7348037513025356,
+    "auc": 0.8123594637930793,
+    "splits": 131.0
+   },
+   "DistilledTree": {
+    "acc": 0.783865925668635,
+    "auc": 0.8623825918305948,
+    "splits": 140.0
+   },
+   "DistilledForest": {
+    "acc": 0.7849658446219753,
+    "auc": 0.8636674375610348,
+    "splits": 474.0
+   },
+   "SoftTree": {
+    "acc": 0.7427926363320596,
+    "auc": 0.814684714297555,
+    "splits": 41.333333333333336
+   }
+  },
+  "MiniBooNE": {
+   "XGBoost": {
+    "acc": 0.9400187227435669,
+    "auc": 0.9840126125990861,
+    "splits": 44470.666666666664
+   },
+   "LightGBM": {
+    "acc": 0.9409091946937004,
+    "auc": 0.9839366248332011,
+    "splits": 50697.0
+   },
+   "CatBoost": {
+    "acc": 0.9398132292166131,
+    "auc": 0.9838864396886794,
+    "splits": 213534.0
+   },
+   "HistGB": {
+    "acc": 0.9393109117062813,
+    "auc": 0.9833310374036349,
+    "splits": 37086.0
+   },
+   "CART": {
+    "acc": 0.8954951252368883,
+    "auc": 0.9453702483795553,
+    "splits": 295.6666666666667
+   },
+   "DistilledTree": {
+    "acc": 0.9307030161883234,
+    "auc": 0.9794367777909151,
+    "splits": 178.33333333333334
+   },
+   "DistilledForest": {
+    "acc": 0.9341735735324338,
+    "auc": 0.9808060183386602,
+    "splits": 588.3333333333334
+   },
+   "SoftTree": {
+    "acc": 0.9196063657328128,
+    "auc": 0.9726788995302416,
+    "splits": 84.0
+   }
+  },
+  "covertype": {
+   "XGBoost": {
+    "acc": 0.8495333333333334,
+    "auc": 0.9271266416666667,
+    "splits": 99660.66666666667
+   },
+   "LightGBM": {
+    "acc": 0.8553166666666666,
+    "auc": 0.9315983833333333,
+    "splits": 151779.0
+   },
+   "CatBoost": {
+    "acc": 0.8560166666666666,
+    "auc": 0.9323679500000001,
+    "splits": 1098202.0
+   },
+   "HistGB": {
+    "acc": 0.8545333333333334,
+    "auc": 0.9306671033333335,
+    "splits": 115737.0
+   },
+   "CART": {
+    "acc": 0.7751333333333333,
+    "auc": 0.8471996983333333,
+    "splits": 529.6666666666666
+   },
+   "DistilledTree": {
+    "acc": 0.8089666666666666,
+    "auc": 0.8915963549999999,
+    "splits": 178.33333333333334
+   },
+   "DistilledForest": {
+    "acc": 0.8197666666666666,
+    "auc": 0.9016981999999999,
+    "splits": 568.0
+   },
+   "SoftTree": {
+    "acc": 0.79025,
+    "auc": 0.8684179733333334,
+    "splits": 103.0
+   }
+  },
+  "Higgs": {
+   "XGBoost": {
+    "acc": 0.7178166666666667,
+    "auc": 0.7950417666666666,
+    "splits": 12196.666666666666
+   },
+   "LightGBM": {
+    "acc": 0.7210666666666666,
+    "auc": 0.797918,
+    "splits": 27590.666666666668
+   },
+   "CatBoost": {
+    "acc": 0.7187666666666667,
+    "auc": 0.7969747633333334,
+    "splits": 444495.0
+   },
+   "HistGB": {
+    "acc": 0.7165833333333333,
+    "auc": 0.7942851366666664,
+    "splits": 37781.333333333336
+   },
+   "CART": {
+    "acc": 0.6764666666666667,
+    "auc": 0.7391984733333333,
+    "splits": 102.0
+   },
+   "DistilledTree": {
+    "acc": 0.7165499999999999,
+    "auc": 0.7954876133333334,
+    "splits": 148.33333333333334
+   },
+   "DistilledForest": {
+    "acc": 0.7190666666666666,
+    "auc": 0.7974612866666666,
+    "splits": 453.3333333333333
+   },
+   "SoftTree": {
+    "acc": 0.6874833333333333,
+    "auc": 0.7565343033333334,
+    "splits": 41.0
+   }
+  },
+  "credit-default": {
+   "XGBoost": {
+    "acc": 0.8232777777777778,
+    "auc": 0.7798391062877149,
+    "splits": 4031.0
+   },
+   "LightGBM": {
+    "acc": 0.8232777777777778,
+    "auc": 0.7850187760576626,
+    "splits": 4874.0
+   },
+   "CatBoost": {
+    "acc": 0.8222222222222223,
+    "auc": 0.777810531976385,
+    "splits": 8966.333333333334
+   },
+   "HistGB": {
+    "acc": 0.8227222222222222,
+    "auc": 0.7792031139997161,
+    "splits": 12197.0
+   },
+   "CART": {
+    "acc": 0.8242222222222222,
+    "auc": 0.7390690790886499,
+    "splits": 11.333333333333334
+   },
+   "DistilledTree": {
+    "acc": 0.8228333333333332,
+    "auc": 0.781562491382537,
+    "splits": 47.0
+   },
+   "DistilledForest": {
+    "acc": 0.8236666666666667,
+    "auc": 0.7816865022187297,
+    "splits": 146.66666666666666
+   },
+   "SoftTree": {
+    "acc": 0.8216111111111112,
+    "auc": 0.7532377605954412,
+    "splits": 7.333333333333333
+   }
+  },
+  "bank-marketing": {
+   "XGBoost": {
+    "acc": 0.9070633340706333,
+    "auc": 0.9285334610620106,
+    "splits": 5308.333333333333
+   },
+   "LightGBM": {
+    "acc": 0.9078006340780064,
+    "auc": 0.9321271323365066,
+    "splits": 8958.0
+   },
+   "CatBoost": {
+    "acc": 0.9075794440757945,
+    "auc": 0.9329716853366468,
+    "splits": 114592.0
+   },
+   "HistGB": {
+    "acc": 0.9062891690628917,
+    "auc": 0.9297726281169775,
+    "splits": 23687.666666666668
+   },
+   "CART": {
+    "acc": 0.8962618889626189,
+    "auc": 0.8741906071121449,
+    "splits": 53.333333333333336
+   },
+   "DistilledTree": {
+    "acc": 0.9040035390400355,
+    "auc": 0.9259852408029671,
+    "splits": 89.66666666666667
+   },
+   "DistilledForest": {
+    "acc": 0.9036717540367176,
+    "auc": 0.9262763081298072,
+    "splits": 290.6666666666667
+   },
+   "SoftTree": {
+    "acc": 0.8984369239843693,
+    "auc": 0.9061603042253378,
+    "splits": 20.0
+   }
+  },
+  "adult": {
+   "XGBoost": {
+    "acc": 0.8725771225771227,
+    "auc": 0.9255179314217976,
+    "splits": 11475.0
+   },
+   "LightGBM": {
+    "acc": 0.8719969969969968,
+    "auc": 0.9253620639316408,
+    "splits": 16211.666666666666
+   },
+   "CatBoost": {
+    "acc": 0.8722699972699973,
+    "auc": 0.925048822197066,
+    "splits": 19385.333333333332
+   },
+   "HistGB": {
+    "acc": 0.8715192465192465,
+    "auc": 0.9248764859788071,
+    "splits": 20056.333333333332
+   },
+   "CART": {
+    "acc": 0.8520679770679771,
+    "auc": 0.8936533226397928,
+    "splits": 160.66666666666666
+   },
+   "DistilledTree": {
+    "acc": 0.8590636090636091,
+    "auc": 0.91162147277225,
+    "splits": 83.33333333333333
+   },
+   "DistilledForest": {
+    "acc": 0.8627149877149877,
+    "auc": 0.9151271620939937,
+    "splits": 263.0
+   },
+   "SoftTree": {
+    "acc": 0.853023478023478,
+    "auc": 0.9035683511046843,
+    "splits": 39.333333333333336
+   }
+  }
+ },
+ "comparisons": {
+  "DistilledTree - XGBoost (acc)": {
+   "mean_pt": -1.592064721845384,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledTree - XGBoost (auc)": {
+   "mean_pt": -1.267601742742884,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.01953125,
+   "cells": 9
+  },
+  "DistilledTree - LightGBM (acc)": {
+   "mean_pt": -1.7409947407072108,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledTree - LightGBM (auc)": {
+   "mean_pt": -1.475419644575262,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledTree - CatBoost (acc)": {
+   "mean_pt": -1.7168450790188188,
+   "higher": 1,
+   "lower": 8,
+   "p": 0.0078125,
+   "cells": 9
+  },
+  "DistilledTree - CatBoost (auc)": {
+   "mean_pt": -1.4287230021923458,
+   "higher": 1,
+   "lower": 8,
+   "p": 0.01171875,
+   "cells": 9
+  },
+  "DistilledTree - HistGB (acc)": {
+   "mean_pt": -1.6317395451561671,
+   "higher": 1,
+   "lower": 8,
+   "p": 0.01171875,
+   "cells": 9
+  },
+  "DistilledTree - HistGB (auc)": {
+   "mean_pt": -1.3088338137058317,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.01953125,
+   "cells": 9
+  },
+  "DistilledTree - CART (acc)": {
+   "mean_pt": 2.178603621346019,
+   "higher": 7,
+   "lower": 2,
+   "p": 0.0390625,
+   "cells": 9
+  },
+  "DistilledTree - CART (auc)": {
+   "mean_pt": 3.7376901531748294,
+   "higher": 8,
+   "lower": 1,
+   "p": 0.0078125,
+   "cells": 9
+  },
+  "DistilledTree - DistilledForest (acc)": {
+   "mean_pt": -0.3210162896128521,
+   "higher": 1,
+   "lower": 8,
+   "p": 0.0078125,
+   "cells": 9
+  },
+  "DistilledTree - DistilledForest (auc)": {
+   "mean_pt": -0.295199253759304,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledTree - SoftTree (acc)": {
+   "mean_pt": 1.4930980530504963,
+   "higher": 9,
+   "lower": 0,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledTree - SoftTree (auc)": {
+   "mean_pt": 2.1383994210410524,
+   "higher": 9,
+   "lower": 0,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledForest - XGBoost (acc)": {
+   "mean_pt": -1.271048432232532,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.01953125,
+   "cells": 9
+  },
+  "DistilledForest - XGBoost (auc)": {
+   "mean_pt": -0.9724024889835802,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.0546875,
+   "cells": 9
+  },
+  "DistilledForest - LightGBM (acc)": {
+   "mean_pt": -1.419978451094359,
+   "higher": 1,
+   "lower": 8,
+   "p": 0.0078125,
+   "cells": 9
+  },
+  "DistilledForest - LightGBM (auc)": {
+   "mean_pt": -1.1802203908159585,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledForest - CatBoost (acc)": {
+   "mean_pt": -1.3958287894059669,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.01953125,
+   "cells": 9
+  },
+  "DistilledForest - CatBoost (auc)": {
+   "mean_pt": -1.133523748433042,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.02734375,
+   "cells": 9
+  },
+  "DistilledForest - HistGB (acc)": {
+   "mean_pt": -1.310723255543315,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.01953125,
+   "cells": 9
+  },
+  "DistilledForest - HistGB (auc)": {
+   "mean_pt": -1.0136345599465277,
+   "higher": 2,
+   "lower": 7,
+   "p": 0.0546875,
+   "cells": 9
+  },
+  "DistilledForest - CART (acc)": {
+   "mean_pt": 2.4996199109588715,
+   "higher": 7,
+   "lower": 2,
+   "p": 0.0390625,
+   "cells": 9
+  },
+  "DistilledForest - CART (auc)": {
+   "mean_pt": 4.0328894069341334,
+   "higher": 9,
+   "lower": 0,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledForest - DistilledTree (acc)": {
+   "mean_pt": 0.3210162896128521,
+   "higher": 8,
+   "lower": 1,
+   "p": 0.0078125,
+   "cells": 9
+  },
+  "DistilledForest - DistilledTree (auc)": {
+   "mean_pt": 0.295199253759304,
+   "higher": 9,
+   "lower": 0,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledForest - SoftTree (acc)": {
+   "mean_pt": 1.8141143426633484,
+   "higher": 9,
+   "lower": 0,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "DistilledForest - SoftTree (auc)": {
+   "mean_pt": 2.433598674800356,
+   "higher": 9,
+   "lower": 0,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - XGBoost (acc)": {
+   "mean_pt": -3.08516277489588,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - XGBoost (auc)": {
+   "mean_pt": -3.4060011637839365,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - LightGBM (acc)": {
+   "mean_pt": -3.2340927937577075,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - LightGBM (auc)": {
+   "mean_pt": -3.613819065616314,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - CatBoost (acc)": {
+   "mean_pt": -3.209943132069315,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - CatBoost (auc)": {
+   "mean_pt": -3.567122423233398,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - HistGB (acc)": {
+   "mean_pt": -3.1248375982066627,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - HistGB (auc)": {
+   "mean_pt": -3.447233234746884,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - CART (acc)": {
+   "mean_pt": 0.6855055682955228,
+   "higher": 7,
+   "lower": 2,
+   "p": 0.203125,
+   "cells": 9
+  },
+  "SoftTree - CART (auc)": {
+   "mean_pt": 1.599290732133777,
+   "higher": 8,
+   "lower": 1,
+   "p": 0.01953125,
+   "cells": 9
+  },
+  "SoftTree - DistilledTree (acc)": {
+   "mean_pt": -1.4930980530504963,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - DistilledTree (auc)": {
+   "mean_pt": -2.1383994210410524,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - DistilledForest (acc)": {
+   "mean_pt": -1.8141143426633484,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  },
+  "SoftTree - DistilledForest (auc)": {
+   "mean_pt": -2.433598674800356,
+   "higher": 0,
+   "lower": 9,
+   "p": 0.00390625,
+   "cells": 9
+  }
+ },
+ "runs": {
+  "electricity__0": {
+   "XGBoost": {
+    "acc": 0.8804263062126332,
+    "auc": 0.9541219517617223,
+    "splits": 48617,
+    "trees": 299,
+    "params": {
+     "learning_rate": 0.15089628614733738,
+     "max_depth": 10,
+     "min_child_weight": 1.0880268763202021,
+     "subsample": 0.8672417858943646,
+     "colsample_bytree": 0.855571438994875,
+     "reg_lambda": 18.289797754458572
+    },
+    "val_acc": 0.86525,
+    "sn": 25.445498943328857
+   },
+   "LightGBM": {
+    "acc": 0.8836755913698986,
+    "auc": 0.9566369170552689,
+    "splits": 36261,
+    "trees": 459,
+    "params": {
+     "learning_rate": 0.059443295483714464,
+     "num_leaves": 80,
+     "min_child_samples": 16,
+     "subsample": 0.8117448777687502,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.888341557171149,
+     "reg_lambda": 1.398014106678725
+    },
+    "val_acc": 0.8735,
+    "sn": 51.14031791687012
+   },
+   "CatBoost": {
+    "acc": 0.888614504808942,
+    "auc": 0.9567765847947036,
+    "splits": 1570305,
+    "trees": 1535,
+    "params": {
+     "learning_rate": 0.038675616893579755,
+     "depth": 10,
+     "l2_leaf_reg": 1.909320583808781
+    },
+    "val_acc": 0.87425,
+    "sn": 245.59911704063416
+   },
+   "HistGB": {
+    "acc": 0.8865349623082922,
+    "auc": 0.9557625916007861,
+    "splits": 23188,
+    "trees": 187,
+    "params": {
+     "learning_rate": 0.14451586093033572,
+     "max_leaf_nodes": 125,
+     "min_samples_leaf": 7,
+     "l2_regularization": 0.6727603419207773
+    },
+    "val_acc": 0.87325,
+    "sn": 38.41809606552124
+   },
+   "CART": {
+    "acc": 0.8376657135430206,
+    "auc": 0.9092847558980228,
+    "splits": 763,
+    "trees": 1,
+    "params": {
+     "max_depth": 15,
+     "min_samples_leaf": 9
+    },
+    "val_acc": 0.829,
+    "sn": 0.7843179702758789
+   },
+   "DistilledTree": {
+    "acc": 0.8214192877566935,
+    "auc": 0.9027704754966904,
+    "sn": 703.5275919437408,
+    "splits": 167,
+    "fidelity": 0.8662594229269561,
+    "teacher_acc": 0.8865349623082922,
+    "teacher_auc": 0.9557625916007861
+   },
+   "DistilledForest": {
+    "acc": 0.8298674291655835,
+    "auc": 0.9105386573207079,
+    "sn": 2058.144488096237,
+    "splits": 555,
+    "fidelity": 0.87340785027294,
+    "teacher_acc": 0.8865349623082922,
+    "teacher_auc": 0.9557625916007861
+   },
+   "SoftTree": {
+    "acc": 0.8077722900961788,
+    "auc": 0.8929918755539495,
+    "sn": 39.78348207473755,
+    "splits": 155
+   }
+  },
+  "electricity__1": {
+   "XGBoost": {
+    "acc": 0.8890044190278139,
+    "auc": 0.9572514010525692,
+    "splits": 164662,
+    "trees": 1128,
+    "params": {
+     "learning_rate": 0.01670094326909569,
+     "max_depth": 9,
+     "min_child_weight": 0.6110005279058689,
+     "subsample": 0.7100782265743486,
+     "colsample_bytree": 0.9040088540330846,
+     "reg_lambda": 0.010796339964115036
+    },
+    "val_acc": 0.879,
+    "sn": 29.87209916114807
+   },
+   "LightGBM": {
+    "acc": 0.88185599168183,
+    "auc": 0.9549781345998343,
+    "splits": 25740,
+    "trees": 220,
+    "params": {
+     "learning_rate": 0.08635863243778838,
+     "num_leaves": 118,
+     "min_child_samples": 14,
+     "subsample": 0.7172088624850047,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.5521890247027179,
+     "reg_lambda": 0.0355372685923054
+    },
+    "val_acc": 0.87775,
+    "sn": 64.69165897369385
+   },
+   "CatBoost": {
+    "acc": 0.8856251624642578,
+    "auc": 0.9556461342476582,
+    "splits": 2020425,
+    "trees": 1975,
+    "params": {
+     "learning_rate": 0.04048549002462904,
+     "depth": 10,
+     "l2_leaf_reg": 8.069415690357204
+    },
+    "val_acc": 0.87875,
+    "sn": 244.88492488861084
+   },
+   "HistGB": {
+    "acc": 0.888614504808942,
+    "auc": 0.9578810883596769,
+    "splits": 42240,
+    "trees": 192,
+    "params": {
+     "learning_rate": 0.07748800953598353,
+     "max_leaf_nodes": 221,
+     "min_samples_leaf": 22,
+     "l2_regularization": 0.6592035357590681
+    },
+    "val_acc": 0.87725,
+    "sn": 46.03735589981079
+   },
+   "CART": {
+    "acc": 0.8315570574473615,
+    "auc": 0.91092090231441,
+    "splits": 380,
+    "trees": 1,
+    "params": {
+     "max_depth": 12,
+     "min_samples_leaf": 22
+    },
+    "val_acc": 0.822,
+    "sn": 0.8604919910430908
+   },
+   "DistilledTree": {
+    "acc": 0.8189498310371718,
+    "auc": 0.9054903476213139,
+    "sn": 703.1018440723419,
+    "splits": 173,
+    "fidelity": 0.861190538081622,
+    "teacher_acc": 0.888614504808942,
+    "teacher_auc": 0.9578810883596769
+   },
+   "DistilledForest": {
+    "acc": 0.8185599168183,
+    "auc": 0.9076938815597297,
+    "sn": 1997.0771703720093,
+    "splits": 629,
+    "fidelity": 0.8662594229269561,
+    "teacher_acc": 0.888614504808942,
+    "teacher_auc": 0.9578810883596769
+   },
+   "SoftTree": {
+    "acc": 0.8084221471276319,
+    "auc": 0.8971814347451308,
+    "sn": 42.45979309082031,
+    "splits": 81
+   }
+  },
+  "electricity__2": {
+   "XGBoost": {
+    "acc": 0.8810761632440863,
+    "auc": 0.9549701613084685,
+    "splits": 132775,
+    "trees": 1990,
+    "params": {
+     "learning_rate": 0.016857475696077207,
+     "max_depth": 8,
+     "min_child_weight": 2.6764682507435853,
+     "subsample": 0.802315972891386,
+     "colsample_bytree": 0.665917908018716,
+     "reg_lambda": 0.24852799274420131
+    },
+    "val_acc": 0.8665,
+    "sn": 23.481981992721558
+   },
+   "LightGBM": {
+    "acc": 0.8840655055887705,
+    "auc": 0.9567259070953441,
+    "splits": 101118,
+    "trees": 887,
+    "params": {
+     "learning_rate": 0.021162111791406906,
+     "num_leaves": 115,
+     "min_child_samples": 5,
+     "subsample": 0.978487809417032,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.5269646644818196,
+     "reg_lambda": 0.02479467942124227
+    },
+    "val_acc": 0.86675,
+    "sn": 48.434874057769775
+   },
+   "CatBoost": {
+    "acc": 0.8841954769950611,
+    "auc": 0.9562887274755362,
+    "splits": 660723,
+    "trees": 1293,
+    "params": {
+     "learning_rate": 0.0724080768217223,
+     "depth": 9,
+     "l2_leaf_reg": 6.550737511338664
+    },
+    "val_acc": 0.8705,
+    "sn": 235.01304388046265
+   },
+   "HistGB": {
+    "acc": 0.8817260202755394,
+    "auc": 0.9552817615892635,
+    "splits": 32784,
+    "trees": 683,
+    "params": {
+     "learning_rate": 0.06645063072401121,
+     "max_leaf_nodes": 49,
+     "min_samples_leaf": 12,
+     "l2_regularization": 0.01789277740295725
+    },
+    "val_acc": 0.87025,
+    "sn": 41.30672836303711
+   },
+   "CART": {
+    "acc": 0.839875227449961,
+    "auc": 0.9077686818439844,
+    "splits": 826,
+    "trees": 1,
+    "params": {
+     "max_depth": 15,
+     "min_samples_leaf": 7
+    },
+    "val_acc": 0.82425,
+    "sn": 0.8536350727081299
+   },
+   "DistilledTree": {
+    "acc": 0.8197296594749155,
+    "auc": 0.904400810870218,
+    "sn": 726.2629799842834,
+    "splits": 167,
+    "fidelity": 0.8685989082401872,
+    "teacher_acc": 0.8817260202755394,
+    "teacher_auc": 0.9552817615892635
+   },
+   "DistilledForest": {
+    "acc": 0.8266181440083181,
+    "auc": 0.9107300163134893,
+    "sn": 2107.505768060684,
+    "splits": 567,
+    "fidelity": 0.8762672212113335,
+    "teacher_acc": 0.8817260202755394,
+    "teacher_auc": 0.9552817615892635
+   },
+   "SoftTree": {
+    "acc": 0.8138809461918378,
+    "auc": 0.8965432335845301,
+    "sn": 40.39889693260193,
+    "splits": 133
+   }
+  },
+  "MagicTelescope__0": {
+   "XGBoost": {
+    "acc": 0.8598130841121495,
+    "auc": 0.931062336422372,
+    "splits": 16353,
+    "trees": 344,
+    "params": {
+     "learning_rate": 0.034410643563014834,
+     "max_depth": 7,
+     "min_child_weight": 2.6842599821356328,
+     "subsample": 0.6609346955379711,
+     "colsample_bytree": 0.7971500150998484,
+     "reg_lambda": 0.15229627786717145
+    },
+    "val_acc": 0.8682858477347034,
+    "sn": 11.52145504951477
+   },
+   "LightGBM": {
+    "acc": 0.8594392523364486,
+    "auc": 0.9303076852556814,
+    "splits": 28830,
+    "trees": 116,
+    "params": {
+     "learning_rate": 0.04789022023096315,
+     "num_leaves": 250,
+     "min_child_samples": 17,
+     "subsample": 0.7015564932235646,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.6017276203380748,
+     "reg_lambda": 0.08281265177024064
+    },
+    "val_acc": 0.8664175618869687,
+    "sn": 13.91372013092041
+   },
+   "CatBoost": {
+    "acc": 0.8620560747663552,
+    "auc": 0.9320506499503048,
+    "splits": 10323,
+    "trees": 333,
+    "params": {
+     "learning_rate": 0.10091272826344763,
+     "depth": 5,
+     "l2_leaf_reg": 4.307021204512595
+    },
+    "val_acc": 0.8701541335824381,
+    "sn": 66.13353109359741
+   },
+   "HistGB": {
+    "acc": 0.8609345794392523,
+    "auc": 0.9326498988767437,
+    "splits": 21390,
+    "trees": 310,
+    "params": {
+     "learning_rate": 0.03642216439067196,
+     "max_leaf_nodes": 70,
+     "min_samples_leaf": 13,
+     "l2_regularization": 0.43853097011748293
+    },
+    "val_acc": 0.867351704810836,
+    "sn": 15.024765014648438
+   },
+   "CART": {
+    "acc": 0.8160747663551402,
+    "auc": 0.8886582078655894,
+    "splits": 79,
+    "trees": 1,
+    "params": {
+     "max_depth": 9,
+     "min_samples_leaf": 61
+    },
+    "val_acc": 0.8183092013078,
+    "sn": 0.7688419818878174
+   },
+   "DistilledTree": {
+    "acc": 0.8557009345794393,
+    "auc": 0.9272287084955835,
+    "sn": 435.05144023895264,
+    "splits": 146,
+    "fidelity": 0.9446728971962617,
+    "teacher_acc": 0.8609345794392523,
+    "teacher_auc": 0.9326498988767437
+   },
+   "DistilledForest": {
+    "acc": 0.8579439252336448,
+    "auc": 0.9297911684571465,
+    "sn": 1282.1404690742493,
+    "splits": 473,
+    "fidelity": 0.9484112149532711,
+    "teacher_acc": 0.8609345794392523,
+    "teacher_auc": 0.9326498988767437
+   },
+   "SoftTree": {
+    "acc": 0.8388785046728972,
+    "auc": 0.9104743345933213,
+    "sn": 23.7879581451416,
+    "splits": 78
+   }
+  },
+  "MagicTelescope__1": {
+   "XGBoost": {
+    "acc": 0.8583177570093458,
+    "auc": 0.9308974311674286,
+    "splits": 59559,
+    "trees": 355,
+    "params": {
+     "learning_rate": 0.01670094326909569,
+     "max_depth": 9,
+     "min_child_weight": 0.6110005279058689,
+     "subsample": 0.7100782265743486,
+     "colsample_bytree": 0.9040088540330846,
+     "reg_lambda": 0.010796339964115036
+    },
+    "val_acc": 0.8580102755721626,
+    "sn": 12.126956224441528
+   },
+   "LightGBM": {
+    "acc": 0.8635514018691589,
+    "auc": 0.9322149962043842,
+    "splits": 27244,
+    "trees": 211,
+    "params": {
+     "learning_rate": 0.029409322082603963,
+     "num_leaves": 155,
+     "min_child_samples": 58,
+     "subsample": 0.9817060904911066,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.862315754895865,
+     "reg_lambda": 0.04638831237107187
+    },
+    "val_acc": 0.8552078468005605,
+    "sn": 14.752581119537354
+   },
+   "CatBoost": {
+    "acc": 0.8579439252336448,
+    "auc": 0.9331451736424384,
+    "splits": 34596,
+    "trees": 1116,
+    "params": {
+     "learning_rate": 0.024568718936365502,
+     "depth": 5,
+     "l2_leaf_reg": 1.0640047149019054
+    },
+    "val_acc": 0.8598785614198973,
+    "sn": 69.50968980789185
+   },
+   "HistGB": {
+    "acc": 0.8616822429906542,
+    "auc": 0.9294104888686158,
+    "splits": 22763,
+    "trees": 97,
+    "params": {
+     "learning_rate": 0.11483022365457078,
+     "max_leaf_nodes": 236,
+     "min_samples_leaf": 25,
+     "l2_regularization": 0.003654275090838869
+    },
+    "val_acc": 0.8580102755721626,
+    "sn": 15.691245079040527
+   },
+   "CART": {
+    "acc": 0.8127102803738318,
+    "auc": 0.8758503800646875,
+    "splits": 241,
+    "trees": 1,
+    "params": {
+     "max_depth": 10,
+     "min_samples_leaf": 9
+    },
+    "val_acc": 0.8211116300794021,
+    "sn": 0.8751029968261719
+   },
+   "DistilledTree": {
+    "acc": 0.8500934579439252,
+    "auc": 0.922412357049504,
+    "sn": 359.84210300445557,
+    "splits": 155,
+    "fidelity": 0.9263551401869159,
+    "teacher_acc": 0.8616822429906542,
+    "teacher_auc": 0.9294104888686158
+   },
+   "DistilledForest": {
+    "acc": 0.8504672897196262,
+    "auc": 0.9251285422487263,
+    "sn": 1066.7145709991455,
+    "splits": 465,
+    "fidelity": 0.9357009345794393,
+    "teacher_acc": 0.8616822429906542,
+    "teacher_auc": 0.9294104888686158
+   },
+   "SoftTree": {
+    "acc": 0.8418691588785047,
+    "auc": 0.9152006869002619,
+    "sn": 24.35734724998474,
+    "splits": 48
+   }
+  },
+  "MagicTelescope__2": {
+   "XGBoost": {
+    "acc": 0.8605607476635514,
+    "auc": 0.9306799798312488,
+    "splits": 64857,
+    "trees": 1515,
+    "params": {
+     "learning_rate": 0.0124918936720699,
+     "max_depth": 6,
+     "min_child_weight": 0.2971803897612418,
+     "subsample": 0.9785943961773864,
+     "colsample_bytree": 0.7008334727942167,
+     "reg_lambda": 1.5585017597916317
+    },
+    "val_acc": 0.8580102755721626,
+    "sn": 10.227979183197021
+   },
+   "LightGBM": {
+    "acc": 0.8609345794392523,
+    "auc": 0.933283805856764,
+    "splits": 10106,
+    "trees": 163,
+    "params": {
+     "learning_rate": 0.043202084671062305,
+     "num_leaves": 63,
+     "min_child_samples": 24,
+     "subsample": 0.7375501276087071,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.9810742252765066,
+     "reg_lambda": 0.3250321273831174
+    },
+    "val_acc": 0.8598785614198973,
+    "sn": 12.946518898010254
+   },
+   "CatBoost": {
+    "acc": 0.8601869158878505,
+    "auc": 0.9331966017219463,
+    "splits": 30000,
+    "trees": 2000,
+    "params": {
+     "learning_rate": 0.023508786709465445,
+     "depth": 4,
+     "l2_leaf_reg": 7.163751687252268
+    },
+    "val_acc": 0.864549276039234,
+    "sn": 108.96254682540894
+   },
+   "HistGB": {
+    "acc": 0.8583177570093458,
+    "auc": 0.9307822769894001,
+    "splits": 3424,
+    "trees": 107,
+    "params": {
+     "learning_rate": 0.19658640284827952,
+     "max_leaf_nodes": 33,
+     "min_samples_leaf": 41,
+     "l2_regularization": 0.12294963772071614
+    },
+    "val_acc": 0.8580102755721626,
+    "sn": 15.080732107162476
+   },
+   "CART": {
+    "acc": 0.8071028037383178,
+    "auc": 0.8786322478654552,
+    "splits": 258,
+    "trees": 1,
+    "params": {
+     "max_depth": 12,
+     "min_samples_leaf": 17
+    },
+    "val_acc": 0.8192433442316674,
+    "sn": 0.8789670467376709
+   },
+   "DistilledTree": {
+    "acc": 0.8527102803738318,
+    "auc": 0.9268938669779183,
+    "sn": 408.9563238620758,
+    "splits": 180,
+    "fidelity": 0.9390654205607477,
+    "teacher_acc": 0.8583177570093458,
+    "teacher_auc": 0.9307822769894001
+   },
+   "DistilledForest": {
+    "acc": 0.8557009345794393,
+    "auc": 0.9290669828375555,
+    "sn": 1236.6816799640656,
+    "splits": 487,
+    "fidelity": 0.9413084112149532,
+    "teacher_acc": 0.8583177570093458,
+    "teacher_auc": 0.9307822769894001
+   },
+   "SoftTree": {
+    "acc": 0.8429906542056075,
+    "auc": 0.9178078669309623,
+    "sn": 24.90346908569336,
+    "splits": 36
+   }
+  },
+  "jannis__0": {
+   "XGBoost": {
+    "acc": 0.789857589440778,
+    "auc": 0.8658347610905093,
+    "splits": 48793,
+    "trees": 620,
+    "params": {
+     "learning_rate": 0.01680425256718816,
+     "max_depth": 9,
+     "min_child_weight": 9.790630842358924,
+     "subsample": 0.6153211044968737,
+     "colsample_bytree": 0.5260106505322049,
+     "reg_lambda": 0.2605742157683907
+    },
+    "val_acc": 0.7785,
+    "sn": 78.14864611625671
+   },
+   "LightGBM": {
+    "acc": 0.7910732893365752,
+    "auc": 0.8665393699642681,
+    "splits": 78210,
+    "trees": 740,
+    "params": {
+     "learning_rate": 0.01241872138771188,
+     "num_leaves": 199,
+     "min_child_samples": 83,
+     "subsample": 0.5822536332370507,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.6875734982483209,
+     "reg_lambda": 0.12840548718535852
+    },
+    "val_acc": 0.7795,
+    "sn": 65.15879201889038
+   },
+   "CatBoost": {
+    "acc": 0.7915074678707885,
+    "auc": 0.8677205044831837,
+    "splits": 171577,
+    "trees": 1351,
+    "params": {
+     "learning_rate": 0.020084506787778896,
+     "depth": 7,
+     "l2_leaf_reg": 10.464468914657168
+    },
+    "val_acc": 0.7795,
+    "sn": 361.6800057888031
+   },
+   "HistGB": {
+    "acc": 0.7899444251476208,
+    "auc": 0.865586228188674,
+    "splits": 50165,
+    "trees": 395,
+    "params": {
+     "learning_rate": 0.028005584164501295,
+     "max_leaf_nodes": 128,
+     "min_samples_leaf": 75,
+     "l2_regularization": 0.773854357788366
+    },
+    "val_acc": 0.77775,
+    "sn": 54.99293899536133
+   },
+   "CART": {
+    "acc": 0.7338485585272664,
+    "auc": 0.8106868182612808,
+    "splits": 170,
+    "trees": 1,
+    "params": {
+     "max_depth": 9,
+     "min_samples_leaf": 49
+    },
+    "val_acc": 0.736,
+    "sn": 8.60524582862854
+   },
+   "DistilledTree": {
+    "acc": 0.7852552969781174,
+    "auc": 0.8626682287241056,
+    "sn": 1255.4851768016815,
+    "splits": 140,
+    "fidelity": 0.914727335880514,
+    "teacher_acc": 0.7899444251476208,
+    "teacher_auc": 0.865586228188674
+   },
+   "DistilledForest": {
+    "acc": 0.7843001042028482,
+    "auc": 0.8635426483062784,
+    "sn": 3548.3426208496094,
+    "splits": 490,
+    "fidelity": 0.9186349426884335,
+    "teacher_acc": 0.7899444251476208,
+    "teacher_auc": 0.865586228188674
+   },
+   "SoftTree": {
+    "acc": 0.7428794720389024,
+    "auc": 0.8138194789712814,
+    "sn": 59.0010130405426,
+    "splits": 39
+   }
+  },
+  "jannis__1": {
+   "XGBoost": {
+    "acc": 0.7894234109065648,
+    "auc": 0.8660925687335235,
+    "splits": 10724,
+    "trees": 135,
+    "params": {
+     "learning_rate": 0.0710400291152827,
+     "max_depth": 8,
+     "min_child_weight": 6.466723497811486,
+     "subsample": 0.9281890449912851,
+     "colsample_bytree": 0.772157824874677,
+     "reg_lambda": 0.21319519579941154
+    },
+    "val_acc": 0.79375,
+    "sn": 76.1892249584198
+   },
+   "LightGBM": {
+    "acc": 0.7897707537339353,
+    "auc": 0.8665467294336913,
+    "splits": 12555,
+    "trees": 155,
+    "params": {
+     "learning_rate": 0.06784421540299963,
+     "num_leaves": 82,
+     "min_child_samples": 54,
+     "subsample": 0.9627417359243968,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.8295508585714325,
+     "reg_lambda": 7.380045257825675
+    },
+    "val_acc": 0.797,
+    "sn": 69.00950002670288
+   },
+   "CatBoost": {
+    "acc": 0.7896839180270927,
+    "auc": 0.8693700511338349,
+    "splits": 1010758,
+    "trees": 1978,
+    "params": {
+     "learning_rate": 0.010783432958221022,
+     "depth": 9,
+     "l2_leaf_reg": 1.2954996998157142
+    },
+    "val_acc": 0.79725,
+    "sn": 469.56627798080444
+   },
+   "HistGB": {
+    "acc": 0.7891629037860368,
+    "auc": 0.8670248234903647,
+    "splits": 77145,
+    "trees": 513,
+    "params": {
+     "learning_rate": 0.015942676433909023,
+     "max_leaf_nodes": 243,
+     "min_samples_leaf": 90,
+     "l2_regularization": 0.004327365107416018
+    },
+    "val_acc": 0.79525,
+    "sn": 76.74752998352051
+   },
+   "CART": {
+    "acc": 0.7379298367488711,
+    "auc": 0.813840743012033,
+    "splits": 174,
+    "trees": 1,
+    "params": {
+     "max_depth": 11,
+     "min_samples_leaf": 75
+    },
+    "val_acc": 0.744,
+    "sn": 9.434508085250854
+   },
+   "DistilledTree": {
+    "acc": 0.7843001042028482,
+    "auc": 0.8632592031673225,
+    "sn": 1236.752562046051,
+    "splits": 162,
+    "fidelity": 0.9239319208058353,
+    "teacher_acc": 0.7891629037860368,
+    "teacher_auc": 0.8670248234903647
+   },
+   "DistilledForest": {
+    "acc": 0.7870788468218132,
+    "auc": 0.86548239633011,
+    "sn": 3576.2191660404205,
+    "splits": 466,
+    "fidelity": 0.9300104202848212,
+    "teacher_acc": 0.7891629037860368,
+    "teacher_auc": 0.8670248234903647
+   },
+   "SoftTree": {
+    "acc": 0.740969086488364,
+    "auc": 0.8109569469832267,
+    "sn": 58.11282801628113,
+    "splits": 50
+   }
+  },
+  "jannis__2": {
+   "XGBoost": {
+    "acc": 0.7870788468218132,
+    "auc": 0.8645415153099284,
+    "splits": 8436,
+    "trees": 202,
+    "params": {
+     "learning_rate": 0.04757343542251052,
+     "max_depth": 7,
+     "min_child_weight": 18.350550338503872,
+     "subsample": 0.7076457217711469,
+     "colsample_bytree": 0.6296775541211769,
+     "reg_lambda": 2.9075705974735464
+    },
+    "val_acc": 0.77325,
+    "sn": 51.396740198135376
+   },
+   "LightGBM": {
+    "acc": 0.7911601250434178,
+    "auc": 0.8666610123420715,
+    "splits": 28990,
+    "trees": 220,
+    "params": {
+     "learning_rate": 0.032068636925751286,
+     "num_leaves": 178,
+     "min_child_samples": 99,
+     "subsample": 0.8914844893290941,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.6100524816935486,
+     "reg_lambda": 1.2483131938138763
+    },
+    "val_acc": 0.77675,
+    "sn": 50.93754482269287
+   },
+   "CatBoost": {
+    "acc": 0.7902917679749913,
+    "auc": 0.8677944007950157,
+    "splits": 78867,
+    "trees": 621,
+    "params": {
+     "learning_rate": 0.029720905769687698,
+     "depth": 7,
+     "l2_leaf_reg": 14.35711636658426
+    },
+    "val_acc": 0.776,
+    "sn": 421.20267605781555
+   },
+   "HistGB": {
+    "acc": 0.7873393539423411,
+    "auc": 0.8660136504886629,
+    "splits": 38052,
+    "trees": 252,
+    "params": {
+     "learning_rate": 0.04323622523576726,
+     "max_leaf_nodes": 152,
+     "min_samples_leaf": 64,
+     "l2_regularization": 0.7003745552686831
+    },
+    "val_acc": 0.77025,
+    "sn": 79.60138702392578
+   },
+   "CART": {
+    "acc": 0.7326328586314692,
+    "auc": 0.8125508301059245,
+    "splits": 49,
+    "trees": 1,
+    "params": {
+     "max_depth": 6,
+     "min_samples_leaf": 82
+    },
+    "val_acc": 0.73675,
+    "sn": 8.655071020126343
+   },
+   "DistilledTree": {
+    "acc": 0.7820423758249392,
+    "auc": 0.8612203436003562,
+    "sn": 1264.7266750335693,
+    "splits": 118,
+    "fidelity": 0.9125564432094477,
+    "teacher_acc": 0.7873393539423411,
+    "teacher_auc": 0.8660136504886629
+   },
+   "DistilledForest": {
+    "acc": 0.7835185828412643,
+    "auc": 0.8619772680467159,
+    "sn": 3558.133455991745,
+    "splits": 466,
+    "fidelity": 0.9178534213268496,
+    "teacher_acc": 0.7873393539423411,
+    "teacher_auc": 0.8660136504886629
+   },
+   "SoftTree": {
+    "acc": 0.7445293504689128,
+    "auc": 0.8192777169381567,
+    "sn": 58.83860492706299,
+    "splits": 35
+   }
+  },
+  "MiniBooNE__0": {
+   "XGBoost": {
+    "acc": 0.939927392287143,
+    "auc": 0.9839459242868697,
+    "splits": 15850,
+    "trees": 290,
+    "params": {
+     "learning_rate": 0.10137634332553626,
+     "max_depth": 7,
+     "min_child_weight": 3.455117161569773,
+     "subsample": 0.6918387771309418,
+     "colsample_bytree": 0.9986049678946055,
+     "reg_lambda": 27.097154385022208
+    },
+    "val_acc": 0.93825,
+    "sn": 87.4917860031128
+   },
+   "LightGBM": {
+    "acc": 0.9401328858140968,
+    "auc": 0.9833422480467393,
+    "splits": 15022,
+    "trees": 203,
+    "params": {
+     "learning_rate": 0.04315088164014733,
+     "num_leaves": 75,
+     "min_child_samples": 83,
+     "subsample": 0.7045995681845807,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.7747968438365298,
+     "reg_lambda": 0.012486965055363225
+    },
+    "val_acc": 0.93925,
+    "sn": 61.691421031951904
+   },
+   "CatBoost": {
+    "acc": 0.9402013836564148,
+    "auc": 0.9836968659621229,
+    "splits": 233934,
+    "trees": 1842,
+    "params": {
+     "learning_rate": 0.014481413773051384,
+     "depth": 7,
+     "l2_leaf_reg": 1.434879191879852
+    },
+    "val_acc": 0.93675,
+    "sn": 396.3166811466217
+   },
+   "HistGB": {
+    "acc": 0.9392424138639632,
+    "auc": 0.9833848885285468,
+    "splits": 48063,
+    "trees": 472,
+    "params": {
+     "learning_rate": 0.021284974629229948,
+     "max_leaf_nodes": 104,
+     "min_samples_leaf": 83,
+     "l2_regularization": 0.42717796596786456
+    },
+    "val_acc": 0.9385,
+    "sn": 56.452080726623535
+   },
+   "CART": {
+    "acc": 0.8952667990958285,
+    "auc": 0.9523934973265242,
+    "splits": 231,
+    "trees": 1,
+    "params": {
+     "max_depth": 15,
+     "min_samples_leaf": 37
+    },
+    "val_acc": 0.89,
+    "sn": 8.26680302619934
+   },
+   "DistilledTree": {
+    "acc": 0.9328721145283924,
+    "auc": 0.9798568297026988,
+    "sn": 873.7409629821777,
+    "splits": 185,
+    "fidelity": 0.9696554558531406,
+    "teacher_acc": 0.9392424138639632,
+    "teacher_auc": 0.9833848885285468
+   },
+   "DistilledForest": {
+    "acc": 0.9333515994246181,
+    "auc": 0.9808338166046391,
+    "sn": 2535.5452048778534,
+    "splits": 550,
+    "fidelity": 0.9726008630728132,
+    "teacher_acc": 0.9392424138639632,
+    "teacher_auc": 0.9833848885285468
+   },
+   "SoftTree": {
+    "acc": 0.9182135762723475,
+    "auc": 0.9718810139125834,
+    "sn": 53.98839497566223,
+    "splits": 109
+   }
+  },
+  "MiniBooNE__1": {
+   "XGBoost": {
+    "acc": 0.9404068771833687,
+    "auc": 0.9842274978557768,
+    "splits": 103941,
+    "trees": 1869,
+    "params": {
+     "learning_rate": 0.013028768893054245,
+     "max_depth": 6,
+     "min_child_weight": 0.17641441013494824,
+     "subsample": 0.5332387213996416,
+     "colsample_bytree": 0.8538757515574653,
+     "reg_lambda": 15.125931821869024
+    },
+    "val_acc": 0.93925,
+    "sn": 97.75496816635132
+   },
+   "LightGBM": {
+    "acc": 0.9406808685526405,
+    "auc": 0.983865776321395,
+    "splits": 110969,
+    "trees": 628,
+    "params": {
+     "learning_rate": 0.01536411370399248,
+     "num_leaves": 179,
+     "min_child_samples": 13,
+     "subsample": 0.635536207006475,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.7000528984905332,
+     "reg_lambda": 3.2601148245901492
+    },
+    "val_acc": 0.9385,
+    "sn": 70.14952898025513
+   },
+   "CatBoost": {
+    "acc": 0.9394479073909172,
+    "auc": 0.9841727427476459,
+    "splits": 252857,
+    "trees": 1991,
+    "params": {
+     "learning_rate": 0.01590612898063512,
+     "depth": 7,
+     "l2_leaf_reg": 13.218381713296575
+    },
+    "val_acc": 0.9395,
+    "sn": 371.2676160335541
+   },
+   "HistGB": {
+    "acc": 0.9387629289677375,
+    "auc": 0.9834907202525395,
+    "splits": 11776,
+    "trees": 184,
+    "params": {
+     "learning_rate": 0.09034452195969511,
+     "max_leaf_nodes": 65,
+     "min_samples_leaf": 34,
+     "l2_regularization": 0.016914254726732945
+    },
+    "val_acc": 0.937,
+    "sn": 61.96500492095947
+   },
+   "CART": {
+    "acc": 0.8928693746146996,
+    "auc": 0.9400000281517266,
+    "splits": 328,
+    "trees": 1,
+    "params": {
+     "max_depth": 10,
+     "min_samples_leaf": 9
+    },
+    "val_acc": 0.8885,
+    "sn": 9.135277032852173
+   },
+   "DistilledTree": {
+    "acc": 0.9284197547777245,
+    "auc": 0.9791651511653876,
+    "sn": 814.2480990886688,
+    "splits": 188,
+    "fidelity": 0.9660935680526064,
+    "teacher_acc": 0.9387629289677375,
+    "teacher_auc": 0.9834907202525395
+   },
+   "DistilledForest": {
+    "acc": 0.9347900541132954,
+    "auc": 0.9809814161069165,
+    "sn": 2305.1879653930664,
+    "splits": 632,
+    "fidelity": 0.9710939105418179,
+    "teacher_acc": 0.9387629289677375,
+    "teacher_auc": 0.9834907202525395
+   },
+   "SoftTree": {
+    "acc": 0.921227481334338,
+    "auc": 0.972251340491379,
+    "sn": 55.483839988708496,
+    "splits": 92
+   }
+  },
+  "MiniBooNE__2": {
+   "XGBoost": {
+    "acc": 0.9397218987601891,
+    "auc": 0.9838644156546121,
+    "splits": 13621,
+    "trees": 368,
+    "params": {
+     "learning_rate": 0.04681595506108409,
+     "max_depth": 9,
+     "min_child_weight": 18.60373356732496,
+     "subsample": 0.8846318911533018,
+     "colsample_bytree": 0.7307002591186308,
+     "reg_lambda": 0.013275769334331564
+    },
+    "val_acc": 0.93875,
+    "sn": 66.33024215698242
+   },
+   "LightGBM": {
+    "acc": 0.941913829714364,
+    "auc": 0.9846018501314686,
+    "splits": 26100,
+    "trees": 870,
+    "params": {
+     "learning_rate": 0.023551224834873975,
+     "num_leaves": 31,
+     "min_child_samples": 50,
+     "subsample": 0.503819001532535,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.5543612399834598,
+     "reg_lambda": 6.93076589538542
+    },
+    "val_acc": 0.939,
+    "sn": 61.40209698677063
+   },
+   "CatBoost": {
+    "acc": 0.9397903966025071,
+    "auc": 0.9837897103562696,
+    "splits": 153811,
+    "trees": 301,
+    "params": {
+     "learning_rate": 0.0724080768217223,
+     "depth": 9,
+     "l2_leaf_reg": 6.550737511338664
+    },
+    "val_acc": 0.9365,
+    "sn": 613.0426366329193
+   },
+   "HistGB": {
+    "acc": 0.939927392287143,
+    "auc": 0.9831175034298185,
+    "splits": 51419,
+    "trees": 234,
+    "params": {
+     "learning_rate": 0.041142462528459794,
+     "max_leaf_nodes": 233,
+     "min_samples_leaf": 51,
+     "l2_regularization": 0.0013107427197531502
+    },
+    "val_acc": 0.9375,
+    "sn": 56.918428897857666
+   },
+   "CART": {
+    "acc": 0.898349202000137,
+    "auc": 0.9437172196604151,
+    "splits": 328,
+    "trees": 1,
+    "params": {
+     "max_depth": 12,
+     "min_samples_leaf": 17
+    },
+    "val_acc": 0.8845,
+    "sn": 7.527082920074463
+   },
+   "DistilledTree": {
+    "acc": 0.9308171792588533,
+    "auc": 0.9792883525046591,
+    "sn": 833.7536408901215,
+    "splits": 162,
+    "fidelity": 0.9643126241523392,
+    "teacher_acc": 0.939927392287143,
+    "teacher_auc": 0.9831175034298185
+   },
+   "DistilledForest": {
+    "acc": 0.9343790670593877,
+    "auc": 0.9806028223044253,
+    "sn": 2325.5982546806335,
+    "splits": 583,
+    "fidelity": 0.9696554558531406,
+    "teacher_acc": 0.939927392287143,
+    "teacher_auc": 0.9831175034298185
+   },
+   "SoftTree": {
+    "acc": 0.9193780395917529,
+    "auc": 0.9739043441867621,
+    "sn": 57.32832407951355,
+    "splits": 51
+   }
+  },
+  "covertype__0": {
+   "XGBoost": {
+    "acc": 0.85055,
+    "auc": 0.92712413,
+    "splits": 60135,
+    "trees": 297,
+    "params": {
+     "learning_rate": 0.15089628614733738,
+     "max_depth": 10,
+     "min_child_weight": 1.0880268763202021,
+     "subsample": 0.8672417858943646,
+     "colsample_bytree": 0.855571438994875,
+     "reg_lambda": 18.289797754458572
+    },
+    "val_acc": 0.844,
+    "sn": 33.08753991127014
+   },
+   "LightGBM": {
+    "acc": 0.8562,
+    "auc": 0.93181052,
+    "splits": 165910,
+    "trees": 706,
+    "params": {
+     "learning_rate": 0.025767517692917637,
+     "num_leaves": 236,
+     "min_child_samples": 5,
+     "subsample": 0.8228604477874739,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.8599546917543466,
+     "reg_lambda": 8.404120247838803
+    },
+    "val_acc": 0.84875,
+    "sn": 64.33747982978821
+   },
+   "CatBoost": {
+    "acc": 0.85545,
+    "auc": 0.93154186,
+    "splits": 1130415,
+    "trees": 1105,
+    "params": {
+     "learning_rate": 0.038675616893579755,
+     "depth": 10,
+     "l2_leaf_reg": 1.909320583808781
+    },
+    "val_acc": 0.85,
+    "sn": 241.78436827659607
+   },
+   "HistGB": {
+    "acc": 0.8528,
+    "auc": 0.9285651699999999,
+    "splits": 19095,
+    "trees": 95,
+    "params": {
+     "learning_rate": 0.2718947877844734,
+     "max_leaf_nodes": 202,
+     "min_samples_leaf": 31,
+     "l2_regularization": 0.39281569189544807
+    },
+    "val_acc": 0.849,
+    "sn": 36.19989085197449
+   },
+   "CART": {
+    "acc": 0.77575,
+    "auc": 0.846882315,
+    "splits": 824,
+    "trees": 1,
+    "params": {
+     "max_depth": 15,
+     "min_samples_leaf": 9
+    },
+    "val_acc": 0.77625,
+    "sn": 1.0827000141143799
+   },
+   "DistilledTree": {
+    "acc": 0.80865,
+    "auc": 0.8902605499999999,
+    "sn": 687.8729112148285,
+    "splits": 184,
+    "fidelity": 0.86895,
+    "teacher_acc": 0.8528,
+    "teacher_auc": 0.9285651699999999
+   },
+   "DistilledForest": {
+    "acc": 0.81825,
+    "auc": 0.9006905199999999,
+    "sn": 2048.2728011608124,
+    "splits": 550,
+    "fidelity": 0.88195,
+    "teacher_acc": 0.8528,
+    "teacher_auc": 0.9285651699999999
+   },
+   "SoftTree": {
+    "acc": 0.7895,
+    "auc": 0.863986465,
+    "sn": 43.28753209114075,
+    "splits": 86
+   }
+  },
+  "covertype__1": {
+   "XGBoost": {
+    "acc": 0.85235,
+    "auc": 0.9282062850000001,
+    "splits": 197484,
+    "trees": 1188,
+    "params": {
+     "learning_rate": 0.01670094326909569,
+     "max_depth": 9,
+     "min_child_weight": 0.6110005279058689,
+     "subsample": 0.7100782265743486,
+     "colsample_bytree": 0.9040088540330846,
+     "reg_lambda": 0.010796339964115036
+    },
+    "val_acc": 0.84525,
+    "sn": 40.04163694381714
+   },
+   "LightGBM": {
+    "acc": 0.8548,
+    "auc": 0.9306963199999999,
+    "splits": 241072,
+    "trees": 1586,
+    "params": {
+     "learning_rate": 0.010877810384009975,
+     "num_leaves": 153,
+     "min_child_samples": 15,
+     "subsample": 0.6285862540912146,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.7679588631106771,
+     "reg_lambda": 0.18178146348527605
+    },
+    "val_acc": 0.851,
+    "sn": 89.25026392936707
+   },
+   "CatBoost": {
+    "acc": 0.85785,
+    "auc": 0.9333825499999999,
+    "splits": 1676697,
+    "trees": 1639,
+    "params": {
+     "learning_rate": 0.04048549002462904,
+     "depth": 10,
+     "l2_leaf_reg": 8.069415690357204
+    },
+    "val_acc": 0.8555,
+    "sn": 243.29524397850037
+   },
+   "HistGB": {
+    "acc": 0.8537,
+    "auc": 0.9286020900000002,
+    "splits": 151604,
+    "trees": 1004,
+    "params": {
+     "learning_rate": 0.01912652411656549,
+     "max_leaf_nodes": 152,
+     "min_samples_leaf": 29,
+     "l2_regularization": 0.09521761711342994
+    },
+    "val_acc": 0.851,
+    "sn": 58.0410943031311
+   },
+   "CART": {
+    "acc": 0.77475,
+    "auc": 0.84712826,
+    "splits": 344,
+    "trees": 1,
+    "params": {
+     "max_depth": 12,
+     "min_samples_leaf": 22
+    },
+    "val_acc": 0.779,
+    "sn": 1.2263736724853516
+   },
+   "DistilledTree": {
+    "acc": 0.8131,
+    "auc": 0.895393255,
+    "sn": 797.2689461708069,
+    "splits": 190,
+    "fidelity": 0.8921,
+    "teacher_acc": 0.8537,
+    "teacher_auc": 0.9286020900000002
+   },
+   "DistilledForest": {
+    "acc": 0.8226,
+    "auc": 0.9024661649999999,
+    "sn": 2308.951537847519,
+    "splits": 584,
+    "fidelity": 0.9064,
+    "teacher_acc": 0.8537,
+    "teacher_auc": 0.9286020900000002
+   },
+   "SoftTree": {
+    "acc": 0.7877,
+    "auc": 0.868100795,
+    "sn": 43.297295808792114,
+    "splits": 90
+   }
+  },
+  "covertype__2": {
+   "XGBoost": {
+    "acc": 0.8457,
+    "auc": 0.92604951,
+    "splits": 41363,
+    "trees": 352,
+    "params": {
+     "learning_rate": 0.09941298344233564,
+     "max_depth": 10,
+     "min_child_weight": 2.6821158142192156,
+     "subsample": 0.9716619857311194,
+     "colsample_bytree": 0.6454680430118029,
+     "reg_lambda": 2.4827684100198315
+    },
+    "val_acc": 0.833,
+    "sn": 23.748914003372192
+   },
+   "LightGBM": {
+    "acc": 0.85495,
+    "auc": 0.93228831,
+    "splits": 48355,
+    "trees": 300,
+    "params": {
+     "learning_rate": 0.07301834855394093,
+     "num_leaves": 233,
+     "min_child_samples": 83,
+     "subsample": 0.8905043261386189,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.8884601580089027,
+     "reg_lambda": 0.4743643973395299
+    },
+    "val_acc": 0.84025,
+    "sn": 52.03584909439087
+   },
+   "CatBoost": {
+    "acc": 0.85475,
+    "auc": 0.9321794400000001,
+    "splits": 487494,
+    "trees": 954,
+    "params": {
+     "learning_rate": 0.0724080768217223,
+     "depth": 9,
+     "l2_leaf_reg": 6.550737511338664
+    },
+    "val_acc": 0.84325,
+    "sn": 243.71832489967346
+   },
+   "HistGB": {
+    "acc": 0.8571,
+    "auc": 0.9348340500000001,
+    "splits": 176512,
+    "trees": 788,
+    "params": {
+     "learning_rate": 0.02021188480513199,
+     "max_leaf_nodes": 225,
+     "min_samples_leaf": 27,
+     "l2_regularization": 0.011545696567778967
+    },
+    "val_acc": 0.83925,
+    "sn": 58.12195897102356
+   },
+   "CART": {
+    "acc": 0.7749,
+    "auc": 0.84758852,
+    "splits": 421,
+    "trees": 1,
+    "params": {
+     "max_depth": 12,
+     "min_samples_leaf": 17
+    },
+    "val_acc": 0.7655,
+    "sn": 1.1291518211364746
+   },
+   "DistilledTree": {
+    "acc": 0.80515,
+    "auc": 0.88913526,
+    "sn": 810.8331620693207,
+    "splits": 161,
+    "fidelity": 0.87375,
+    "teacher_acc": 0.8571,
+    "teacher_auc": 0.9348340500000001
+   },
+   "DistilledForest": {
+    "acc": 0.81845,
+    "auc": 0.901937915,
+    "sn": 2258.865663051605,
+    "splits": 570,
+    "fidelity": 0.89455,
+    "teacher_acc": 0.8571,
+    "teacher_auc": 0.9348340500000001
+   },
+   "SoftTree": {
+    "acc": 0.79355,
+    "auc": 0.8731666599999999,
+    "sn": 41.28023409843445,
+    "splits": 133
+   }
+  },
+  "Higgs__0": {
+   "XGBoost": {
+    "acc": 0.7178,
+    "auc": 0.7941337,
+    "splits": 3701,
+    "trees": 152,
+    "params": {
+     "learning_rate": 0.08127437971495265,
+     "max_depth": 5,
+     "min_child_weight": 6.664098420822018,
+     "subsample": 0.7718124957327115,
+     "colsample_bytree": 0.9675362118938842,
+     "reg_lambda": 7.169476398701068
+    },
+    "val_acc": 0.72625,
+    "sn": 29.910740852355957
+   },
+   "LightGBM": {
+    "acc": 0.71915,
+    "auc": 0.7957754800000001,
+    "splits": 7900,
+    "trees": 100,
+    "params": {
+     "learning_rate": 0.059443295483714464,
+     "num_leaves": 80,
+     "min_child_samples": 16,
+     "subsample": 0.8117448777687502,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.888341557171149,
+     "reg_lambda": 1.398014106678725
+    },
+    "val_acc": 0.73025,
+    "sn": 30.06466794013977
+   },
+   "CatBoost": {
+    "acc": 0.7205,
+    "auc": 0.7979525399999999,
+    "splits": 204000,
+    "trees": 800,
+    "params": {
+     "learning_rate": 0.03303246613012589,
+     "depth": 8,
+     "l2_leaf_reg": 21.717714231731566
+    },
+    "val_acc": 0.73,
+    "sn": 175.11754512786865
+   },
+   "HistGB": {
+    "acc": 0.7168,
+    "auc": 0.7939981099999999,
+    "splits": 35535,
+    "trees": 345,
+    "params": {
+     "learning_rate": 0.021284974629229948,
+     "max_leaf_nodes": 104,
+     "min_samples_leaf": 83,
+     "l2_regularization": 0.42717796596786456
+    },
+    "val_acc": 0.725,
+    "sn": 29.9459969997406
+   },
+   "CART": {
+    "acc": 0.67875,
+    "auc": 0.7411637649999999,
+    "splits": 142,
+    "trees": 1,
+    "params": {
+     "max_depth": 10,
+     "min_samples_leaf": 92
+    },
+    "val_acc": 0.687,
+    "sn": 3.640465021133423
+   },
+   "DistilledTree": {
+    "acc": 0.71785,
+    "auc": 0.7966380849999999,
+    "sn": 1037.340444803238,
+    "splits": 165,
+    "fidelity": 0.90375,
+    "teacher_acc": 0.7168,
+    "teacher_auc": 0.7939981099999999
+   },
+   "DistilledForest": {
+    "acc": 0.7197,
+    "auc": 0.79763998,
+    "sn": 3033.2607822418213,
+    "splits": 474,
+    "fidelity": 0.9094,
+    "teacher_acc": 0.7168,
+    "teacher_auc": 0.7939981099999999
+   },
+   "SoftTree": {
+    "acc": 0.68505,
+    "auc": 0.75179631,
+    "sn": 49.124594926834106,
+    "splits": 63
+   }
+  },
+  "Higgs__1": {
+   "XGBoost": {
+    "acc": 0.72115,
+    "auc": 0.798088025,
+    "splits": 25383,
+    "trees": 214,
+    "params": {
+     "learning_rate": 0.04577989084869792,
+     "max_depth": 8,
+     "min_child_weight": 2.6149307415961625,
+     "subsample": 0.6095188600031496,
+     "colsample_bytree": 0.6916746316186544,
+     "reg_lambda": 6.384686279483776
+    },
+    "val_acc": 0.728,
+    "sn": 32.68233394622803
+   },
+   "LightGBM": {
+    "acc": 0.7243,
+    "auc": 0.8000086,
+    "splits": 42712,
+    "trees": 562,
+    "params": {
+     "learning_rate": 0.02073118381145691,
+     "num_leaves": 77,
+     "min_child_samples": 39,
+     "subsample": 0.9565626473923197,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.5313833507634265,
+     "reg_lambda": 0.0505999827332064
+    },
+    "val_acc": 0.7265,
+    "sn": 40.007534980773926
+   },
+   "CatBoost": {
+    "acc": 0.71895,
+    "auc": 0.7959775900000001,
+    "splits": 23622,
+    "trees": 186,
+    "params": {
+     "learning_rate": 0.10343363397274084,
+     "depth": 7,
+     "l2_leaf_reg": 4.94133796639437
+    },
+    "val_acc": 0.729,
+    "sn": 186.98105382919312
+   },
+   "HistGB": {
+    "acc": 0.71755,
+    "auc": 0.7949109699999999,
+    "splits": 43665,
+    "trees": 213,
+    "params": {
+     "learning_rate": 0.03400798399104179,
+     "max_leaf_nodes": 206,
+     "min_samples_leaf": 54,
+     "l2_regularization": 0.03151298597853036
+    },
+    "val_acc": 0.7215,
+    "sn": 29.64266300201416
+   },
+   "CART": {
+    "acc": 0.67595,
+    "auc": 0.744354295,
+    "splits": 112,
+    "trees": 1,
+    "params": {
+     "max_depth": 8,
+     "min_samples_leaf": 86
+    },
+    "val_acc": 0.67925,
+    "sn": 3.7948129177093506
+   },
+   "DistilledTree": {
+    "acc": 0.7195,
+    "auc": 0.7966616099999999,
+    "sn": 1062.1478388309479,
+    "splits": 138,
+    "fidelity": 0.88675,
+    "teacher_acc": 0.71755,
+    "teacher_auc": 0.7949109699999999
+   },
+   "DistilledForest": {
+    "acc": 0.72195,
+    "auc": 0.799041125,
+    "sn": 3057.4627583026886,
+    "splits": 436,
+    "fidelity": 0.8906,
+    "teacher_acc": 0.71755,
+    "teacher_auc": 0.7949109699999999
+   },
+   "SoftTree": {
+    "acc": 0.69465,
+    "auc": 0.76561882,
+    "sn": 51.109118938446045,
+    "splits": 20
+   }
+  },
+  "Higgs__2": {
+   "XGBoost": {
+    "acc": 0.7145,
+    "auc": 0.7929035750000001,
+    "splits": 7506,
+    "trees": 144,
+    "params": {
+     "learning_rate": 0.06628446073819658,
+     "max_depth": 6,
+     "min_child_weight": 0.7517568089188237,
+     "subsample": 0.7564539044699801,
+     "colsample_bytree": 0.8132067440423256,
+     "reg_lambda": 0.14519388506524505
+    },
+    "val_acc": 0.71175,
+    "sn": 22.83442997932434
+   },
+   "LightGBM": {
+    "acc": 0.71975,
+    "auc": 0.79796992,
+    "splits": 32160,
+    "trees": 670,
+    "params": {
+     "learning_rate": 0.01387623699363683,
+     "num_leaves": 49,
+     "min_child_samples": 8,
+     "subsample": 0.9728391579824429,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.956105609630159,
+     "reg_lambda": 5.710764668973576
+    },
+    "val_acc": 0.712,
+    "sn": 29.679484844207764
+   },
+   "CatBoost": {
+    "acc": 0.71685,
+    "auc": 0.79699416,
+    "splits": 1105863,
+    "trees": 1081,
+    "params": {
+     "learning_rate": 0.019379615505609165,
+     "depth": 10,
+     "l2_leaf_reg": 27.194738773020333
+    },
+    "val_acc": 0.71625,
+    "sn": 283.89099311828613
+   },
+   "HistGB": {
+    "acc": 0.7154,
+    "auc": 0.79394633,
+    "splits": 34144,
+    "trees": 221,
+    "params": {
+     "learning_rate": 0.027665888630240054,
+     "max_leaf_nodes": 242,
+     "min_samples_leaf": 88,
+     "l2_regularization": 0.40307246581692113
+    },
+    "val_acc": 0.71,
+    "sn": 29.27765202522278
+   },
+   "CART": {
+    "acc": 0.6747,
+    "auc": 0.73207736,
+    "splits": 52,
+    "trees": 1,
+    "params": {
+     "max_depth": 6,
+     "min_samples_leaf": 82
+    },
+    "val_acc": 0.67225,
+    "sn": 3.346242904663086
+   },
+   "DistilledTree": {
+    "acc": 0.7123,
+    "auc": 0.7931631450000001,
+    "sn": 1058.8152656555176,
+    "splits": 142,
+    "fidelity": 0.8966,
+    "teacher_acc": 0.7154,
+    "teacher_auc": 0.79394633
+   },
+   "DistilledForest": {
+    "acc": 0.71555,
+    "auc": 0.795702755,
+    "sn": 3031.26966714859,
+    "splits": 450,
+    "fidelity": 0.90315,
+    "teacher_acc": 0.7154,
+    "teacher_auc": 0.79394633
+   },
+   "SoftTree": {
+    "acc": 0.68275,
+    "auc": 0.75218778,
+    "sn": 49.61622595787048,
+    "splits": 40
+   }
+  },
+  "credit-default__0": {
+   "XGBoost": {
+    "acc": 0.823,
+    "auc": 0.7786522682936544,
+    "splits": 565,
+    "trees": 40,
+    "params": {
+     "learning_rate": 0.17122246351967943,
+     "max_depth": 4,
+     "min_child_weight": 0.38100642478241803,
+     "subsample": 0.9009402893591539,
+     "colsample_bytree": 0.9617650798917348,
+     "reg_lambda": 0.08539962290952328
+    },
+    "val_acc": 0.82025,
+    "sn": 9.204645872116089
+   },
+   "LightGBM": {
+    "acc": 0.8231666666666667,
+    "auc": 0.7876858691022888,
+    "splits": 968,
+    "trees": 44,
+    "params": {
+     "learning_rate": 0.13352021068156655,
+     "num_leaves": 23,
+     "min_child_samples": 31,
+     "subsample": 0.7425954872158176,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.9903685999006193,
+     "reg_lambda": 23.216683334074023
+    },
+    "val_acc": 0.81975,
+    "sn": 11.549275875091553
+   },
+   "CatBoost": {
+    "acc": 0.8221666666666667,
+    "auc": 0.7795020408571357,
+    "splits": 6096,
+    "trees": 48,
+    "params": {
+     "learning_rate": 0.19641605198588727,
+     "depth": 7,
+     "l2_leaf_reg": 4.54233592760484
+    },
+    "val_acc": 0.82125,
+    "sn": 55.900065898895264
+   },
+   "HistGB": {
+    "acc": 0.8238333333333333,
+    "auc": 0.7802540883663482,
+    "splits": 2144,
+    "trees": 134,
+    "params": {
+     "learning_rate": 0.07468666274224774,
+     "max_leaf_nodes": 17,
+     "min_samples_leaf": 13,
+     "l2_regularization": 0.0540141767140498
+    },
+    "val_acc": 0.81825,
+    "sn": 14.695518255233765
+   },
+   "CART": {
+    "acc": 0.8238333333333333,
+    "auc": 0.7398199440064466,
+    "splits": 13,
+    "trees": 1,
+    "params": {
+     "max_depth": 4,
+     "min_samples_leaf": 79
+    },
+    "val_acc": 0.81775,
+    "sn": 1.9747867584228516
+   },
+   "DistilledTree": {
+    "acc": 0.8235,
+    "auc": 0.780730054534128,
+    "sn": 1069.7099781036377,
+    "splits": 45,
+    "fidelity": 0.9843333333333333,
+    "teacher_acc": 0.8238333333333333,
+    "teacher_auc": 0.7802540883663482
+   },
+   "DistilledForest": {
+    "acc": 0.8246666666666667,
+    "auc": 0.7812161802372525,
+    "sn": 3139.2536380290985,
+    "splits": 134,
+    "fidelity": 0.9841666666666666,
+    "teacher_acc": 0.8238333333333333,
+    "teacher_auc": 0.7802540883663482
+   },
+   "SoftTree": {
+    "acc": 0.823,
+    "auc": 0.774373088132679,
+    "sn": 48.41176891326904,
+    "splits": 10
+   }
+  },
+  "credit-default__1": {
+   "XGBoost": {
+    "acc": 0.825,
+    "auc": 0.7834121718651503,
+    "splits": 8911,
+    "trees": 98,
+    "params": {
+     "learning_rate": 0.04577989084869792,
+     "max_depth": 8,
+     "min_child_weight": 2.6149307415961625,
+     "subsample": 0.6095188600031496,
+     "colsample_bytree": 0.6916746316186544,
+     "reg_lambda": 6.384686279483776
+    },
+    "val_acc": 0.82375,
+    "sn": 9.77279281616211
+   },
+   "LightGBM": {
+    "acc": 0.823,
+    "auc": 0.7851677556989752,
+    "splits": 7020,
+    "trees": 270,
+    "params": {
+     "learning_rate": 0.03715844168951424,
+     "num_leaves": 27,
+     "min_child_samples": 36,
+     "subsample": 0.5354757426033281,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.6853250346742894,
+     "reg_lambda": 26.43954251981385
+    },
+    "val_acc": 0.823,
+    "sn": 15.68618106842041
+   },
+   "CatBoost": {
+    "acc": 0.8223333333333334,
+    "auc": 0.7772872621519734,
+    "splits": 17374,
+    "trees": 34,
+    "params": {
+     "learning_rate": 0.11843454979046068,
+     "depth": 9,
+     "l2_leaf_reg": 2.344586158798512
+    },
+    "val_acc": 0.8235,
+    "sn": 52.27823185920715
+   },
+   "HistGB": {
+    "acc": 0.8201666666666667,
+    "auc": 0.7765041716180964,
+    "splits": 29747,
+    "trees": 197,
+    "params": {
+     "learning_rate": 0.01912652411656549,
+     "max_leaf_nodes": 152,
+     "min_samples_leaf": 29,
+     "l2_regularization": 0.09521761711342994
+    },
+    "val_acc": 0.82025,
+    "sn": 17.201003074645996
+   },
+   "CART": {
+    "acc": 0.8248333333333333,
+    "auc": 0.7464475088254916,
+    "splits": 14,
+    "trees": 1,
+    "params": {
+     "max_depth": 4,
+     "min_samples_leaf": 13
+    },
+    "val_acc": 0.82425,
+    "sn": 2.1419148445129395
+   },
+   "DistilledTree": {
+    "acc": 0.8225,
+    "auc": 0.7830839221160344,
+    "sn": 1062.5551989078522,
+    "splits": 49,
+    "fidelity": 0.9726666666666667,
+    "teacher_acc": 0.8201666666666667,
+    "teacher_auc": 0.7765041716180964
+   },
+   "DistilledForest": {
+    "acc": 0.8233333333333334,
+    "auc": 0.7823151033103798,
+    "sn": 3101.1806819438934,
+    "splits": 169,
+    "fidelity": 0.9755,
+    "teacher_acc": 0.8201666666666667,
+    "teacher_auc": 0.7765041716180964
+   },
+   "SoftTree": {
+    "acc": 0.8203333333333334,
+    "auc": 0.7690085309457028,
+    "sn": 48.216148138046265,
+    "splits": 11
+   }
+  },
+  "credit-default__2": {
+   "XGBoost": {
+    "acc": 0.8218333333333333,
+    "auc": 0.77745287870434,
+    "splits": 2617,
+    "trees": 186,
+    "params": {
+     "learning_rate": 0.07289613096003586,
+     "max_depth": 4,
+     "min_child_weight": 0.11684072950062188,
+     "subsample": 0.7532786143093743,
+     "colsample_bytree": 0.8235842378871436,
+     "reg_lambda": 0.08743333419775823
+    },
+    "val_acc": 0.83,
+    "sn": 9.485878944396973
+   },
+   "LightGBM": {
+    "acc": 0.8236666666666667,
+    "auc": 0.782202703371724,
+    "splits": 6634,
+    "trees": 107,
+    "params": {
+     "learning_rate": 0.043202084671062305,
+     "num_leaves": 63,
+     "min_child_samples": 24,
+     "subsample": 0.7375501276087071,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.9810742252765066,
+     "reg_lambda": 0.3250321273831174
+    },
+    "val_acc": 0.8275,
+    "sn": 13.300082921981812
+   },
+   "CatBoost": {
+    "acc": 0.8221666666666667,
+    "auc": 0.7766422929200456,
+    "splits": 3429,
+    "trees": 27,
+    "params": {
+     "learning_rate": 0.25149208447113647,
+     "depth": 7,
+     "l2_leaf_reg": 1.4520330908344696
+    },
+    "val_acc": 0.82825,
+    "sn": 102.23925495147705
+   },
+   "HistGB": {
+    "acc": 0.8241666666666667,
+    "auc": 0.7808510820147037,
+    "splits": 4700,
+    "trees": 235,
+    "params": {
+     "learning_rate": 0.030058991577129685,
+     "max_leaf_nodes": 21,
+     "min_samples_leaf": 29,
+     "l2_regularization": 2.5432884896183707
+    },
+    "val_acc": 0.82725,
+    "sn": 19.04452085494995
+   },
+   "CART": {
+    "acc": 0.824,
+    "auc": 0.7309397844340114,
+    "splits": 7,
+    "trees": 1,
+    "params": {
+     "max_depth": 3,
+     "min_samples_leaf": 6
+    },
+    "val_acc": 0.824,
+    "sn": 1.9875221252441406
+   },
+   "DistilledTree": {
+    "acc": 0.8225,
+    "auc": 0.7808734974974485,
+    "sn": 1068.224601984024,
+    "splits": 47,
+    "fidelity": 0.9853333333333333,
+    "teacher_acc": 0.8241666666666667,
+    "teacher_auc": 0.7808510820147037
+   },
+   "DistilledForest": {
+    "acc": 0.823,
+    "auc": 0.7815282231085565,
+    "sn": 3135.515068769455,
+    "splits": 137,
+    "fidelity": 0.9861666666666666,
+    "teacher_acc": 0.8241666666666667,
+    "teacher_auc": 0.7808510820147037
+   },
+   "SoftTree": {
+    "acc": 0.8215,
+    "auc": 0.7163316627079419,
+    "sn": 49.0537850856781,
+    "splits": 1
+   }
+  },
+  "bank-marketing__0": {
+   "XGBoost": {
+    "acc": 0.9078743640787437,
+    "auc": 0.9275065963685405,
+    "splits": 1449,
+    "trees": 76,
+    "params": {
+     "learning_rate": 0.29634155818297453,
+     "max_depth": 8,
+     "min_child_weight": 24.718689887136264,
+     "subsample": 0.574382006116249,
+     "colsample_bytree": 0.9863144069114775,
+     "reg_lambda": 13.02490142090187
+    },
+    "val_acc": 0.90575,
+    "sn": 10.177157878875732
+   },
+   "LightGBM": {
+    "acc": 0.9072107940721079,
+    "auc": 0.9315410120808726,
+    "splits": 2310,
+    "trees": 105,
+    "params": {
+     "learning_rate": 0.13352021068156655,
+     "num_leaves": 23,
+     "min_child_samples": 31,
+     "subsample": 0.7425954872158176,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.9903685999006193,
+     "reg_lambda": 23.216683334074023
+    },
+    "val_acc": 0.9035,
+    "sn": 15.941180944442749
+   },
+   "CatBoost": {
+    "acc": 0.90687900906879,
+    "auc": 0.9320465126851055,
+    "splits": 6572,
+    "trees": 212,
+    "params": {
+     "learning_rate": 0.10091272826344763,
+     "depth": 5,
+     "l2_leaf_reg": 4.307021204512595
+    },
+    "val_acc": 0.90775,
+    "sn": 60.706687927246094
+   },
+   "HistGB": {
+    "acc": 0.9051094890510949,
+    "auc": 0.9295142742952825,
+    "splits": 31349,
+    "trees": 306,
+    "params": {
+     "learning_rate": 0.021284974629229948,
+     "max_leaf_nodes": 104,
+     "min_samples_leaf": 83,
+     "l2_regularization": 0.42717796596786456
+    },
+    "val_acc": 0.902,
+    "sn": 20.26261305809021
+   },
+   "CART": {
+    "acc": 0.8958195089581951,
+    "auc": 0.894603656746385,
+    "splits": 70,
+    "trees": 1,
+    "params": {
+     "max_depth": 10,
+     "min_samples_leaf": 92
+    },
+    "val_acc": 0.90025,
+    "sn": 0.6755757331848145
+   },
+   "DistilledTree": {
+    "acc": 0.9033399690333996,
+    "auc": 0.9219829072132925,
+    "sn": 714.7151379585266,
+    "splits": 98,
+    "fidelity": 0.962176509621765,
+    "teacher_acc": 0.9051094890510949,
+    "teacher_auc": 0.9295142742952825
+   },
+   "DistilledForest": {
+    "acc": 0.9035611590356116,
+    "auc": 0.9266556506207122,
+    "sn": 2104.632577896118,
+    "splits": 291,
+    "fidelity": 0.964609599646096,
+    "teacher_acc": 0.9051094890510949,
+    "teacher_auc": 0.9295142742952825
+   },
+   "SoftTree": {
+    "acc": 0.8979208139792081,
+    "auc": 0.9016343177849082,
+    "sn": 45.89749574661255,
+    "splits": 14
+   }
+  },
+  "bank-marketing__1": {
+   "XGBoost": {
+    "acc": 0.9065472240654723,
+    "auc": 0.9299157151732578,
+    "splits": 2712,
+    "trees": 218,
+    "params": {
+     "learning_rate": 0.08661578149454269,
+     "max_depth": 4,
+     "min_child_weight": 4.280660543695666,
+     "subsample": 0.9494037643742325,
+     "colsample_bytree": 0.9873818903535835,
+     "reg_lambda": 0.03457508792955138
+    },
+    "val_acc": 0.90875,
+    "sn": 8.744313955307007
+   },
+   "LightGBM": {
+    "acc": 0.9083167440831674,
+    "auc": 0.9337647412026321,
+    "splits": 8844,
+    "trees": 111,
+    "params": {
+     "learning_rate": 0.06784421540299963,
+     "num_leaves": 82,
+     "min_child_samples": 54,
+     "subsample": 0.9627417359243968,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.8295508585714325,
+     "reg_lambda": 7.380045257825675
+    },
+    "val_acc": 0.90875,
+    "sn": 18.208760976791382
+   },
+   "CatBoost": {
+    "acc": 0.9066578190665782,
+    "auc": 0.9331575485564702,
+    "splits": 245791,
+    "trees": 481,
+    "params": {
+     "learning_rate": 0.03725904672271069,
+     "depth": 9,
+     "l2_leaf_reg": 13.225694161246278
+    },
+    "val_acc": 0.9115,
+    "sn": 75.84099817276001
+   },
+   "HistGB": {
+    "acc": 0.9058836540588365,
+    "auc": 0.9287897628906207,
+    "splits": 10260,
+    "trees": 100,
+    "params": {
+     "learning_rate": 0.1352814037572861,
+     "max_leaf_nodes": 249,
+     "min_samples_leaf": 95,
+     "l2_regularization": 5.537839226846586
+    },
+    "val_acc": 0.9065,
+    "sn": 21.439930200576782
+   },
+   "CART": {
+    "acc": 0.8942711789427118,
+    "auc": 0.8510039928628523,
+    "splits": 55,
+    "trees": 1,
+    "params": {
+     "max_depth": 6,
+     "min_samples_leaf": 10
+    },
+    "val_acc": 0.90225,
+    "sn": 0.763035774230957
+   },
+   "DistilledTree": {
+    "acc": 0.9030081840300819,
+    "auc": 0.9276961294990738,
+    "sn": 684.9116067886353,
+    "splits": 96,
+    "fidelity": 0.9568679495686795,
+    "teacher_acc": 0.9058836540588365,
+    "teacher_auc": 0.9287897628906207
+   },
+   "DistilledForest": {
+    "acc": 0.902676399026764,
+    "auc": 0.9270448979243933,
+    "sn": 1984.406270980835,
+    "splits": 355,
+    "fidelity": 0.9596328245963283,
+    "teacher_acc": 0.9058836540588365,
+    "teacher_auc": 0.9287897628906207
+   },
+   "SoftTree": {
+    "acc": 0.900353904003539,
+    "auc": 0.9079248998943066,
+    "sn": 45.64099907875061,
+    "splits": 16
+   }
+  },
+  "bank-marketing__2": {
+   "XGBoost": {
+    "acc": 0.9067684140676842,
+    "auc": 0.9281780716442337,
+    "splits": 11764,
+    "trees": 831,
+    "params": {
+     "learning_rate": 0.0238599266819964,
+     "max_depth": 4,
+     "min_child_weight": 0.25352553717029985,
+     "subsample": 0.5794351741929573,
+     "colsample_bytree": 0.5432539452400953,
+     "reg_lambda": 5.415184216209802
+    },
+    "val_acc": 0.91075,
+    "sn": 9.43878984451294
+   },
+   "LightGBM": {
+    "acc": 0.9078743640787437,
+    "auc": 0.9310756437260153,
+    "splits": 15720,
+    "trees": 524,
+    "params": {
+     "learning_rate": 0.023551224834873975,
+     "num_leaves": 31,
+     "min_child_samples": 50,
+     "subsample": 0.503819001532535,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.5543612399834598,
+     "reg_lambda": 6.93076589538542
+    },
+    "val_acc": 0.9075,
+    "sn": 15.796934127807617
+   },
+   "CatBoost": {
+    "acc": 0.9092015040920151,
+    "auc": 0.9337109947683647,
+    "splits": 91413,
+    "trees": 1451,
+    "params": {
+     "learning_rate": 0.018600879986755567,
+     "depth": 6,
+     "l2_leaf_reg": 1.6073962267058173
+    },
+    "val_acc": 0.91125,
+    "sn": 96.30803394317627
+   },
+   "HistGB": {
+    "acc": 0.9078743640787437,
+    "auc": 0.9310138471650294,
+    "splits": 29454,
+    "trees": 319,
+    "params": {
+     "learning_rate": 0.02826261450556291,
+     "max_leaf_nodes": 137,
+     "min_samples_leaf": 92,
+     "l2_regularization": 7.8478287624699625
+    },
+    "val_acc": 0.907,
+    "sn": 19.246422052383423
+   },
+   "CART": {
+    "acc": 0.8986949789869498,
+    "auc": 0.8769641717271974,
+    "splits": 35,
+    "trees": 1,
+    "params": {
+     "max_depth": 6,
+     "min_samples_leaf": 82
+    },
+    "val_acc": 0.90125,
+    "sn": 0.6525070667266846
+   },
+   "DistilledTree": {
+    "acc": 0.9056624640566246,
+    "auc": 0.9282766856965349,
+    "sn": 722.5114078521729,
+    "splits": 75,
+    "fidelity": 0.9685910196859102,
+    "teacher_acc": 0.9078743640787437,
+    "teacher_auc": 0.9310138471650294
+   },
+   "DistilledForest": {
+    "acc": 0.904777704047777,
+    "auc": 0.9251283758443162,
+    "sn": 2193.175708293915,
+    "splits": 226,
+    "fidelity": 0.9708029197080292,
+    "teacher_acc": 0.9078743640787437,
+    "teacher_auc": 0.9310138471650294
+   },
+   "SoftTree": {
+    "acc": 0.8970360539703606,
+    "auc": 0.9089216949967989,
+    "sn": 44.968788146972656,
+    "splits": 30
+   }
+  },
+  "adult__0": {
+   "XGBoost": {
+    "acc": 0.872952497952498,
+    "auc": 0.9257115541429302,
+    "splits": 11042,
+    "trees": 485,
+    "params": {
+     "learning_rate": 0.03867483778420098,
+     "max_depth": 5,
+     "min_child_weight": 0.3697379115811585,
+     "subsample": 0.8115935723430212,
+     "colsample_bytree": 0.5420076717911924,
+     "reg_lambda": 8.2083244943251
+    },
+    "val_acc": 0.87875,
+    "sn": 8.920416831970215
+   },
+   "LightGBM": {
+    "acc": 0.8726453726453727,
+    "auc": 0.9263820214004789,
+    "splits": 12869,
+    "trees": 757,
+    "params": {
+     "learning_rate": 0.016818499461034742,
+     "num_leaves": 18,
+     "min_child_samples": 50,
+     "subsample": 0.9473579310980867,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.7113584534727186,
+     "reg_lambda": 1.1567971694798336
+    },
+    "val_acc": 0.87725,
+    "sn": 15.526405096054077
+   },
+   "CatBoost": {
+    "acc": 0.872952497952498,
+    "auc": 0.9250809918803987,
+    "splits": 12338,
+    "trees": 398,
+    "params": {
+     "learning_rate": 0.06972660087728527,
+     "depth": 5,
+     "l2_leaf_reg": 4.456010301798248
+    },
+    "val_acc": 0.8765,
+    "sn": 65.44259786605835
+   },
+   "HistGB": {
+    "acc": 0.8714168714168714,
+    "auc": 0.9252176938402406,
+    "splits": 41718,
+    "trees": 818,
+    "params": {
+     "learning_rate": 0.013442305172951427,
+     "max_leaf_nodes": 52,
+     "min_samples_leaf": 27,
+     "l2_regularization": 1.6036066952937384
+    },
+    "val_acc": 0.87375,
+    "sn": 18.324920892715454
+   },
+   "CART": {
+    "acc": 0.8515561015561015,
+    "auc": 0.8946550167114403,
+    "splits": 281,
+    "trees": 1,
+    "params": {
+     "max_depth": 15,
+     "min_samples_leaf": 37
+    },
+    "val_acc": 0.85425,
+    "sn": 0.5059647560119629
+   },
+   "DistilledTree": {
+    "acc": 0.8614864864864865,
+    "auc": 0.9126228021517833,
+    "sn": 761.5925381183624,
+    "splits": 107,
+    "fidelity": 0.9517813267813268,
+    "teacher_acc": 0.8714168714168714,
+    "teacher_auc": 0.9252176938402406
+   },
+   "DistilledForest": {
+    "acc": 0.8625102375102375,
+    "auc": 0.9148056284124025,
+    "sn": 2403.972009897232,
+    "splits": 285,
+    "fidelity": 0.954033579033579,
+    "teacher_acc": 0.8714168714168714,
+    "teacher_auc": 0.9252176938402406
+   },
+   "SoftTree": {
+    "acc": 0.852989352989353,
+    "auc": 0.9050207566436202,
+    "sn": 43.148552894592285,
+    "splits": 46
+   }
+  },
+  "adult__1": {
+   "XGBoost": {
+    "acc": 0.8722358722358723,
+    "auc": 0.9246900611283484,
+    "splits": 3776,
+    "trees": 588,
+    "params": {
+     "learning_rate": 0.047987230089175374,
+     "max_depth": 3,
+     "min_child_weight": 2.492972362276839,
+     "subsample": 0.5014443169056648,
+     "colsample_bytree": 0.6488787846429867,
+     "reg_lambda": 0.0154275470981666
+    },
+    "val_acc": 0.87025,
+    "sn": 9.02307915687561
+   },
+   "LightGBM": {
+    "acc": 0.8731572481572482,
+    "auc": 0.9265719876033087,
+    "splits": 33896,
+    "trees": 446,
+    "params": {
+     "learning_rate": 0.02073118381145691,
+     "num_leaves": 77,
+     "min_child_samples": 39,
+     "subsample": 0.9565626473923197,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.5313833507634265,
+     "reg_lambda": 0.0505999827332064
+    },
+    "val_acc": 0.862,
+    "sn": 19.199476957321167
+   },
+   "CatBoost": {
+    "acc": 0.8716216216216216,
+    "auc": 0.9246377470042894,
+    "splits": 5084,
+    "trees": 164,
+    "params": {
+     "learning_rate": 0.1821900843359212,
+     "depth": 5,
+     "l2_leaf_reg": 4.018371511443145
+    },
+    "val_acc": 0.87,
+    "sn": 66.70232605934143
+   },
+   "HistGB": {
+    "acc": 0.8712121212121212,
+    "auc": 0.9241644726117278,
+    "splits": 5191,
+    "trees": 179,
+    "params": {
+     "learning_rate": 0.0705492214809968,
+     "max_leaf_nodes": 30,
+     "min_samples_leaf": 93,
+     "l2_regularization": 0.0038361150030558036
+    },
+    "val_acc": 0.866,
+    "sn": 19.597071886062622
+   },
+   "CART": {
+    "acc": 0.8518632268632269,
+    "auc": 0.8876195587912576,
+    "splits": 40,
+    "trees": 1,
+    "params": {
+     "max_depth": 6,
+     "min_samples_leaf": 10
+    },
+    "val_acc": 0.8515,
+    "sn": 0.537168025970459
+   },
+   "DistilledTree": {
+    "acc": 0.8594389844389845,
+    "auc": 0.9128663780953941,
+    "sn": 761.2717730998993,
+    "splits": 62,
+    "fidelity": 0.948914823914824,
+    "teacher_acc": 0.8712121212121212,
+    "teacher_auc": 0.9241644726117278
+   },
+   "DistilledForest": {
+    "acc": 0.864045864045864,
+    "auc": 0.9162996760324784,
+    "sn": 2413.787638902664,
+    "splits": 225,
+    "fidelity": 0.9615069615069615,
+    "teacher_acc": 0.8712121212121212,
+    "teacher_auc": 0.9241644726117278
+   },
+   "SoftTree": {
+    "acc": 0.8533988533988534,
+    "auc": 0.9018766115672545,
+    "sn": 38.63416862487793,
+    "splits": 43
+   }
+  },
+  "adult__2": {
+   "XGBoost": {
+    "acc": 0.8725429975429976,
+    "auc": 0.9261521789941143,
+    "splits": 19607,
+    "trees": 1456,
+    "params": {
+     "learning_rate": 0.012460875600155321,
+     "max_depth": 4,
+     "min_child_weight": 0.19676543901274596,
+     "subsample": 0.8889103731154997,
+     "colsample_bytree": 0.7463580620255436,
+     "reg_lambda": 0.0860203941394062
+    },
+    "val_acc": 0.86775,
+    "sn": 8.251871824264526
+   },
+   "LightGBM": {
+    "acc": 0.8701883701883701,
+    "auc": 0.923132182791135,
+    "splits": 1870,
+    "trees": 55,
+    "params": {
+     "learning_rate": 0.17547909166185288,
+     "num_leaves": 35,
+     "min_child_samples": 72,
+     "subsample": 0.8356259639762615,
+     "subsample_freq": 1,
+     "colsample_bytree": 0.9046236955834568,
+     "reg_lambda": 0.013173045018043209
+    },
+    "val_acc": 0.8665,
+    "sn": 13.001590013504028
+   },
+   "CatBoost": {
+    "acc": 0.8722358722358723,
+    "auc": 0.9254277277065102,
+    "splits": 40734,
+    "trees": 1314,
+    "params": {
+     "learning_rate": 0.016911561965185867,
+     "depth": 5,
+     "l2_leaf_reg": 1.809010941986887
+    },
+    "val_acc": 0.86775,
+    "sn": 91.16224384307861
+   },
+   "HistGB": {
+    "acc": 0.8719287469287469,
+    "auc": 0.9252472914844525,
+    "splits": 13260,
+    "trees": 663,
+    "params": {
+     "learning_rate": 0.030058991577129685,
+     "max_leaf_nodes": 21,
+     "min_samples_leaf": 29,
+     "l2_regularization": 2.5432884896183707
+    },
+    "val_acc": 0.86675,
+    "sn": 21.150208950042725
+   },
+   "CART": {
+    "acc": 0.8527846027846028,
+    "auc": 0.8986853924166804,
+    "splits": 161,
+    "trees": 1,
+    "params": {
+     "max_depth": 15,
+     "min_samples_leaf": 69
+    },
+    "val_acc": 0.85,
+    "sn": 0.5093779563903809
+   },
+   "DistilledTree": {
+    "acc": 0.8562653562653563,
+    "auc": 0.9093752380695725,
+    "sn": 740.630692243576,
+    "splits": 81,
+    "fidelity": 0.9462530712530712,
+    "teacher_acc": 0.8719287469287469,
+    "teacher_auc": 0.9252472914844525
+   },
+   "DistilledForest": {
+    "acc": 0.8615888615888616,
+    "auc": 0.9142761818371004,
+    "sn": 2387.530321121216,
+    "splits": 279,
+    "fidelity": 0.9566953316953317,
+    "teacher_acc": 0.8719287469287469,
+    "teacher_auc": 0.9252472914844525
+   },
+   "SoftTree": {
+    "acc": 0.8526822276822277,
+    "auc": 0.9038076851031775,
+    "sn": 38.72916316986084,
+    "splits": 29
+   }
+  }
+ }
+}
