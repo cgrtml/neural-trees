@@ -40,3 +40,5 @@ benchmarks/_damitma_cache/
 benchmarks/_*_cache*/
 benchmarks/_*_cache.json
 benchmarks/*.log
+cases/*/_cache/
+cases/*/_smoke/
