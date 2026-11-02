@@ -1,0 +1,93 @@
+if +16.724*repay_status_sep -1.112*paid_sep -0.854*credit_limit -0.733*bill_may -17.906 (+16 more) > 0:
+    yes -> if -7.746*paid_aug -6.214*paid_jul +3.779*repay_status_sep -3.770*paid_sep -16.703 (+16 more) > 0:
+        yes -> if +16.851*paid_aug +16.397*paid_may +15.144*paid_apr +12.810*repay_status_aug -28.562 (+16 more) > 0:
+            yes -> predict 1 (p=0.538)
+            no  -> if +15.479*paid_apr +12.328*paid_jul +8.749*paid_aug -7.911*paid_may +3.117 (+16 more) > 0:
+                yes -> predict 1 (p=0.878)
+                no  -> if +14.398*bill_apr +11.719*bill_may +11.071*paid_apr +7.323*paid_jul +6.676 (+16 more) > 0:
+                    yes -> predict 1 (p=1.000)
+                    no  -> if +17.601*bill_sep +6.023*bill_may +5.049*bill_aug +4.211*bill_jul +9.035 (+16 more) > 0:
+                        yes -> predict 1 (p=0.545)
+                        no  -> predict 1 (p=1.000)
+        no  -> if +15.776*repay_status_aug +7.999*repay_status_sep -5.077*paid_may +2.480*paid_apr -6.039 (+16 more) > 0:
+            yes -> if +15.408*education -6.022*paid_jun +5.209*paid_may +3.039*paid_aug -20.961 (+16 more) > 0:
+                yes -> predict 0 (p=0.849)
+                no  -> if +12.660*education -10.278*paid_jun -6.163*paid_may +6.077*repay_status_jul -7.531 (+16 more) > 0:
+                    yes -> predict 1 (p=1.000)
+                    no  -> if +13.627*bill_sep +6.712*bill_jun -6.175*paid_apr +5.557*bill_aug +7.548 (+16 more) > 0:
+                        yes -> if +15.312*paid_may +8.264*paid_aug -8.164*education +3.206*paid_sep -7.073 (+16 more) > 0:
+                            yes -> predict 0 (p=0.782)
+                            no  -> predict 1 (p=1.000)
+                        no  -> predict 0 (p=0.658)
+            no  -> predict 0 (p=0.778)
+    no  -> if +15.676*repay_status_aug -9.371*paid_apr -3.645*repay_status_sep +2.805*repay_status_jun -12.098 (+16 more) > 0:
+        yes -> if +9.678*repay_status_sep +7.408*repay_status_may +7.353*paid_aug -5.733*credit_limit -12.122 (+16 more) > 0:
+            yes -> if +11.912*repay_status_apr -9.961*paid_apr -7.682*paid_aug -3.400*credit_limit -15.262 (+16 more) > 0:
+                yes -> if +26.448*paid_aug +8.917*paid_sep +7.597*paid_may +6.327*paid_apr +2.684 (+16 more) > 0:
+                    yes -> predict 0 (p=0.944)
+                    no  -> predict 1 (p=0.999)
+                no  -> predict 0 (p=0.927)
+            no  -> if +6.008*repay_status_jul +5.787*paid_apr +5.567*credit_limit +5.163*bill_apr +7.817 (+16 more) > 0:
+                yes -> if -16.018*paid_apr -12.414*paid_aug -9.754*credit_limit -9.420*paid_may -17.314 (+16 more) > 0:
+                    yes -> predict 0 (p=0.822)
+                    no  -> predict 0 (p=1.000)
+                no  -> if +11.778*paid_sep -9.164*bill_jul -9.138*bill_sep +8.823*credit_limit -12.898 (+16 more) > 0:
+                    yes -> if +15.087*bill_sep +1.761*bill_aug -0.890*bill_apr -0.672*paid_sep +10.695 (+16 more) > 0:
+                        yes -> predict 0 (p=1.000)
+                        no  -> predict 1 (p=1.000)
+                    no  -> if +19.897*paid_aug +6.390*paid_jul -4.965*paid_jun +4.880*paid_sep +7.615 (+16 more) > 0:
+                        yes -> if +15.973*paid_sep +12.061*repay_status_apr -6.559*paid_jul -3.208*repay_status_aug +0.513 (+16 more) > 0:
+                            yes -> predict 0 (p=1.000)
+                            no  -> predict 0 (p=0.716)
+                        no  -> predict 1 (p=0.956)
+        no  -> if +21.832*paid_jul +5.243*repay_status_aug +2.438*paid_aug +1.705*credit_limit +6.784 (+16 more) > 0:
+            yes -> if +13.471*repay_status_may +5.562*repay_status_apr +3.022*bill_jul -2.326*repay_status_jul -18.137 (+16 more) > 0:
+                yes -> if -10.896*paid_aug +9.070*repay_status_aug +8.374*repay_status_jul -8.006*credit_limit -12.634 (+16 more) > 0:
+                    yes -> predict 1 (p=0.591)
+                    no  -> if +19.618*repay_status_jul +9.306*paid_may +8.781*paid_aug +6.785*credit_limit +4.738 (+16 more) > 0:
+                        yes -> predict 0 (p=0.887)
+                        no  -> predict 0 (p=0.817)
+                no  -> if +11.147*credit_limit -8.324*bill_sep +4.393*repay_status_aug -3.032*paid_sep +9.354 (+16 more) > 0:
+                    yes -> if +12.113*bill_sep +5.895*repay_status_sep +4.588*repay_status_jul +2.407*repay_status_aug +12.150 (+16 more) > 0:
+                        yes -> if +14.247*repay_status_jul +7.965*repay_status_jun +5.221*repay_status_aug -4.094*repay_status_sep -14.016 (+16 more) > 0:
+                            yes -> predict 0 (p=0.851)
+                            no  -> if -16.784*paid_aug -11.474*repay_status_jun -10.798*repay_status_sep +10.425*credit_limit -30.039 (+16 more) > 0:
+                                yes -> predict 0 (p=0.888)
+                                no  -> predict 0 (p=1.000)
+                        no  -> if +24.783*paid_sep +6.084*bill_sep +4.833*bill_aug -4.039*repay_status_sep +5.817 (+16 more) > 0:
+                            yes -> predict 0 (p=0.967)
+                            no  -> predict 0 (p=0.834)
+                    no  -> if +17.681*paid_aug -7.069*education +5.033*paid_jun +4.706*credit_limit +3.225 (+16 more) > 0:
+                        yes -> predict 0 (p=0.940)
+                        no  -> if -18.010*paid_aug -8.072*credit_limit -6.947*education -6.741*paid_jun -8.134 (+16 more) > 0:
+                            yes -> predict 0 (p=0.783)
+                            no  -> if +11.996*paid_sep +11.322*credit_limit +6.018*paid_aug -4.455*bill_jul +12.554 (+16 more) > 0:
+                                yes -> predict 0 (p=1.000)
+                                no  -> predict 1 (p=0.858)
+            no  -> if +12.168*repay_status_sep +7.998*paid_jul -6.843*repay_status_aug -6.702*repay_status_jun -4.172 (+16 more) > 0:
+                yes -> if +13.026*paid_jun +7.373*paid_apr +6.801*paid_may +5.625*repay_status_sep +8.542 (+16 more) > 0:
+                    yes -> predict 0 (p=0.905)
+                    no  -> if +15.109*credit_limit -11.297*paid_apr -8.177*paid_sep -8.079*paid_may -14.042 (+16 more) > 0:
+                        yes -> if +7.649*repay_status_jul +7.397*paid_apr +6.826*paid_sep -6.759*repay_status_sep +18.437 (+16 more) > 0:
+                            yes -> predict 0 (p=0.991)
+                            no  -> predict 1 (p=1.000)
+                        no  -> if -7.765*repay_status_sep +6.986*paid_jun +5.903*credit_limit +5.767*paid_aug +8.503 (+16 more) > 0:
+                            yes -> predict 0 (p=1.000)
+                            no  -> predict 1 (p=0.981)
+                no  -> if -12.069*paid_jul -7.339*bill_apr -6.274*bill_may -5.015*bill_aug -13.040 (+16 more) > 0:
+                    yes -> if +9.318*paid_aug -8.033*paid_jul +6.791*paid_sep +6.371*bill_sep +2.490 (+16 more) > 0:
+                        yes -> predict 0 (p=0.573)
+                        no  -> if +14.927*paid_jun -7.938*paid_apr +7.439*paid_aug +5.832*paid_sep +7.471 (+16 more) > 0:
+                            yes -> predict 0 (p=1.000)
+                            no  -> predict 1 (p=1.000)
+                    no  -> if +12.526*paid_jul +11.631*bill_sep +6.184*paid_jun +4.864*paid_apr +11.313 (+16 more) > 0:
+                        yes -> if +13.115*repay_status_may -6.526*paid_sep -4.980*credit_limit +4.113*paid_aug -11.806 (+16 more) > 0:
+                            yes -> predict 0 (p=0.610)
+                            no  -> if +12.557*credit_limit -5.145*repay_status_jun +3.558*repay_status_jul -3.112*paid_apr +8.961 (+16 more) > 0:
+                                yes -> predict 0 (p=1.000)
+                                no  -> predict 0 (p=0.868)
+                        no  -> if +19.307*paid_sep +9.039*paid_jun +7.341*paid_jul +6.101*paid_apr +5.907 (+16 more) > 0:
+                            yes -> predict 0 (p=0.914)
+                            no  -> if +9.377*credit_limit -6.188*paid_may -4.380*paid_apr +3.922*bill_may -15.015 (+16 more) > 0:
+                                yes -> predict 1 (p=1.000)
+                                no  -> predict 1 (p=0.523)

@@ -1,0 +1,864 @@
+{
+ "library": "0.8.0",
+ "data": {
+  "source": "OpenML 42477 (UCI default of credit card clients, Yeh and Lien 2009), CC0",
+  "n": 30000,
+  "n_default": 6636,
+  "inputs": [
+   "credit_limit",
+   "education",
+   "repay_status_sep",
+   "repay_status_aug",
+   "repay_status_jul",
+   "repay_status_jun",
+   "repay_status_may",
+   "repay_status_apr",
+   "bill_sep",
+   "bill_aug",
+   "bill_jul",
+   "bill_jun",
+   "bill_may",
+   "bill_apr",
+   "paid_sep",
+   "paid_aug",
+   "paid_jul",
+   "paid_jun",
+   "paid_may",
+   "paid_apr"
+  ],
+  "kept_out_of_inputs": [
+   "sex",
+   "marriage",
+   "age"
+  ],
+  "train_rows": 24000,
+  "test_rows": 6000
+ },
+ "protocol": {
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "threshold": 0.5,
+  "xgboost_trials": 20
+ },
+ "summary": {
+  "XGBoost (bank model)": {
+   "accuracy": {
+    "mean": 0.8227777777777779,
+    "sd": 0.0006309898162000244
+   },
+   "auc": {
+    "mean": 0.7852900732792771,
+    "sd": 0.00037479221096076615
+   },
+   "ks": {
+    "mean": 0.43251898884773254,
+    "sd": 0.0020333116382557
+   },
+   "brier": {
+    "mean": 0.13330939908822378,
+    "sd": 0.0001503646164745414
+   },
+   "decline_rate": {
+    "mean": 0.11583333333333334,
+    "sd": 0.001691481927515367
+   },
+   "splits": {
+    "mean": 24814.333333333332,
+    "sd": 19916.853926595268
+   },
+   "fit_seconds": {
+    "mean": 0.7162337303161621,
+    "sd": 0.4340028488719308
+   },
+   "ms_per_row": {
+    "mean": 0.697481632232666,
+    "sd": 0.3922893980767204
+   }
+  },
+  "DistilledTree": {
+   "accuracy": {
+    "mean": 0.8226111111111111,
+    "sd": 0.0010844011831079433
+   },
+   "auc": {
+    "mean": 0.7830562656031516,
+    "sd": 0.00020788143933651095
+   },
+   "ks": {
+    "mean": 0.4264671901861827,
+    "sd": 0.003118716608473291
+   },
+   "brier": {
+    "mean": 0.13375848035017648,
+    "sd": 7.859977114600972e-05
+   },
+   "decline_rate": {
+    "mean": 0.11444444444444445,
+    "sd": 0.0022993557873972046
+   },
+   "splits": {
+    "mean": 48.0,
+    "sd": 2.6457513110645907
+   },
+   "fit_seconds": {
+    "mean": 979.6829073429108,
+    "sd": 8.795474506812496
+   },
+   "ms_per_row": {
+    "mean": 0.4603882630666097,
+    "sd": 0.02549073911943807
+   },
+   "same_decision_as_bank_model": {
+    "mean": 0.9853888888888888,
+    "sd": 0.0005357583756107241
+   }
+  },
+  "DistilledForest": {
+   "accuracy": {
+    "mean": 0.8226666666666667,
+    "sd": 0.0006009252125773269
+   },
+   "auc": {
+    "mean": 0.784139331200476,
+    "sd": 0.0005069865806582176
+   },
+   "ks": {
+    "mean": 0.42682863275210065,
+    "sd": 0.0012552017565319728
+   },
+   "brier": {
+    "mean": 0.15389775733153024,
+    "sd": 0.0005491992066351214
+   },
+   "decline_rate": {
+    "mean": 0.1125,
+    "sd": 0.0010408329997330596
+   },
+   "splits": {
+    "mean": 140.66666666666666,
+    "sd": 18.147543451754935
+   },
+   "fit_seconds": {
+    "mean": 2880.7264173030853,
+    "sd": 5.480908971214864
+   },
+   "ms_per_row": {
+    "mean": 0.9271466732025146,
+    "sd": 0.011863432330281901
+   },
+   "same_decision_as_bank_model": {
+    "mean": 0.9847777777777779,
+    "sd": 0.001109721353079885
+   }
+  },
+  "Logistic regression": {
+   "accuracy": {
+    "mean": 0.8125,
+    "sd": 0.0
+   },
+   "auc": {
+    "mean": 0.7109721852886381,
+    "sd": 0.0
+   },
+   "ks": {
+    "mean": 0.3796152174472809,
+    "sd": 0.0
+   },
+   "brier": {
+    "mean": 0.14625084400177002,
+    "sd": 0.0
+   },
+   "decline_rate": {
+    "mean": 0.07,
+    "sd": 0.0
+   },
+   "splits": {
+    "mean": 0.0,
+    "sd": 0.0
+   },
+   "fit_seconds": {
+    "mean": 0.01699995994567871,
+    "sd": 0.0017301444581937027
+   },
+   "ms_per_row": {
+    "mean": 0.20024855931599936,
+    "sd": 0.003440374795487079
+   },
+   "same_decision_as_bank_model": {
+    "mean": 0.9499444444444446,
+    "sd": 0.0015122952876462452
+   }
+  },
+  "CART": {
+   "accuracy": {
+    "mean": 0.8205555555555556,
+    "sd": 9.622504486492702e-05
+   },
+   "auc": {
+    "mean": 0.7664953360475956,
+    "sd": 0.0032103082024453754
+   },
+   "ks": {
+    "mean": 0.4149267118534847,
+    "sd": 0.005305863638809945
+   },
+   "brier": {
+    "mean": 0.13690438850676923,
+    "sd": 0.0006030626655848882
+   },
+   "decline_rate": {
+    "mean": 0.11894444444444445,
+    "sd": 0.0047150271983819455
+   },
+   "splits": {
+    "mean": 72.33333333333333,
+    "sd": 21.82506204649447
+   },
+   "fit_seconds": {
+    "mean": 0.12638131777445474,
+    "sd": 0.007438808450117747
+   },
+   "ms_per_row": {
+    "mean": 0.13779520988464355,
+    "sd": 0.005041767176375223
+   },
+   "same_decision_as_bank_model": {
+    "mean": 0.9717777777777777,
+    "sd": 0.0031016721893795136
+   }
+  }
+ },
+ "per_seed": [
+  {
+   "seed": 0,
+   "xgboost_params": {
+    "learning_rate": 0.01991925842193538,
+    "max_depth": 9,
+    "min_child_weight": 0.8180416586416891,
+    "subsample": 0.5527476397851148,
+    "colsample_bytree": 0.8145540757698546,
+    "reg_lambda": 17.580893201655815,
+    "n_estimators": 276
+   },
+   "xgboost_val_auc": 0.7858931380165429,
+   "models": {
+    "XGBoost (bank model)": {
+     "accuracy": 0.8223333333333334,
+     "auc": 0.7849492450578295,
+     "ks": 0.43068927526474,
+     "brier": 0.1334812045097351,
+     "decline_rate": 0.11616666666666667,
+     "splits": 47774,
+     "fit_seconds": 1.209123134613037,
+     "ms_per_row": 1.1484646797180176
+    },
+    "DistilledTree": {
+     "accuracy": 0.8236666666666667,
+     "auc": 0.782911371277639,
+     "ks": 0.4229671061038971,
+     "brier": 0.13372837007045746,
+     "decline_rate": 0.11183333333333334,
+     "splits": 46,
+     "fit_seconds": 985.9713809490204,
+     "ms_per_row": 0.46242356300354004,
+     "same_decision_as_bank_model": 0.985
+    },
+    "DistilledForest": {
+     "accuracy": 0.8221666666666667,
+     "auc": 0.7844541692878537,
+     "ks": 0.4268110990524292,
+     "brier": 0.1540958434343338,
+     "decline_rate": 0.11133333333333334,
+     "splits": 160,
+     "fit_seconds": 2874.403907060623,
+     "ms_per_row": 0.9350955486297607,
+     "same_decision_as_bank_model": 0.9845
+    },
+    "Logistic regression": {
+     "accuracy": 0.8125,
+     "auc": 0.7109721852886381,
+     "ks": 0.3796152174472809,
+     "brier": 0.14625084400177002,
+     "decline_rate": 0.07,
+     "splits": 0,
+     "fit_seconds": 0.01612710952758789,
+     "ms_per_row": 0.1964104175567627,
+     "same_decision_as_bank_model": 0.9488333333333333
+    },
+    "CART": {
+     "accuracy": 0.8205,
+     "auc": 0.7698518530105525,
+     "ks": 0.41799005365363506,
+     "brier": 0.13643253784864134,
+     "decline_rate": 0.12166666666666667,
+     "splits": 68,
+     "fit_seconds": 0.13493084907531738,
+     "ms_per_row": 0.13877511024475098,
+     "same_decision_as_bank_model": 0.9685
+    }
+   }
+  },
+  {
+   "seed": 1,
+   "xgboost_params": {
+    "learning_rate": 0.017417186939268865,
+    "max_depth": 10,
+    "min_child_weight": 26.59582906631892,
+    "subsample": 0.7580342927739394,
+    "colsample_bytree": 0.5579328062353852,
+    "reg_lambda": 1.5212974747931653,
+    "n_estimators": 203
+   },
+   "xgboost_val_auc": 0.7723409196938048,
+   "models": {
+    "XGBoost (bank model)": {
+     "accuracy": 0.8235,
+     "auc": 0.7856914555566289,
+     "ks": 0.43470799922943115,
+     "brier": 0.13324521481990814,
+     "decline_rate": 0.114,
+     "splits": 12185,
+     "fit_seconds": 0.3913447856903076,
+     "ms_per_row": 0.4352247714996338
+    },
+    "DistilledTree": {
+     "accuracy": 0.8226666666666667,
+     "auc": 0.7829629752666918,
+     "ks": 0.4289510250091553,
+     "brier": 0.1338476836681366,
+     "decline_rate": 0.11616666666666667,
+     "splits": 51,
+     "fit_seconds": 969.6320290565491,
+     "ms_per_row": 0.4339408874511719,
+     "same_decision_as_bank_model": 0.9851666666666666
+    },
+    "DistilledForest": {
+     "accuracy": 0.8233333333333334,
+     "auc": 0.784409338322364,
+     "ks": 0.42809250950813293,
+     "brier": 0.15327699482440948,
+     "decline_rate": 0.11283333333333333,
+     "splits": 124,
+     "fit_seconds": 2884.1321337223053,
+     "ms_per_row": 0.9328341484069824,
+     "same_decision_as_bank_model": 0.9838333333333333
+    },
+    "Logistic regression": {
+     "accuracy": 0.8125,
+     "auc": 0.7109721852886381,
+     "ks": 0.3796152174472809,
+     "brier": 0.14625084400177002,
+     "decline_rate": 0.07,
+     "splits": 0,
+     "fit_seconds": 0.015880107879638672,
+     "ms_per_row": 0.20305514335632324,
+     "same_decision_as_bank_model": 0.9516666666666667
+    },
+    "CART": {
+     "accuracy": 0.8205,
+     "auc": 0.7661795841395785,
+     "ks": 0.41799005365363506,
+     "brier": 0.13669680251022742,
+     "decline_rate": 0.12166666666666667,
+     "splits": 53,
+     "fit_seconds": 0.12282419204711914,
+     "ms_per_row": 0.14227509498596191,
+     "same_decision_as_bank_model": 0.9746666666666667
+    }
+   }
+  },
+  {
+   "seed": 2,
+   "xgboost_params": {
+    "learning_rate": 0.01464034761133287,
+    "max_depth": 9,
+    "min_child_weight": 28.4910436433309,
+    "subsample": 0.7229349397076069,
+    "colsample_bytree": 0.659196499531838,
+    "reg_lambda": 0.014843860472599913,
+    "n_estimators": 308
+   },
+   "xgboost_val_auc": 0.7911148695285051,
+   "models": {
+    "XGBoost (bank model)": {
+     "accuracy": 0.8225,
+     "auc": 0.7852295192233728,
+     "ks": 0.4321596920490265,
+     "brier": 0.13320177793502808,
+     "decline_rate": 0.11733333333333333,
+     "splits": 14484,
+     "fit_seconds": 0.5482332706451416,
+     "ms_per_row": 0.5087554454803467
+    },
+    "DistilledTree": {
+     "accuracy": 0.8215,
+     "auc": 0.7832944502651236,
+     "ks": 0.4274834394454956,
+     "brier": 0.13369938731193542,
+     "decline_rate": 0.11533333333333333,
+     "splits": 47,
+     "fit_seconds": 983.4453120231628,
+     "ms_per_row": 0.4848003387451172,
+     "same_decision_as_bank_model": 0.986
+    },
+    "DistilledForest": {
+     "accuracy": 0.8225,
+     "auc": 0.7835544859912102,
+     "ks": 0.42558228969573975,
+     "brier": 0.15432043373584747,
+     "decline_rate": 0.11333333333333333,
+     "splits": 138,
+     "fit_seconds": 2883.6432111263275,
+     "ms_per_row": 0.9135103225708008,
+     "same_decision_as_bank_model": 0.986
+    },
+    "Logistic regression": {
+     "accuracy": 0.8125,
+     "auc": 0.7109721852886381,
+     "ks": 0.3796152174472809,
+     "brier": 0.14625084400177002,
+     "decline_rate": 0.07,
+     "splits": 0,
+     "fit_seconds": 0.01899266242980957,
+     "ms_per_row": 0.2012801170349121,
+     "same_decision_as_bank_model": 0.9493333333333334
+    },
+    "CART": {
+     "accuracy": 0.8206666666666667,
+     "auc": 0.7634545709926559,
+     "ks": 0.40880002825318396,
+     "brier": 0.1375838251614389,
+     "decline_rate": 0.1135,
+     "splits": 96,
+     "fit_seconds": 0.12138891220092773,
+     "ms_per_row": 0.13233542442321777,
+     "same_decision_as_bank_model": 0.9721666666666666
+    }
+   }
+  }
+ ],
+ "explanations": [
+  {
+   "case": "declined, highest risk",
+   "test_row": 25053,
+   "actual_default": 1,
+   "gate_counterfactual_raw_units": {
+    "input": "repay_status_sep",
+    "from": 3.0,
+    "to": -1.9788423491647678,
+    "p_new_class": 0.6815767288208008,
+    "new_class": 0
+   },
+   "p_default": 0.8725314736366272,
+   "bank_model_p_default": 0.845224142074585,
+   "declined": true,
+   "bank_model_declined": true,
+   "applicant": {
+    "credit_limit": 500000.0,
+    "education": 1.0,
+    "repay_status_sep": 3.0,
+    "repay_status_aug": 2.0,
+    "repay_status_jul": 2.0,
+    "repay_status_jun": 2.0,
+    "repay_status_may": 2.0,
+    "repay_status_apr": 2.0,
+    "bill_sep": 4957.0,
+    "bill_aug": 4957.0,
+    "bill_jul": 4957.0,
+    "bill_jun": 4957.0,
+    "bill_may": 4957.0,
+    "bill_apr": 4957.0,
+    "paid_sep": 0.0,
+    "paid_aug": 0.0,
+    "paid_jul": 0.0,
+    "paid_jun": 0.0,
+    "paid_may": 0.0,
+    "paid_apr": 0.0
+   },
+   "path_text": "predicted 1 with probability 0.873\ndominant leaf 56 received 0.405 of the sample's mass; its distribution is 0: 0.000, 1: 1.000\npath:\n  gate 0: went right with p=0.993  (+44.788[repay_status_sep] -2.201[credit_limit] -1.254[repay_status_aug])\n  gate 2: went right with p=0.942  (+10.121[repay_status_sep] +5.959[repay_status_aug] -5.831[credit_limit])\n  gate 6: went left with p=0.854  (+22.735[repay_status_aug] -15.617[credit_limit] -9.938[repay_status_apr])\n  gate 13: went left with p=0.592  (+9.680[repay_status_sep] -7.254[repay_status_aug] -4.607[paid_apr])\n  gate 27: went right with p=0.857  (+11.107[credit_limit] +9.006[repay_status_may] -8.243[bill_apr])\nlargest contributions: repay_status_sep 71.045, repay_status_aug 34.392, credit_limit 29.371, repay_status_apr 19.565, repay_status_may 13.715\ncounterfactual: set repay_status_sep from 2.678 to -1.741 and the prediction becomes 0 (p=0.682)",
+   "reasons": [
+    {
+     "input": "repay_status_sep",
+     "value": 3.0,
+     "median": 0.0,
+     "p_default_if_median": 0.35498982667922974,
+     "drop": 0.5175416469573975
+    },
+    {
+     "input": "credit_limit",
+     "value": 500000.0,
+     "median": 140000.0,
+     "p_default_if_median": 0.8262469172477722,
+     "drop": 0.04628455638885498
+    },
+    {
+     "input": "repay_status_apr",
+     "value": 2.0,
+     "median": 0.0,
+     "p_default_if_median": 0.8484876155853271,
+     "drop": 0.02404385805130005
+    },
+    {
+     "input": "repay_status_may",
+     "value": 2.0,
+     "median": 0.0,
+     "p_default_if_median": 0.8512310981750488,
+     "drop": 0.02130037546157837
+    }
+   ],
+   "reachable_flips": [
+    {
+     "input": "repay_status_sep",
+     "from": 3.0,
+     "to": 1.0,
+     "p_default": 0.46744102239608765,
+     "size_sd": 1.7752645773618958
+    },
+    {
+     "input": "repay_status_sep",
+     "from": 3.0,
+     "to": 0.0,
+     "p_default": 0.35498982667922974,
+     "size_sd": 2.6628968660428436
+    },
+    {
+     "input": "repay_status_sep",
+     "from": 3.0,
+     "to": -1.0,
+     "p_default": 0.33221670985221863,
+     "size_sd": 3.5505291547237916
+    }
+   ],
+   "reachable_tried": 129
+  },
+  {
+   "case": "declined, nearest the cut-off",
+   "test_row": 7752,
+   "actual_default": 1,
+   "gate_counterfactual_raw_units": {
+    "input": "paid_jun",
+    "from": 5067.0,
+    "to": 845.171859095527,
+    "p_new_class": 0.5042464137077332,
+    "new_class": 0
+   },
+   "p_default": 0.5002145171165466,
+   "bank_model_p_default": 0.41365161538124084,
+   "declined": true,
+   "bank_model_declined": false,
+   "applicant": {
+    "credit_limit": 120000.0,
+    "education": 3.0,
+    "repay_status_sep": 4.0,
+    "repay_status_aug": 3.0,
+    "repay_status_jul": 2.0,
+    "repay_status_jun": 0.0,
+    "repay_status_may": 0.0,
+    "repay_status_apr": 0.0,
+    "bill_sep": 149229.0,
+    "bill_aug": 138487.0,
+    "bill_jul": 127516.0,
+    "bill_jun": 124530.0,
+    "bill_may": 120937.0,
+    "bill_apr": 67711.0,
+    "paid_sep": 0.0,
+    "paid_aug": 0.0,
+    "paid_jul": 6000.0,
+    "paid_jun": 5067.0,
+    "paid_may": 1548.0,
+    "paid_apr": 120862.0
+   },
+   "path_text": "predicted 1 with probability 0.500\ndominant leaf 14 received 0.456 of the sample's mass; its distribution is 0: 0.462, 1: 0.538\npath:\n  gate 0: went right with p=1.000  (+59.633[repay_status_sep] -1.843[repay_status_aug] +1.034[education])\n  gate 2: went right with p=0.460  (+13.476[repay_status_sep] -11.529[paid_apr] +8.755[repay_status_aug])\n  gate 6: went right with p=0.992  (+99.880[paid_apr] +33.401[repay_status_aug] +11.905[repay_status_sep])\nlargest contributions: repay_status_sep 78.580, paid_apr 58.437, repay_status_aug 25.954, education 6.293, paid_aug 3.987\ncounterfactual: set paid_jun from 0.017 to -0.257 and the prediction becomes 0 (p=0.504)",
+   "reasons": [
+    {
+     "input": "repay_status_sep",
+     "value": 4.0,
+     "median": 0.0,
+     "p_default_if_median": 0.2103487253189087,
+     "drop": 0.28986579179763794
+    },
+    {
+     "input": "bill_jul",
+     "value": 127516.0,
+     "median": 20202.5,
+     "p_default_if_median": 0.4827657639980316,
+     "drop": 0.017448753118515015
+    },
+    {
+     "input": "bill_jun",
+     "value": 124530.0,
+     "median": 19147.0,
+     "p_default_if_median": 0.48340386152267456,
+     "drop": 0.01681065559387207
+    },
+    {
+     "input": "bill_sep",
+     "value": 149229.0,
+     "median": 22467.5,
+     "p_default_if_median": 0.4929494559764862,
+     "drop": 0.007265061140060425
+    }
+   ],
+   "reachable_flips": [
+    {
+     "input": "paid_aug",
+     "from": 0.0,
+     "to": 240.0,
+     "p_default": 0.49979153275489807,
+     "size_sd": 0.0103374746326802
+    },
+    {
+     "input": "paid_sep",
+     "from": 0.0,
+     "to": 316.0,
+     "p_default": 0.4998018443584442,
+     "size_sd": 0.018812826377398378
+    },
+    {
+     "input": "bill_jun",
+     "from": 124530.0,
+     "to": 122342.3,
+     "p_default": 0.49991655349731445,
+     "size_sd": 0.03407541587372509
+    },
+    {
+     "input": "paid_may",
+     "from": 1548.0,
+     "to": 2138.3999999999996,
+     "p_default": 0.4992538392543793,
+     "size_sd": 0.03841791078920175
+    },
+    {
+     "input": "paid_aug",
+     "from": 0.0,
+     "to": 1158.0,
+     "p_default": 0.49815911054611206,
+     "size_sd": 0.04987831510268197
+    }
+   ],
+   "reachable_tried": 134
+  },
+  {
+   "case": "approved, typical applicant",
+   "test_row": 11943,
+   "actual_default": 0,
+   "gate_counterfactual_raw_units": {
+    "input": "repay_status_sep",
+    "from": 0.0,
+    "to": 2.1965243512711385,
+    "p_new_class": 0.7227604389190674,
+    "new_class": 1
+   },
+   "p_default": 0.1470484584569931,
+   "bank_model_p_default": 0.16158366203308105,
+   "declined": false,
+   "bank_model_declined": false,
+   "applicant": {
+    "credit_limit": 60000.0,
+    "education": 2.0,
+    "repay_status_sep": 0.0,
+    "repay_status_aug": 0.0,
+    "repay_status_jul": 0.0,
+    "repay_status_jun": 0.0,
+    "repay_status_may": 0.0,
+    "repay_status_apr": 0.0,
+    "bill_sep": 57171.0,
+    "bill_aug": 58656.0,
+    "bill_jul": 53271.0,
+    "bill_jun": 54331.0,
+    "bill_may": 55513.0,
+    "bill_apr": 56898.0,
+    "paid_sep": 2464.0,
+    "paid_aug": 1932.0,
+    "paid_jul": 1944.0,
+    "paid_jun": 2057.0,
+    "paid_may": 2351.0,
+    "paid_apr": 1963.0
+   },
+   "path_text": "predicted 0 with probability 0.853\ndominant leaf 299 received 0.150 of the sample's mass; its distribution is 0: 1.000, 1: 0.000\npath:\n  gate 0: went left with p=0.976  (+0.711[credit_limit] +0.252[repay_status_sep] +0.214[paid_sep])\n  gate 1: went left with p=0.592  (+1.740[paid_apr] +1.717[repay_status_aug] +1.428[credit_limit])\n  gate 3: went right with p=0.546  (-4.234[paid_jul] -1.419[credit_limit] +0.574[repay_status_aug])\n  gate 8: went left with p=0.987  (+3.117[repay_status_may] +1.395[repay_status_apr] +0.995[credit_limit])\n  gate 17: went right with p=0.531  (-9.275[credit_limit] -0.655[bill_sep] +0.585[paid_sep])\n  gate 36: went right with p=0.947  (-1.577[credit_limit] +0.954[bill_sep] +0.631[repay_status_jul])\n  gate 74: went left with p=1.000  (+1.959[repay_status_jul] +1.500[repay_status_jun] +0.572[repay_status_aug])\n  gate 149: went left with p=0.962  (-8.675[credit_limit] +2.883[paid_aug] -2.161[repay_status_jun])\nlargest contributions: credit_limit 7.789, paid_jul 3.231, repay_status_aug 2.520, paid_apr 1.896, repay_status_may 1.577\ncounterfactual: set repay_status_sep from 0.015 to 1.965 and the prediction becomes 1 (p=0.723)",
+   "reasons": [
+    {
+     "input": "credit_limit",
+     "value": 60000.0,
+     "median": 140000.0,
+     "p_default_if_median": 0.07668161392211914,
+     "drop": 0.07036685943603516
+    },
+    {
+     "input": "bill_jul",
+     "value": 53271.0,
+     "median": 20202.5,
+     "p_default_if_median": 0.12129337340593338,
+     "drop": 0.025755099952220917
+    },
+    {
+     "input": "bill_aug",
+     "value": 58656.0,
+     "median": 21451.0,
+     "p_default_if_median": 0.13434572517871857,
+     "drop": 0.01270274817943573
+    },
+    {
+     "input": "bill_jun",
+     "value": 54331.0,
+     "median": 19147.0,
+     "p_default_if_median": 0.13669466972351074,
+     "drop": 0.010353803634643555
+    }
+   ],
+   "reachable_flips": [
+    {
+     "input": "repay_status_sep",
+     "from": 0.0,
+     "to": 2.0,
+     "p_default": 0.6946021318435669,
+     "size_sd": 1.7752645773618958
+    }
+   ],
+   "reachable_tried": 134
+  }
+ ],
+ "slices_seed0": {
+  "DistilledTree": {
+   "sex: male": {
+    "n": 2436,
+    "default_rate": 0.24178981937602628,
+    "decline_rate": 0.11535303776683087,
+    "auc": 0.7717787666504577,
+    "defaults_approved": 0.66553480475382,
+    "repayers_declined": 0.04547915538711424,
+    "approval_ratio_to_highest": 0.9933464944546361
+   },
+   "sex: female": {
+    "n": 3564,
+    "default_rate": 0.20707070707070707,
+    "decline_rate": 0.10942760942760943,
+    "auc": 0.7907232876291962,
+    "defaults_approved": 0.6300813008130082,
+    "repayers_declined": 0.041401273885350316,
+    "approval_ratio_to_highest": 1.0
+   },
+   "married": {
+    "n": 2765,
+    "default_rate": 0.24520795660036165,
+    "decline_rate": 0.12079566003616636,
+    "auc": 0.7786041699352503,
+    "defaults_approved": 0.6460176991150443,
+    "repayers_declined": 0.045040728318160035,
+    "approval_ratio_to_highest": 0.9824749703854194
+   },
+   "single": {
+    "n": 3149,
+    "default_rate": 0.20069863448713876,
+    "decline_rate": 0.10511273420133375,
+    "auc": 0.7889996756234818,
+    "defaults_approved": 0.6424050632911392,
+    "repayers_declined": 0.041716328963051254,
+    "approval_ratio_to_highest": 1.0
+   },
+   "age under 30": {
+    "n": 1933,
+    "default_rate": 0.21469218830832903,
+    "decline_rate": 0.12467666839110192,
+    "auc": 0.7867342889343937,
+    "defaults_approved": 0.6048192771084338,
+    "repayers_declined": 0.050724637681159424,
+    "approval_ratio_to_highest": 0.97221776173464
+   },
+   "age 30 to 44": {
+    "n": 2970,
+    "default_rate": 0.21077441077441078,
+    "decline_rate": 0.09966329966329966,
+    "auc": 0.7770614797893336,
+    "defaults_approved": 0.6741214057507987,
+    "repayers_declined": 0.03924914675767918,
+    "approval_ratio_to_highest": 1.0
+   },
+   "age 45 and over": {
+    "n": 1097,
+    "default_rate": 0.26071103008204194,
+    "decline_rate": 0.12215132178669097,
+    "auc": 0.7945771860691713,
+    "defaults_approved": 0.6433566433566433,
+    "repayers_declined": 0.03945745992601726,
+    "approval_ratio_to_highest": 0.9750226530641466
+   }
+  },
+  "XGBoost (bank model)": {
+   "sex: male": {
+    "n": 2436,
+    "default_rate": 0.24178981937602628,
+    "decline_rate": 0.12151067323481117,
+    "auc": 0.7714211914332699,
+    "defaults_approved": 0.6519524617996605,
+    "repayers_declined": 0.049269085002707096,
+    "approval_ratio_to_highest": 0.9898627760326061
+   },
+   "sex: female": {
+    "n": 3564,
+    "default_rate": 0.20707070707070707,
+    "decline_rate": 0.11251402918069585,
+    "auc": 0.7945989332504789,
+    "defaults_approved": 0.6287262872628726,
+    "repayers_declined": 0.04493984430290163,
+    "approval_ratio_to_highest": 1.0
+   },
+   "married": {
+    "n": 2765,
+    "default_rate": 0.24520795660036165,
+    "decline_rate": 0.12585895117540688,
+    "auc": 0.7756871799438299,
+    "defaults_approved": 0.6312684365781711,
+    "repayers_declined": 0.04695735505510302,
+    "approval_ratio_to_highest": 0.98064487450967
+   },
+   "single": {
+    "n": 3149,
+    "default_rate": 0.20069863448713876,
+    "decline_rate": 0.10860590663702763,
+    "auc": 0.7963377513918015,
+    "defaults_approved": 0.6439873417721519,
+    "repayers_declined": 0.04648390941597139,
+    "approval_ratio_to_highest": 1.0
+   },
+   "age under 30": {
+    "n": 1933,
+    "default_rate": 0.21469218830832903,
+    "decline_rate": 0.1288153129849974,
+    "auc": 0.793358413892725,
+    "defaults_approved": 0.6,
+    "repayers_declined": 0.054677206851119896,
+    "approval_ratio_to_highest": 0.9712531983613205
+   },
+   "age 30 to 44": {
+    "n": 2970,
+    "default_rate": 0.21077441077441078,
+    "decline_rate": 0.10303030303030303,
+    "auc": 0.7822306834661812,
+    "defaults_approved": 0.6677316293929713,
+    "repayers_declined": 0.041808873720136516,
+    "approval_ratio_to_highest": 1.0
+   },
+   "age 45 and over": {
+    "n": 1097,
+    "default_rate": 0.26071103008204194,
+    "decline_rate": 0.12944393801276208,
+    "auc": 0.7813693704569167,
+    "defaults_approved": 0.6328671328671329,
+    "repayers_declined": 0.04562268803945746,
+    "approval_ratio_to_highest": 0.9705523664046909
+   }
+  }
+ },
+ "final_model": {
+  "n_splits": 46,
+  "json_bytes": 55353,
+  "numpy_matches_model": 2.9217229813305323e-07,
+  "rules_lines": 93,
+  "hard_rules_same_decision": 0.9215
+ },
+ "total_seconds": 3885.7764010429382
+}

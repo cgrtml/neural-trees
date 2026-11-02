@@ -110,13 +110,20 @@ P(f"Reading. The distilled tree's AUC is {t['auc']['mean']:.3f} against {b['auc'
   f"decision as the bank's model for {t['same_decision_as_bank_model']['mean']:.1%} of applicants. "
   f"Logistic regression reaches {S['Logistic regression']['auc']['mean']:.3f} and the tuned CART {S['CART']['auc']['mean']:.3f}: "
   "accuracy alone hides the difference, because declining nobody is already right for most applicants, so AUC and KS, which measure "
-  "how well the model ranks applicants by risk, are the columns to compare.")
+  "how well the model ranks applicants by risk, are the columns to compare. "
+  f"The group of three trees ranks slightly better than one tree but its probabilities are less calibrated (Brier "
+  f"{S['DistilledForest']['brier']['mean']:.3f} against {t['brier']['mean']:.3f}), because the group adds the trees' log "
+  "probabilities; a lender who uses the probability itself, for pricing or loss provisions, would recalibrate it or use the single tree.")
 P("")
 P("## 5. The rules")
 P("")
 P(f"The tree a reviewer reads is the seed-0 distilled tree: {FM['n_splits']} soft splits. Reading each gate as a hard decision gives "
   f"the rule list below ({FM['rules_lines']} lines, the four largest weights per gate, inputs standardised as in preprocessing.json); "
   f"that hard reading takes the same decision as the soft tree for {FM['hard_rules_same_decision']:.1%} of the held-out applicants.")
+P("")
+P(f"Each gate is a weighted sum of all {len(D['inputs'])} inputs, not a test on one input as in CART, so a rule shows only its "
+  "largest weights and is harder to read than a CART split. What the reviewer gets in exchange is a model of 46 decisions whose every "
+  "gate can be printed and audited, with nearly the bank model's ranking power; the explanations in section 6 are computed from these gates.".replace("46", str(FM['n_splits'])))
 P("")
 P("```")
 P((HERE / "rules.txt").read_text(encoding="utf-8").strip())
@@ -203,7 +210,7 @@ P("## 10. Limitations")
 P("")
 P("- One public dataset from one bank in 2005. The numbers are a demonstration of the procedure, not evidence about any other portfolio.")
 P("- Three seeds on one split: the standard deviations are the spread of the method, not of the data.")
-P("- The rules in section 5 are a hard reading of soft gates; near a gate the two disagree, and the agreement rate measures how often.")
+P("- The rules in section 5 are a hard reading of soft gates; near a gate the two disagree, and the agreement rate measures how often. Each gate weighs every input, so the rules are less readable than a CART tree.")
 P("- Principal reasons and reachable changes are statements about the model, not advice to the applicant.")
 P("- Leaving protected attributes out of the inputs does not by itself remove their proxies; section 8 is the check, and it should be repeated on the lender's own data.")
 P("- Fitting the distilled tree takes minutes where XGBoost takes seconds; in production this happens at each refit, not at each decision.")
