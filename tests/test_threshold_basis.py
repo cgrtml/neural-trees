@@ -136,3 +136,33 @@ def test_rejects_bad_combine_and_non_tree_teacher():
     with pytest.raises(ValueError, match="tree-ensemble"):
         DistilledTree(teacher=LogisticRegression(), student=_small_student(), synthetic=0,
                       thresholds=4).fit(Xtr, ytr)
+
+
+def test_pruning_folds_keep_the_class_copies_of_a_row_together():
+    from neural_trees.decision_trees.soft_decision_tree import _pruning_folds
+    X = np.random.default_rng(0).normal(size=(200, 3))
+    Xe, ye = np.vstack([X, X]), np.r_[np.zeros(200, int), np.ones(200, int)]   # each row once per class
+    for tr, te in _pruning_folds(Xe, ye, 0):
+        assert not set(map(tuple, Xe[tr])) & set(map(tuple, Xe[te]))
+    # rows that never repeat keep the stratified folds of before
+    from sklearn.model_selection import StratifiedKFold
+    y = (X[:, 0] > 0).astype(int)
+    old = list(StratifiedKFold(3, shuffle=True, random_state=0).split(X, y))
+    for (a, b), (c, d) in zip(_pruning_folds(X, y, 0), old):
+        np.testing.assert_array_equal(a, c)
+        np.testing.assert_array_equal(b, d)
+
+
+def test_cart_init_on_class_expanded_rows_is_not_pruned_to_the_root():
+    # an imbalanced teacher whose argmax is one split (x0 > 1.2) and whose ranking elsewhere is
+    # smooth: with folds over the class copies the pruning picked that one split alone (the
+    # credit-default collapse, 5 Nov 2026; this case gave 1 split before the fix, 126 after)
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(3000, 6))
+    p = np.where(X[:, 0] > 1.2, 0.7, 1 / (1 + np.exp(-(-2.0 + 0.5 * X[:, 1:4].sum(1)))))
+    k0, k1 = 1 - p >= 0.01, p >= 0.01
+    Xe = np.vstack([X[k0], X[k1]])
+    ye = np.r_[np.zeros(k0.sum(), int), np.ones(k1.sum(), int)]
+    we = np.r_[(1 - p)[k0], p[k1]]
+    m = SoftDecisionTree(depth=8, init="cart", max_epochs=1, random_state=0).fit(Xe, ye, sample_weight=we)
+    assert int(m.model_.is_split.sum()) > 10

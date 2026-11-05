@@ -440,6 +440,22 @@ def _module_from_cart(t, depth, n_classes, columns, spread, sharpness, penalty_c
     return _copy_cart(t, module, spread, sharpness, node_row)
 
 
+def _pruning_folds(X, y, random_state):
+    """
+    Three folds for choosing the CART pruning strength. Distillation hands the
+    tree each transfer row once per class (weight = teacher probability), and
+    bootstrap repeats rows; folds that put copies of one row on both sides score
+    any tree that separates rows against itself and drive the choice to the
+    root. When rows repeat, the folds keep all copies of a row together.
+    """
+    from sklearn.model_selection import GroupKFold, StratifiedKFold
+    X = np.asarray(X)
+    groups = np.unique(np.nan_to_num(X, nan=np.inf), axis=0, return_inverse=True)[1].ravel()
+    if groups.max() + 1 < len(X):
+        return list(GroupKFold(3).split(X, y, groups))
+    return list(StratifiedKFold(3, shuffle=True, random_state=random_state or 0).split(X, y))
+
+
 def _pruned_cart(make_tree, X, Y, w, prune, seed, score, folds):
     """
     `make_tree(alpha)` fitted on (X, Y, w), with the cost-complexity strength
@@ -930,7 +946,6 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
         datasets under 1 000 rows the unpruned copy trailed the per-leaf soft
         tree by 2.2 points.
         """
-        from sklearn.model_selection import StratifiedKFold
         from sklearn.tree import DecisionTreeClassifier
 
         def make(alpha):
@@ -942,8 +957,7 @@ class SoftDecisionTree(ClassifierMixin, BaseEstimator):
 
         folds = None
         if self.init_prune and len(y_fit) >= 30 and np.bincount(y_fit).min() >= 3:
-            folds = list(StratifiedKFold(3, shuffle=True, random_state=self.random_state or 0)
-                         .split(X_fit, y_fit))
+            folds = _pruning_folds(X_fit, y_fit, self.random_state)
         cart, alpha = _pruned_cart(make, X_fit, y_fit, w_fit, self.init_prune, self.random_state,
                                    accuracy, folds)
         self.init_ccp_alpha_ = alpha

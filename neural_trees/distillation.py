@@ -239,23 +239,23 @@ class ThresholdBasis:
 
 def _pruned_student(Xs, ys, ws, random_state, rows: int = 40_000):
     """
-    The default student on many transfer rows: CART of depth 8 pruned by
-    3-fold cross-validation on a `rows`-row subsample (pruning on every row
-    costs more than the fit), copied into a soft tree and fine-tuned on all
-    rows. Below `rows` rows this is ``SoftDecisionTree(depth=8, init="cart")``.
+    The default student for threshold inputs: CART of depth 8 pruned by
+    3-fold cross-validation on at most `rows` transfer rows (pruning on every
+    row costs more than the fit), with folds that keep the class copies of a
+    row together, copied into a soft tree and fine-tuned on all rows.
     """
-    from sklearn.model_selection import StratifiedKFold
     from sklearn.tree import DecisionTreeClassifier
 
     from neural_trees import SoftDecisionTree
-    from neural_trees.decision_trees.soft_decision_tree import _pruned_cart
+    from neural_trees.decision_trees.soft_decision_tree import (
+        _pruned_cart,
+        _pruning_folds,
+    )
     kw = dict(learn_temperature=True, max_epochs=60, batch_size=256, random_state=random_state)
-    if len(ys) <= rows:
-        return SoftDecisionTree(depth=8, init="cart", **kw).fit(Xs, ys, sample_weight=ws)
     seed = random_state or 0
-    sub = np.random.default_rng(seed).choice(len(ys), rows, replace=False)
+    sub = np.random.default_rng(seed).choice(len(ys), min(rows, len(ys)), replace=False)
     _, yi = np.unique(ys, return_inverse=True)
-    folds = list(StratifiedKFold(3, shuffle=True, random_state=seed).split(Xs[sub], yi[sub]))
+    folds = _pruning_folds(Xs[sub], yi[sub], seed)
     cart, _ = _pruned_cart(lambda a: DecisionTreeClassifier(max_depth=8, ccp_alpha=a, random_state=random_state),
                            np.nan_to_num(Xs[sub]), ys[sub], ws[sub], True, random_state,
                            lambda m, X, y, w: float(((m.predict(X) == y) * w).sum() / w.sum()), folds)
