@@ -191,6 +191,49 @@ not significant) and 1.3 points below XGBoost, about where the CART-started
 tree alone already is. The distillation earns its cost on the larger tables
 above, not here.
 
+The teacher's thresholds as inputs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A soft gate learns its own cut points slowly; a boosted teacher has already
+found where each feature matters. ``thresholds=512`` gives the student, next
+to the features, one 0/1 input for each of the teacher's 512 highest-gain
+(feature, threshold) splits, so a gate can use those cut points directly.
+
+.. code-block:: python
+
+   from xgboost import XGBClassifier
+   from neural_trees import DistilledForest, DistilledTree
+
+   teacher = XGBClassifier(n_estimators=300, max_depth=6)   # or your tuned model
+   tree = DistilledTree(teacher=teacher, thresholds=512)
+   group = DistilledForest(teacher=teacher, thresholds=512, combine="mean")
+
+Against the tuned rivals of ``benchmarks/kanit.py`` (nine tables, three
+seeds, the tuned XGBoost as teacher; ``benchmarks/esik.py``), accuracy points
+of the three-tree group minus the rival, rivals re-tuned at each training size:
+
+=======  ===============  ==========  ==========  ======
+rows     XGBoost          LightGBM    CatBoost    splits
+=======  ===============  ==========  ==========  ======
+500      +0.40 (p=0.012)  -0.05       -0.02       53
+1 000    +0.01            +0.04       -0.08       89
+2 000    +0.05            +0.14       -0.16       143
+5 000    -0.11            +0.04       -0.30       158
+20 000   -0.39            -0.54       -0.51       196
+=======  ===============  ==========  ==========  ======
+
+Up to 5 000 rows the group is level with tuned XGBoost and LightGBM;
+CatBoost keeps 0.2 to 0.3 points from 2 000 rows on, and at 20 000 rows all
+three lead. One tree with thresholds is 0.70 points under tuned XGBoost at
+20 000 rows with 14 to 99 splits. These were measured with the development
+script the code was taken from; the library gave the same splits and
+accuracy within 0.1 point on the cells checked.
+
+For probabilities use ``combine="mean"``: the default sum of log
+probabilities is overconfident (calibration slope about 0.35 on the
+credit-default case, ``cases/credit-default/esik.py``), the mean is
+calibrated (slope 1.05 to 1.15) at the same AUC.
+
 Unlabelled rows
 ~~~~~~~~~~~~~~~
 

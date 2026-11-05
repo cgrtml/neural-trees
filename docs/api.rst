@@ -54,6 +54,7 @@ Distillation
    neural_trees.fidelity
    neural_trees.Distilled
    neural_trees.distillation.munge
+   neural_trees.distillation.ThresholdBasis
 
 Statistical tests
 -----------------

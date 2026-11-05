@@ -26,7 +26,9 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
-__all__ = ["Distilled", "DistilledForest", "DistilledTree", "distill", "fidelity", "munge"]
+from neural_trees._missing import allow_nan
+
+__all__ = ["Distilled", "DistilledForest", "DistilledTree", "ThresholdBasis", "distill", "fidelity", "munge"]
 
 
 @dataclass
@@ -131,6 +133,133 @@ def munge(X, passes: int = 2, p: float = 0.5, s: float = 5.0, random_state=None)
         drawn = np.where(np.isnan(N), np.nan, drawn)
         out.append(np.where(rng.random(X.shape) < p, drawn, X))
     return np.vstack(out)
+
+
+def _teacher_splits(teacher, n_features):
+    """
+    (feature, threshold, right_if_equal, gain) for every split of a fitted
+    tree ensemble: XGBoost, LightGBM, scikit-learn histogram gradient
+    boosting, gradient boosting, random forest, extra trees or one decision
+    tree. `right_if_equal` is True where a row equal to the threshold goes
+    right (XGBoost: ``x < t`` goes left), False where it goes left
+    (``x <= t``, the others).
+    """
+    out = []
+    est = teacher.steps[-1][1] if hasattr(teacher, "steps") else teacher
+    if hasattr(est, "get_booster"):                                    # XGBoost
+        df = est.get_booster().trees_to_dataframe()
+        df = df[df.Feature != "Leaf"]
+        names = est.get_booster().feature_names
+        pos = {n: i for i, n in enumerate(names)} if names else None
+        for f, t, g in zip(df.Feature, df.Split, df.Gain):
+            j = pos[f] if pos else int(str(f)[1:])
+            out.append((j, float(t), True, float(g)))
+        return out
+    if hasattr(est, "booster_"):                                       # LightGBM
+        df = est.booster_.trees_to_dataframe()
+        df = df[df.split_feature.notna()]
+        pos = {n: i for i, n in enumerate(est.booster_.feature_name())}
+        for f, t, g, d in zip(df.split_feature, df.threshold, df.split_gain, df.decision_type):
+            if d == "<=":
+                out.append((pos[f], float(t), False, float(g)))
+        return out
+    if hasattr(est, "_predictors"):                                    # HistGradientBoosting
+        for it in est._predictors:
+            for pred in it:
+                n = pred.nodes
+                for r in n[~n["is_leaf"].astype(bool)]:
+                    if not r["is_categorical"]:
+                        out.append((int(r["feature_idx"]), float(r["num_threshold"]), False, float(r["gain"])))
+        return out
+    trees = getattr(est, "estimators_", None)
+    if trees is None and hasattr(est, "tree_"):
+        trees = [est]
+    if trees is not None:                                              # sklearn trees and forests
+        for t in np.asarray(trees, dtype=object).ravel():
+            tr = t.tree_
+            for i in np.where(tr.children_left >= 0)[0]:
+                left, right = tr.children_left[i], tr.children_right[i]
+                g = (tr.weighted_n_node_samples[i] * tr.impurity[i]
+                     - tr.weighted_n_node_samples[left] * tr.impurity[left]
+                     - tr.weighted_n_node_samples[right] * tr.impurity[right])
+                out.append((int(tr.feature[i]), float(tr.threshold[i]), False, float(g)))
+        return out
+    raise ValueError(f"thresholds needs a tree-ensemble teacher (XGBoost, LightGBM or a scikit-learn tree "
+                     f"model); got {type(est).__name__}")
+
+
+class ThresholdBasis:
+    """
+    The inputs a threshold-basis student sees: the original features, then
+    one 0/1 input per (feature, threshold) pair among the teacher's `k`
+    splits with the largest total gain, 1 where the row goes right at that
+    split.
+
+    A depth-8 soft tree learns its own thresholds slowly and coarsely; the
+    teacher has already found where each feature matters. With these inputs
+    a gate can pick up a boosted model's cut points directly. On the nine
+    tables of benchmarks/kanit.py (three seeds, k = 512, the tuned XGBoost
+    as teacher; benchmarks/esik.py) one tree was 0.70 points under tuned
+    XGBoost at 20 000 rows with 14 to 99 splits, against XGBoost's 4 031 to
+    115 351; with 500 to 5 000 rows (rivals re-tuned at each size) the
+    three-tree group was level with tuned XGBoost and LightGBM, and 0.40
+    points above XGBoost at 500 rows (18 of 27 cells higher, Wilcoxon
+    p = 0.012). These numbers were measured with the development script
+    this class was taken from; the library code gave the same splits and
+    accuracy within 0.1 point on the cells checked.
+    """
+
+    def __init__(self, teacher, n_features: int, k: int = 512):
+        splits = _teacher_splits(teacher, n_features)
+        gain = {}
+        for j, t, right_eq, g in splits:
+            if 0 <= j < n_features and np.isfinite(t):
+                gain[(j, t, right_eq)] = gain.get((j, t, right_eq), 0.0) + g
+        top = sorted(gain.items(), key=lambda kv: -kv[1])[:int(k)]
+        self.n_features = int(n_features)
+        self.pairs = [key for key, _ in top]
+
+    def transform(self, X) -> np.ndarray:
+        X = np.asarray(X, dtype=np.float64)
+        if not self.pairs:
+            return X.astype(np.float32)
+        j = np.array([p[0] for p in self.pairs])
+        t = np.array([p[1] for p in self.pairs])
+        eq = np.array([p[2] for p in self.pairs])
+        V = X[:, j]
+        with np.errstate(invalid="ignore"):
+            B = np.where(eq, V >= t, V > t).astype(np.float32)
+        B[np.isnan(V)] = np.nan                       # missing stays missing (the student handles NaN)
+        return np.hstack([X.astype(np.float32), B])
+
+    def feature_names(self, names=None) -> list:
+        names = list(names) if names is not None else [f"x{j}" for j in range(self.n_features)]
+        return names + [f"{names[j]} {'>=' if eq else '>'} {t:.6g}" for j, t, eq in self.pairs]
+
+
+def _pruned_student(Xs, ys, ws, random_state, rows: int = 40_000):
+    """
+    The default student on many transfer rows: CART of depth 8 pruned by
+    3-fold cross-validation on a `rows`-row subsample (pruning on every row
+    costs more than the fit), copied into a soft tree and fine-tuned on all
+    rows. Below `rows` rows this is ``SoftDecisionTree(depth=8, init="cart")``.
+    """
+    from sklearn.model_selection import StratifiedKFold
+    from sklearn.tree import DecisionTreeClassifier
+
+    from neural_trees import SoftDecisionTree
+    from neural_trees.decision_trees.soft_decision_tree import _pruned_cart
+    kw = dict(learn_temperature=True, max_epochs=60, batch_size=256, random_state=random_state)
+    if len(ys) <= rows:
+        return SoftDecisionTree(depth=8, init="cart", **kw).fit(Xs, ys, sample_weight=ws)
+    seed = random_state or 0
+    sub = np.random.default_rng(seed).choice(len(ys), rows, replace=False)
+    _, yi = np.unique(ys, return_inverse=True)
+    folds = list(StratifiedKFold(3, shuffle=True, random_state=seed).split(Xs[sub], yi[sub]))
+    cart, _ = _pruned_cart(lambda a: DecisionTreeClassifier(max_depth=8, ccp_alpha=a, random_state=random_state),
+                           np.nan_to_num(Xs[sub]), ys[sub], ws[sub], True, random_state,
+                           lambda m, X, y, w: float(((m.predict(X) == y) * w).sum() / w.sum()), folds)
+    return SoftDecisionTree.from_hard_tree(cart, X=Xs, sharpness=10.0, **kw).fit(Xs, ys, sample_weight=ws)
 
 
 def distill(teacher, X, *, student=None, X_eval=None, threshold: float = 0.01,
@@ -261,22 +390,31 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
         MUNGE passes over the labelled rows; each adds len(X) synthetic rows
         that the teacher labels for the student. 0 turns it off; fewer
         passes fit faster and score a little lower.
+    thresholds : int, default=0
+        Give the student, next to the features, one 0/1 input for each of the
+        teacher's `thresholds` highest-gain (feature, threshold) splits (see
+        `ThresholdBasis`; the teacher must be a tree ensemble). 512 is the
+        measured setting. Prediction, `explain` and `fidelity` take the
+        original features; the exports (`to_numpy`, `to_hard_tree`,
+        `to_onnx`) take ``student_inputs(X)``.
     random_state : int, optional
         Seeds the synthetic rows and the default student.
 
     Attributes
     ----------
     teacher_, student_ : the fitted models
+    basis_ : ThresholdBasis or None
     classes_, n_features_in_
     """
 
     def __init__(self, teacher=None, student=None, alpha: float = 0.0, threshold: float = 0.01,
-                 synthetic: int = 10, random_state: Optional[int] = None):
+                 synthetic: int = 10, thresholds: int = 0, random_state: Optional[int] = None):
         self.teacher = teacher
         self.student = student
         self.alpha = alpha
         self.threshold = threshold
         self.synthetic = synthetic
+        self.thresholds = thresholds
         self.random_state = random_state
 
     # NaN is accepted (the student handles it); scikit-learn >= 1.6 reads
@@ -308,12 +446,37 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
         stochastic mini-batch learner can satisfy.
         """
         teacher, Xt, P, wt, X, y, w = self._teacher_rows(X, y, sample_weight, X_unlabeled)
-        student = self._new_student(self.random_state)
-        student.fit(*self._student_rows(teacher, Xt, P, wt, X, y, w))
+        Xt, Xb = self._basis_rows(teacher, Xt, X)
+        student = self._fit_student(self.random_state, *self._student_rows(teacher, Xt, P, wt, Xb, y, w))
         self.teacher_, self.student_ = teacher, student
         self.classes_ = student.classes_
         self.n_features_in_ = X.shape[1]
         return self
+
+    def _basis_rows(self, teacher, Xt, X):
+        """Set `basis_` and return the transfer rows and labelled rows as the student sees them."""
+        if not isinstance(self.thresholds, (int, np.integer)) or isinstance(self.thresholds, bool) \
+                or self.thresholds < 0:
+            raise ValueError(f"thresholds must be a non-negative int, got {self.thresholds!r}")
+        self.basis_ = ThresholdBasis(teacher, X.shape[1], int(self.thresholds)) if self.thresholds else None
+        if self.basis_ is None:
+            return Xt, X
+        return self.basis_.transform(Xt), self.basis_.transform(X)
+
+    def student_inputs(self, X):
+        """The student's inputs for rows of `X`: `X` itself, or with the threshold inputs appended."""
+        check_is_fitted(self)
+        if self.basis_ is None:
+            return X
+        return self.basis_.transform(check_array(X, dtype=np.float64, **allow_nan()))
+
+    def _fit_student(self, random_state, Xs, ys, ws):
+        if self.student is None and self.thresholds:
+            return _pruned_student(Xs, ys, ws, random_state)
+        student = self._new_student(random_state)
+        if self.student is not None and random_state is not None and "random_state" in student.get_params():
+            student.set_params(random_state=random_state)
+        return student.fit(Xs, ys, sample_weight=ws)
 
     def _new_student(self, random_state):
         from sklearn.base import clone
@@ -376,21 +539,35 @@ class DistilledTree(ClassifierMixin, BaseEstimator):
 
     def predict_proba(self, X):
         check_is_fitted(self)
-        return self.student_.predict_proba(X)
+        return self.student_.predict_proba(self.student_inputs(X))
 
     def predict(self, X):
         check_is_fitted(self)
-        return self.student_.predict(X)
+        return self.student_.predict(self.student_inputs(X))
 
     def fidelity(self, X) -> float:
         """Share of rows of `X` where the student predicts the teacher's class."""
         check_is_fitted(self)
-        return fidelity(self.teacher_, self.student_, X)
+        X = check_array(X, dtype=np.float64, **allow_nan())
+        return float(np.mean(np.asarray(self.predict(X)) == np.asarray(self.teacher_.predict(X))))
 
     def explain(self, X, **kwargs):
-        """The student tree's explanation; see `SoftDecisionTree.explain`."""
+        """
+        The student tree's explanation; see `SoftDecisionTree.explain`. With
+        `thresholds`, `X` is in the original features; `feature_names` and
+        `feature_bounds` may be given for them and are extended to the
+        threshold inputs (named like ``"bill_sep > 1500"``, bounds 0 and 1).
+        """
         check_is_fitted(self)
-        return self.student_.explain(X, **kwargs)
+        if self.basis_ is None:
+            return self.student_.explain(X, **kwargs)
+        Z = self.student_inputs(np.asarray(X, dtype=np.float64).reshape(-1, self.n_features_in_))
+        kwargs["feature_names"] = self.basis_.feature_names(kwargs.get("feature_names"))
+        if kwargs.get("feature_bounds") is not None:
+            lo, hi = (np.asarray(b, dtype=np.float64) for b in kwargs["feature_bounds"])
+            m = len(self.basis_.pairs)
+            kwargs["feature_bounds"] = (np.concatenate([lo, np.zeros(m)]), np.concatenate([hi, np.ones(m)]))
+        return self.student_.explain(Z[0] if np.ndim(X) == 1 else Z, **kwargs)
 
     def to_numpy(self, **kwargs):
         return self.student_.to_numpy(**kwargs)
@@ -428,6 +605,15 @@ class DistilledForest(DistilledTree):
 
     n_trees : int, default=3
         Number of student trees.
+    combine : {"log", "mean"}, default="log"
+        "log" predicts with the sum of the trees' log probabilities (the
+        setting measured above); "mean" averages their probabilities. The
+        sum is overconfident: on the credit-default case
+        (cases/credit-default/esik.py; three trees, threshold inputs, 1 000
+        to 24 000 rows, 3 seeds) its calibration slope was 0.35 to 0.38 and ECE
+        0.13 at every size, the mean's 1.05 to 1.15 and 0.016 to 0.021, at
+        the same AUC. Use "mean" when the probability itself is used, as a
+        probability of default is.
 
     Attributes
     ----------
@@ -437,27 +623,28 @@ class DistilledForest(DistilledTree):
     """
 
     def __init__(self, teacher=None, student=None, n_trees: int = 3, alpha: float = 0.0,
-                 threshold: float = 0.01, synthetic: int = 10, random_state: Optional[int] = None):
+                 threshold: float = 0.01, synthetic: int = 10, thresholds: int = 0,
+                 combine: str = "log", random_state: Optional[int] = None):
         super().__init__(teacher=teacher, student=student, alpha=alpha, threshold=threshold,
-                         synthetic=synthetic, random_state=random_state)
+                         synthetic=synthetic, thresholds=thresholds, random_state=random_state)
         self.n_trees = n_trees
+        self.combine = combine
 
     def fit(self, X, y, sample_weight=None, X_unlabeled=None) -> DistilledForest:
         """Fit the teacher, then `n_trees` students on bootstrap samples of the transfer rows."""
         if not isinstance(self.n_trees, (int, np.integer)) or isinstance(self.n_trees, bool) \
                 or self.n_trees < 1:
             raise ValueError(f"n_trees must be a positive int, got {self.n_trees!r}")
+        if self.combine not in ("log", "mean"):
+            raise ValueError(f'combine must be "log" or "mean", got {self.combine!r}')
         teacher, Xt, P, wt, X, y, w = self._teacher_rows(X, y, sample_weight, X_unlabeled)
+        Xt, Xb = self._basis_rows(teacher, Xt, X)
         rng = np.random.default_rng(self.random_state)
         estimators = []
         for k in range(int(self.n_trees)):
             b = rng.integers(0, len(Xt), len(Xt))
             seed = None if self.random_state is None else int(self.random_state) + k
-            student = self._new_student(seed)
-            if self.student is not None and seed is not None and "random_state" in student.get_params():
-                student.set_params(random_state=seed)
-            Xs, ys, ws = self._student_rows(teacher, Xt[b], P[b], wt[b], X, y, w)
-            estimators.append(student.fit(Xs, ys, sample_weight=ws))
+            estimators.append(self._fit_student(seed, *self._student_rows(teacher, Xt[b], P[b], wt[b], Xb, y, w)))
         self.teacher_, self.estimators_ = teacher, estimators
         self.classes_ = estimators[0].classes_
         self.n_features_in_ = X.shape[1]
@@ -465,8 +652,11 @@ class DistilledForest(DistilledTree):
 
     def predict_proba(self, X):
         check_is_fitted(self)
+        Z = self.student_inputs(X)
+        if self.combine == "mean":
+            return np.mean([t.predict_proba(Z) for t in self.estimators_], axis=0)
         with np.errstate(divide="ignore"):
-            L = sum(np.log(t.predict_proba(X)) for t in self.estimators_)
+            L = sum(np.log(t.predict_proba(Z)) for t in self.estimators_)
         L = L - L.max(axis=1, keepdims=True)
         P = np.exp(L)
         return P / P.sum(axis=1, keepdims=True)
@@ -478,13 +668,15 @@ class DistilledForest(DistilledTree):
     def fidelity(self, X) -> float:
         """Share of rows of `X` where the group predicts the teacher's class."""
         check_is_fitted(self)
+        X = check_array(X, dtype=np.float64, **allow_nan())
         return float(np.mean(self.predict(X) == self.teacher_.predict(X)))
 
     def explain(self, X, **kwargs):
         raise NotImplementedError("a group has no single explanation; explain each tree in estimators_")
 
     def to_numpy(self, **kwargs):
-        """One `NumpySoftTree` per tree; sum their `predict_log_proba` to predict like the group."""
+        """One `NumpySoftTree` per tree, on ``student_inputs(X)``; sum their `predict_log_proba` (combine="log")
+        or average their `predict_proba` (combine="mean") to predict like the group."""
         check_is_fitted(self)
         return [t.to_numpy(**kwargs) for t in self.estimators_]
 
