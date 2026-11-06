@@ -273,7 +273,7 @@ def _pruned_student(Xs, ys, ws, random_state, rows: int = 40_000):
     of a row together, scored by the Brier score, with the one-standard-error
     rule. Weighted accuracy is flat on imbalanced transfer rows (a teacher
     whose argmax is one split scores the same for every larger tree), and
-    taking the best mean accuracy grew trees 1.3 to 7 times larger at the same
+    taking the best mean accuracy grew trees 1.4 to 7 times larger at the same
     test accuracy on the nine tables of `benchmarks/kanit.py` at 500 to 5 000 rows.
     """
     from sklearn.tree import DecisionTreeClassifier
