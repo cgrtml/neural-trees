@@ -166,3 +166,23 @@ def test_cart_init_on_class_expanded_rows_is_not_pruned_to_the_root():
     we = np.r_[(1 - p)[k0], p[k1]]
     m = SoftDecisionTree(depth=8, init="cart", max_epochs=1, random_state=0).fit(Xe, ye, sample_weight=we)
     assert int(m.model_.is_split.sum()) > 10
+
+
+def test_one_se_rule_picks_a_tree_no_larger_than_the_best_scoring_one():
+    from sklearn.tree import DecisionTreeClassifier
+
+    from neural_trees.decision_trees.soft_decision_tree import (
+        _pruned_cart,
+        _pruning_folds,
+    )
+    from neural_trees.distillation import _brier, _one_se_cart
+    X, y = load_breast_cancer(return_X_y=True)
+    w = np.ones(len(y))
+    folds = _pruning_folds(X, y, 0)
+
+    def make(a):
+        return DecisionTreeClassifier(max_depth=8, ccp_alpha=a, random_state=0)
+    best, _ = _pruned_cart(make, X, y, w, True, 0, _brier, folds)
+    one_se = _one_se_cart(make, X, y, w, _brier, folds)
+    assert 1 <= one_se.get_n_leaves() <= best.get_n_leaves()
+    assert _brier(one_se, X, y, w) <= 0

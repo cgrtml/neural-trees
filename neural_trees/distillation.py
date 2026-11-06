@@ -237,28 +237,56 @@ class ThresholdBasis:
         return names + [f"{names[j]} {'>=' if eq else '>'} {t:.6g}" for j, t, eq in self.pairs]
 
 
+def _brier(model, X, y, w):
+    """Negative weighted Brier score of a fitted classifier (higher is better)."""
+    P = model.predict_proba(X)
+    Y = (np.asarray(y)[:, None] == model.classes_[None, :]).astype(float)
+    return -float((((P - Y) ** 2).sum(1) * w).sum() / w.sum())
+
+
+def _one_se_cart(make_tree, X, Y, w, score, folds):
+    """
+    CART pruned by Breiman's one-standard-error rule: among up to 12 strengths
+    along the cost-complexity path, the largest whose mean fold score is within
+    one standard error (over the folds) of the best.
+    """
+    path = make_tree(0.0).cost_complexity_pruning_path(X, Y, sample_weight=w)
+    alphas = np.unique(np.clip(path.ccp_alphas[:-1], 0.0, None))
+    if len(alphas) > 12:
+        alphas = np.unique(np.quantile(alphas, np.linspace(0, 1, 12)))
+    if len(alphas) <= 1:
+        return make_tree(0.0).fit(X, Y, sample_weight=w)
+    S = np.array([[score(make_tree(a).fit(X[tr], Y[tr], sample_weight=w[tr]), X[te], Y[te], w[te])
+                   for tr, te in folds] for a in alphas])
+    mean, se = S.mean(1), S.std(1, ddof=1) / np.sqrt(S.shape[1])
+    best = int(mean.argmax())
+    alpha = float(max(a for a, m in zip(alphas, mean) if m >= mean[best] - se[best]))
+    return make_tree(alpha).fit(X, Y, sample_weight=w)
+
+
 def _pruned_student(Xs, ys, ws, random_state, rows: int = 40_000):
     """
-    The default student for threshold inputs: CART of depth 8 pruned by
-    3-fold cross-validation on at most `rows` transfer rows (pruning on every
-    row costs more than the fit), with folds that keep the class copies of a
-    row together, copied into a soft tree and fine-tuned on all rows.
+    The default student for threshold inputs: CART of depth 8 pruned on at
+    most `rows` transfer rows (pruning on every row costs more than the fit),
+    copied into a soft tree and fine-tuned on all rows. The pruning strength
+    is chosen by 3-fold cross-validation with folds that keep the class copies
+    of a row together, scored by the Brier score, with the one-standard-error
+    rule. Weighted accuracy is flat on imbalanced transfer rows (a teacher
+    whose argmax is one split scores the same for every larger tree), and
+    taking the best mean accuracy grew trees 1.3 to 7 times larger at the same
+    test accuracy on the nine tables of `benchmarks/kanit.py` at 500 to 5 000 rows.
     """
     from sklearn.tree import DecisionTreeClassifier
 
     from neural_trees import SoftDecisionTree
-    from neural_trees.decision_trees.soft_decision_tree import (
-        _pruned_cart,
-        _pruning_folds,
-    )
+    from neural_trees.decision_trees.soft_decision_tree import _pruning_folds
     kw = dict(learn_temperature=True, max_epochs=60, batch_size=256, random_state=random_state)
     seed = random_state or 0
     sub = np.random.default_rng(seed).choice(len(ys), min(rows, len(ys)), replace=False)
     _, yi = np.unique(ys, return_inverse=True)
     folds = _pruning_folds(Xs[sub], yi[sub], seed)
-    cart, _ = _pruned_cart(lambda a: DecisionTreeClassifier(max_depth=8, ccp_alpha=a, random_state=random_state),
-                           np.nan_to_num(Xs[sub]), ys[sub], ws[sub], True, random_state,
-                           lambda m, X, y, w: float(((m.predict(X) == y) * w).sum() / w.sum()), folds)
+    cart = _one_se_cart(lambda a: DecisionTreeClassifier(max_depth=8, ccp_alpha=a, random_state=random_state),
+                        np.nan_to_num(Xs[sub]), ys[sub], ws[sub], _brier, folds)
     return SoftDecisionTree.from_hard_tree(cart, X=Xs, sharpness=10.0, **kw).fit(Xs, ys, sample_weight=ws)
 
 
