@@ -54,6 +54,7 @@ source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 html_theme = "pydata_sphinx_theme"
 html_title = f"neural-trees {version}"
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 html_theme_options = {
     "github_url": "https://github.com/cgrtml/neural-trees",
     "icon_links": [
@@ -64,6 +65,7 @@ html_theme_options = {
         },
     ],
     "show_prev_next": False,
+    "navbar_start": ["navbar-logo", "author-link"],
     "navbar_end": ["theme-switcher", "navbar-icon-links"],
 }
 html_context = {"default_mode": "auto"}
