@@ -51,6 +51,12 @@ this, the rest of the library still works:
 a torch-backed estimator there raises an error naming `pip install torch`
 rather than failing at import.
 
+On macOS with an XGBoost teacher, set `OMP_NUM_THREADS=1` before starting
+Python. torch and XGBoost each load an OpenMP runtime, and in one process
+XGBoost's `fit` or a torch fit segfaulted in our environment (xgboost 3.4.1,
+torch 2.14.1, in either import order). With one OpenMP thread it does not;
+the test suite sets it in `tests/conftest.py`.
+
 ### Install from source
 
 ```bash
