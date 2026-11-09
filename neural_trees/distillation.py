@@ -147,21 +147,26 @@ def _teacher_splits(teacher, n_features):
     out = []
     est = teacher.steps[-1][1] if hasattr(teacher, "steps") else teacher
     if hasattr(est, "get_booster"):                                    # XGBoost
-        df = est.get_booster().trees_to_dataframe()
-        df = df[df.Feature != "Leaf"]
+        # the JSON dump, not trees_to_dataframe(), which needs pandas
+        import json
         names = est.get_booster().feature_names
         pos = {n: i for i, n in enumerate(names)} if names else None
-        for f, t, g in zip(df.Feature, df.Split, df.Gain):
-            j = pos[f] if pos else int(str(f)[1:])
-            out.append((j, float(t), True, float(g)))
+        stack = [json.loads(t) for t in est.get_booster().get_dump(dump_format="json", with_stats=True)]
+        while stack:
+            nd = stack.pop()
+            if "split" in nd:
+                f = nd["split"]
+                out.append((pos[f] if pos else int(str(f)[1:]), float(nd["split_condition"]), True, float(nd["gain"])))
+                stack.extend(nd["children"])
         return out
     if hasattr(est, "booster_"):                                       # LightGBM
-        df = est.booster_.trees_to_dataframe()
-        df = df[df.split_feature.notna()]
-        pos = {n: i for i, n in enumerate(est.booster_.feature_name())}
-        for f, t, g, d in zip(df.split_feature, df.threshold, df.split_gain, df.decision_type):
-            if d == "<=":
-                out.append((pos[f], float(t), False, float(g)))
+        stack = [t["tree_structure"] for t in est.booster_.dump_model()["tree_info"]]
+        while stack:
+            nd = stack.pop()
+            if "split_feature" in nd:
+                if nd["decision_type"] == "<=":
+                    out.append((int(nd["split_feature"]), float(nd["threshold"]), False, float(nd["split_gain"])))
+                stack.extend((nd["left_child"], nd["right_child"]))
         return out
     if hasattr(est, "_predictors"):                                    # HistGradientBoosting
         for it in est._predictors:
