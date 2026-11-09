@@ -1,0 +1,11 @@
+.nt-author-link {
+  margin-left: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--pst-color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nt-author-link:hover {
+  color: var(--pst-color-primary);
+  text-decoration: underline;
+}
