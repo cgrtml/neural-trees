@@ -216,7 +216,7 @@ class ThresholdBasis:
 
     def __init__(self, teacher, n_features: int, k: int = 512):
         splits = _teacher_splits(teacher, n_features)
-        gain = {}
+        gain: dict[tuple[int, float, bool], float] = {}
         for j, t, right_eq, g in splits:
             if 0 <= j < n_features and np.isfinite(t):
                 gain[(j, t, right_eq)] = gain.get((j, t, right_eq), 0.0) + g
