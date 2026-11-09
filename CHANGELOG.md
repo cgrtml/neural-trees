@@ -5,6 +5,8 @@ All notable changes to this project are documented here. This project follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-09
+
 ### Added
 - `DistilledTree(thresholds=k)` and `DistilledForest(thresholds=k)`: the student sees, next to the features, one 0/1 input per (feature, threshold) pair among the teacher's `k` highest-gain splits (`neural_trees.distillation.ThresholdBasis`; XGBoost, LightGBM and the scikit-learn tree models are read). Prediction, `explain` and `fidelity` take the original features, explanations name the threshold inputs ("bill_sep > 1500"), and `student_inputs(X)` gives what the exports take. With 512 thresholds and the tuned XGBoost of `benchmarks/kanit.py` as teacher (nine tables, three seeds; `benchmarks/esik.py`) one tree was 0.70 points under tuned XGBoost at 20 000 rows with 14 to 99 splits; with 500 to 5 000 rows, rivals re-tuned at each size, the three-tree group was level with tuned XGBoost and LightGBM and 0.40 points above XGBoost at 500 rows (18 of 27 cells, p=0.012). On many transfer rows the default student is pruned on a 40 000-row subsample.
 - `DistilledForest(combine="mean")`: average the trees' probabilities instead of summing their log probabilities. The sum is overconfident (calibration slope 0.35 to 0.38, ECE 0.13 on the credit-default case at every size); the mean gives slope 1.05 to 1.15 and ECE about 0.02 at the same AUC (`cases/credit-default/esik.py`). The default stays "log".
