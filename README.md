@@ -227,9 +227,15 @@ Wilcoxon p):
 | 100 trees | 4 159 | -0.78 (3/8, p=0.04) | -0.40 (5/6, p=0.58) |
 | 300 trees | 11 059 | -1.28 (1/10, p=0.005) | -0.90 (3/8, p=0.12) |
 
-One tree is level with XGBoost at about ten times its splits (30 trees),
-and three trees with XGBoost at 100 trees: the differences there are
-small and not significant. Neither reaches 300 trees, the gap
+One tree is level with XGBoost at 30 trees and three trees with XGBoost
+at 100 trees: the differences there are small and not significant. The
+split counts are not the same unit, though. Each gate of the student is
+oblique: it weighs every input, so 137 splits are 137 x 7 to 137 x 54
+weights on these tables (about 960 to 7 400, mean about 3 500), the same
+order as the 1 303 splits and leaf values of XGBoost with 30 trees, not a
+tenth of it. Counted by nonzero weights, the distilled tree is not smaller
+than the XGBoost model it matches, and the table above should not be read
+as a size advantage. Neither reaches 300 trees, the gap
 is largest on electricity and covertype (3 to 5 points), and ten passes
 fit in about 15 minutes for 20 000 rows on one CPU thread (`synthetic=2`
 is faster). Prediction from the numpy export costs about what XGBoost

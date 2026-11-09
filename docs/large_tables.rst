@@ -163,9 +163,14 @@ XGBoost             its splits       one distilled tree     group of three
 ==================  ===============  =====================  =====================
 
 Mean difference in test accuracy points over the 11 cells, cells higher and
-lower, Wilcoxon p. One tree is level with XGBoost at 30 trees, about ten
-times its size, and three trees with XGBoost at 100, about nine times
-theirs: the differences there are small and not significant. Neither reaches 300 trees, and the gap is largest where
+lower, Wilcoxon p. One tree is level with XGBoost at 30 trees and three
+trees with XGBoost at 100: the differences there are small and not
+significant. The split counts are not the same unit. A gate of the student
+is oblique and weighs every input, so its 137 splits are 137 x 7 to
+137 x 54 weights on these tables (about 960 to 7 400, mean about 3 500),
+the same order as XGBoost with 30 trees, not a tenth of it. Counted by
+nonzero weights the distilled tree is not smaller than the XGBoost model it
+matches, and the table above should not be read as a size advantage. Neither reaches 300 trees, and the gap is largest where
 one tree is short of capacity (electricity and covertype, 3 to 5 points).
 Prediction costs about the same as XGBoost with 300 trees: the numpy export
 evaluates only the gates that split, 12 to 58 ms for 10 000 rows against
