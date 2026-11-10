@@ -5,7 +5,16 @@ All notable changes to this project are documented here. This project follows
 
 ## [Unreleased]
 
-## [0.9.0] - 2026-11-09
+## [0.9.1] - 2026-11-09
+
+### Fixed
+- The folds that choose the CART init's pruning strength, when rows repeat (class copies in distillation, bootstrap), came from scikit-learn's `GroupKFold`, which sorts equal-sized groups with an unstable sort: an ARM Mac and an x86 Linux runner gave different folds, and so different pruned trees, from the same `random_state`. The groups now go to folds by a seeded permutation, the same on every CPU. Trees fitted with `init="cart"` on repeated rows can differ from 0.9.0.
+- mypy annotation in `ThresholdBasis`.
+
+### Known limitations
+- With accuracy as the pruning score (the `SoftDecisionTree(init="cart")` default) the chosen strength depends on the fold layout: on the regression case in `tests/test_threshold_basis.py` twelve seeded layouts gave 1 to 126 splits. `DistilledTree(thresholds=k)` prunes by Brier score with the one-standard-error rule instead.
+
+## [0.9.0] - 2026-11-09 (tagged, not published: superseded by 0.9.1 before release)
 
 ### Added
 - `DistilledTree(thresholds=k)` and `DistilledForest(thresholds=k)`: the student sees, next to the features, one 0/1 input per (feature, threshold) pair among the teacher's `k` highest-gain splits (`neural_trees.distillation.ThresholdBasis`; XGBoost, LightGBM and the scikit-learn tree models are read). Prediction, `explain` and `fidelity` take the original features, explanations name the threshold inputs ("bill_sep > 1500"), and `student_inputs(X)` gives what the exports take. With 512 thresholds and the tuned XGBoost of `benchmarks/kanit.py` as teacher (nine tables, three seeds; `benchmarks/esik.py`) one tree was 0.70 points under tuned XGBoost at 20 000 rows with 14 to 99 splits; with 500 to 5 000 rows, rivals re-tuned at each size, the three-tree group was level with tuned XGBoost and LightGBM and 0.40 points above XGBoost at 500 rows (18 of 27 cells, p=0.012). On many transfer rows the default student is pruned on a 40 000-row subsample.

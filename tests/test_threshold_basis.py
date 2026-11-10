@@ -156,7 +156,10 @@ def test_pruning_folds_keep_the_class_copies_of_a_row_together():
 def test_cart_init_on_class_expanded_rows_is_not_pruned_to_the_root():
     # an imbalanced teacher whose argmax is one split (x0 > 1.2) and whose ranking elsewhere is
     # smooth: with folds over the class copies the pruning picked that one split alone (the
-    # credit-default collapse, 5 Nov 2026; this case gave 1 split before the fix, 126 after)
+    # credit-default collapse, 5 Nov 2026; this case gave 1 split before the fix, 126 after).
+    # The choice still depends on the fold layout: over 12 seeded group-fold layouts it gave
+    # 1 to 126 splits, one layout of 12 collapsing to 1. Folds are seeded and the same on every
+    # CPU since 0.9.1, so this checks the layout of random_state=0.
     rng = np.random.default_rng(0)
     X = rng.normal(size=(3000, 6))
     p = np.where(X[:, 0] > 1.2, 0.7, 1 / (1 + np.exp(-(-2.0 + 0.5 * X[:, 1:4].sum(1)))))
@@ -186,3 +189,17 @@ def test_one_se_rule_picks_a_tree_no_larger_than_the_best_scoring_one():
     one_se = _one_se_cart(make, X, y, w, _brier, folds)
     assert 1 <= one_se.get_n_leaves() <= best.get_n_leaves()
     assert _brier(one_se, X, y, w) <= 0
+
+
+def test_pruning_folds_keep_row_copies_together_and_repeat_exactly():
+    from neural_trees.decision_trees.soft_decision_tree import _pruning_folds
+    rng = np.random.default_rng(1)
+    X = rng.normal(size=(200, 3))
+    Xe = np.vstack([X, X]); ye = np.r_[np.zeros(200, int), np.ones(200, int)]
+    a, b = _pruning_folds(Xe, ye, 7), _pruning_folds(Xe, ye, 7)
+    assert all(np.array_equal(p[1], q[1]) for p, q in zip(a, b))
+    fold = np.empty(400, int)
+    for k, (_, te) in enumerate(a):
+        fold[te] = k
+    assert np.array_equal(fold[:200], fold[200:])
+    assert sorted(np.concatenate([te for _, te in a]).tolist()) == list(range(400))

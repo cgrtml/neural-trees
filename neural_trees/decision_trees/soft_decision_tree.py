@@ -447,13 +447,20 @@ def _pruning_folds(X, y, random_state):
     bootstrap repeats rows; folds that put copies of one row on both sides score
     any tree that separates rows against itself and drive the choice to the
     root. When rows repeat, the folds keep all copies of a row together.
+
+    The groups go to folds by a seeded permutation, not by GroupKFold, whose
+    assignment sorts equal-sized groups with an unstable sort and so differed
+    between CPUs (an ARM Mac and an x86 Linux runner gave different folds and
+    different pruned trees from the same seed).
     """
-    from sklearn.model_selection import GroupKFold, StratifiedKFold
+    from sklearn.model_selection import StratifiedKFold
     X = np.asarray(X)
     groups = np.unique(np.nan_to_num(X, nan=np.inf), axis=0, return_inverse=True)[1].ravel()
+    seed = int(random_state) if isinstance(random_state, (int, np.integer)) else 0
     if groups.max() + 1 < len(X):
-        return list(GroupKFold(3).split(X, y, groups))
-    return list(StratifiedKFold(3, shuffle=True, random_state=random_state or 0).split(X, y))
+        fold = np.random.default_rng(seed).permutation(groups.max() + 1)[groups] % 3
+        return [(np.where(fold != k)[0], np.where(fold == k)[0]) for k in range(3)]
+    return list(StratifiedKFold(3, shuffle=True, random_state=seed).split(X, y))
 
 
 def _pruned_cart(make_tree, X, Y, w, prune, seed, score, folds):
