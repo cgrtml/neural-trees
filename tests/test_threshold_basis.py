@@ -195,7 +195,8 @@ def test_pruning_folds_keep_row_copies_together_and_repeat_exactly():
     from neural_trees.decision_trees.soft_decision_tree import _pruning_folds
     rng = np.random.default_rng(1)
     X = rng.normal(size=(200, 3))
-    Xe = np.vstack([X, X]); ye = np.r_[np.zeros(200, int), np.ones(200, int)]
+    Xe = np.vstack([X, X])
+    ye = np.r_[np.zeros(200, int), np.ones(200, int)]
     a, b = _pruning_folds(Xe, ye, 7), _pruning_folds(Xe, ye, 7)
     assert all(np.array_equal(p[1], q[1]) for p, q in zip(a, b))
     fold = np.empty(400, int)
