@@ -57,6 +57,9 @@ dependencies = [
 onnx = [
     "onnx>=1.15",
 ]
+figs = [
+    "imodels>=1.4",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

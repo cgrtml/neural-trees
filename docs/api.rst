@@ -46,6 +46,7 @@ Distillation
 
    neural_trees.DistilledTree
    neural_trees.DistilledForest
+   neural_trees.DistilledFIGS
 
 .. autosummary::
    :toctree: generated

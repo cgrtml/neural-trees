@@ -38,6 +38,7 @@ from neural_trees.distillation import (  # noqa: E402
     distill,
     fidelity,
 )
+from neural_trees.distilled_figs import DistilledFIGS  # noqa: E402
 from neural_trees.explain import Counterfactual, Explanation, GateStep  # noqa: E402
 
 _LAZY = {
@@ -77,6 +78,7 @@ def __dir__():
 __all__ = [
     "Counterfactual",
     "Distilled",
+    "DistilledFIGS",
     "DistilledForest",
     "DistilledTree",
     "Explanation",
