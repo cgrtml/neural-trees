@@ -3,10 +3,11 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.2] - 2026-11-11
 
 ### Added
 - `neural_trees.DistilledFIGS(teacher=None, max_rules=256, synthetic=0)`: fits the teacher on `(X, y)`, then `imodels.FIGSRegressor` with `max_rules` splits on the teacher's class probabilities (one regressor for two classes, one per class otherwise); `predict_proba`, `predict` and `fidelity(X)`. Optional dependency: `pip install neural-trees[figs]`. Not a new method (FIGS-BD, arXiv 2503.06730; `imodels.DistilledRegressor`); added because the equal-size audit of the neural-trees paper measured it on held-out test rows (9 OpenML tables x 3 seeds, tuned XGBoost teacher, hypotheses fixed before the run): at 256 and 512 splits it beat FIGS on labels at the same size by +1.13 and +1.75 accuracy points and +2.01 and +3.64 AUC (p < 0.0001), and at 512 splits FIGS at its best size (128) by +1.02 accuracy on all 9 tables. MUNGE rows gave the same at 13 times the fit time, hence `synthetic=0`.
+- On Python 3.9 the `figs` extra installs imodels below 3 (imodels 3 does not import there); `tests/test_distilled_figs.py` passed with imodels 2.0.4 on Python 3.9 and 3.0.4 on Python 3.12. The extra also installs `six`, which imodels 3.0.4 imports without declaring it.
 
 ## [0.9.1] - 2026-11-09
 

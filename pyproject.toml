@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neural-trees"
-version = "0.9.1"
+version = "0.9.2"
 description = "Soft decision trees, mixture of experts, and statistical model comparison tests for Python. Scikit-learn compatible, PyTorch backend."
 readme = "README.md"
 license = { text = "MIT" }
@@ -58,7 +58,11 @@ onnx = [
     "onnx>=1.15",
 ]
 figs = [
-    "imodels>=1.4",
+    # imodels 3 does not import on Python 3.9 (it uses X | Y annotations)
+    "imodels>=1.4,<3; python_version < '3.10'",
+    "imodels>=1.4; python_version >= '3.10'",
+    # imodels 3.0.4 imports six without declaring it
+    "six",
 ]
 dev = [
     "pytest>=7.0",
