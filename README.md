@@ -409,7 +409,9 @@ a soft tree cannot learn and measures the four growth decisions:
 ```
 
 That DOI always resolves to the most recent release. To cite the exact version
-you ran, use the DOI of that release instead; v0.9.1 is
+you ran, use the DOI of that release instead; v0.9.2 is
+[10.5281/zenodo.24155776](https://doi.org/10.5281/zenodo.24155776),
+v0.9.1 is
 [10.5281/zenodo.24094993](https://doi.org/10.5281/zenodo.24094993),
 v0.8.0 is
 [10.5281/zenodo.23091242](https://doi.org/10.5281/zenodo.23091242),
