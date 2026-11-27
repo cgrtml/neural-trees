@@ -112,12 +112,13 @@ class DistilledFIGS(ClassifierMixin, BaseEstimator):
         # imodels FIGS does not pass random_state to the depth-1 sklearn trees it grows, so ties
         # between equally good splits follow the global NumPy state. Seed it for the fit (and put
         # the caller's state back) so that a fixed random_state gives the same model every time.
-        state = np.random.get_state() if self.random_state is not None else None
+        seed = self.random_state
+        state = np.random.get_state() if seed is not None else None
         try:
             self.figs_ = []
             for t in targets:
-                if state is not None:
-                    np.random.seed(int(self.random_state))
+                if seed is not None:
+                    np.random.seed(int(seed))
                 self.figs_.append(FIGSRegressor(max_rules=int(self.max_rules), random_state=self.random_state).fit(Xt, t))
         finally:
             if state is not None:
