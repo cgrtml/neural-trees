@@ -109,8 +109,19 @@ class DistilledFIGS(ClassifierMixin, BaseEstimator):
             Xt = np.vstack([X, munge(X, passes=int(self.synthetic), random_state=self.random_state)])
         P = np.asarray(teacher.predict_proba(Xt), dtype=np.float64)
         targets = [P[:, 1]] if len(self.classes_) == 2 else [P[:, k] for k in range(len(self.classes_))]
-        self.figs_ = [FIGSRegressor(max_rules=int(self.max_rules), random_state=self.random_state).fit(Xt, t)
-                      for t in targets]
+        # imodels FIGS does not pass random_state to the depth-1 sklearn trees it grows, so ties
+        # between equally good splits follow the global NumPy state. Seed it for the fit (and put
+        # the caller's state back) so that a fixed random_state gives the same model every time.
+        state = np.random.get_state() if self.random_state is not None else None
+        try:
+            self.figs_ = []
+            for t in targets:
+                if state is not None:
+                    np.random.seed(int(self.random_state))
+                self.figs_.append(FIGSRegressor(max_rules=int(self.max_rules), random_state=self.random_state).fit(Xt, t))
+        finally:
+            if state is not None:
+                np.random.set_state(state)
         self.teacher_ = teacher
         self.n_features_in_ = X.shape[1]
         self.complexity_ = int(sum(m.complexity_ for m in self.figs_))

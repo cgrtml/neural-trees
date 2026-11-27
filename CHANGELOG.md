@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.9.3] - 2026-11-27
+
+### Fixed
+- `DistilledFIGS` was not repeatable with a fixed `random_state` when two splits tie. imodels' FIGS (2.x and 3.0.4) does not pass `random_state` to the depth-1 scikit-learn trees it grows, so those trees break ties with the global NumPy state. `DistilledFIGS` now seeds the global state from `random_state` before each FIGS fit and restores the caller's state afterwards. With `random_state=None` nothing changes. Models fitted with a fixed `random_state` on data with tied splits can differ from 0.9.2.
+
 ## [0.9.2] - 2026-11-11
 
 ### Added

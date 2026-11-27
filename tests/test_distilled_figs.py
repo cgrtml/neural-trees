@@ -53,3 +53,32 @@ def test_rejects_wrong_feature_count():
     m = DistilledFIGS(max_rules=4, random_state=0).fit(Xtr, ytr)
     with pytest.raises(ValueError):
         m.predict(Xte[:, :5])
+
+
+def test_fixed_random_state_is_repeatable_with_tied_splits():
+    # duplicated columns make every split tie with its copy; imodels breaks such ties with the
+    # global NumPy state, so the estimator must fix it when random_state is given
+    X, y = load_breast_cancer(return_X_y=True)
+    X = np.hstack([X, X])
+    feats = []
+    for g in (1, 2, 3):
+        np.random.seed(g)
+        m = DistilledFIGS(max_rules=8, random_state=0).fit(X, y)
+        feats.append([int(n.feature) for t in m.figs_[0].trees_ for n in _nodes(t)])
+    assert feats[0] == feats[1] == feats[2]
+
+
+def test_global_numpy_state_is_restored():
+    X, y = load_breast_cancer(return_X_y=True)
+    np.random.seed(123)
+    expected = np.random.get_state()[1].copy()
+    np.random.seed(123)
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    DistilledFIGS(teacher=HistGradientBoostingClassifier(random_state=0), max_rules=4, random_state=0).fit(X, y)
+    assert np.array_equal(np.random.get_state()[1], expected)
+
+
+def _nodes(n):
+    if n is None or getattr(n, "left", None) is None:
+        return []
+    return [n] + _nodes(n.left) + _nodes(n.right)
